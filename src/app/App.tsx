@@ -11,7 +11,7 @@ import {
   BarChart2, UserCircle, Settings, LogOut,
 } from "lucide-react";
 
-type AuthScreen = "login" | "signup-phone" | "signup-otp" | "signup-details" | "forgot-otp" | "forgot-newpass";
+type AuthScreen = "login" | "mechanic-login-otp" | "signup-phone" | "signup-otp" | "signup-details" | "forgot-phone" | "forgot-otp" | "forgot-newpass";
 type Role = "mechanic" | "seller";
 type Lang = "en" | "ru" | "uz";
 type MechanicTab = "main" | "shops" | "scan" | "cart" | "profile";
@@ -222,6 +222,7 @@ function LoginScreen({ onLogin, onNavigate, lang, setLang }: {
   onNavigate: (s: AuthScreen) => void;
   lang: Lang; setLang: (l: Lang) => void;
 }) {
+  const [phone, setPhone] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -261,30 +262,46 @@ function LoginScreen({ onLogin, onNavigate, lang, setLang }: {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3.5">
-          <InputField placeholder="Username or Phone Number" value={username} onChange={setUsername} />
-          <div>
-            <InputField placeholder="Password" type={showPassword ? "text" : "password"} value={password} onChange={setPassword}
-              rightElement={
-                <button onClick={() => setShowPassword((p) => !p)} className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
-                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
-              } />
-            <div className="flex justify-end mt-2">
-              <button onClick={() => onNavigate("forgot-otp")} className="text-[13px] font-medium text-primary hover:text-blue-700 transition-colors">
-                Forgot Password?
-              </button>
+        {role === "mechanic" ? (
+          <>
+            <div className="flex gap-2">
+              <div className="flex items-center gap-1.5 px-3 py-3.5 bg-[#F4F5F7] rounded-xl text-sm font-semibold text-foreground whitespace-nowrap">🇺🇿 +998</div>
+              <div className="flex-1"><InputField placeholder="90 123 45 67" type="tel" value={phone} onChange={setPhone} /></div>
             </div>
-          </div>
-        </div>
-
-        <p className="text-center text-[13px] text-muted-foreground mt-6">
-          Don&apos;t have an account?{" "}
-          <button onClick={() => onNavigate("signup-phone")} className="text-primary font-semibold hover:underline">Sign Up</button>
-        </p>
+            <p className="text-center text-[13px] text-muted-foreground mt-6">
+              Don&apos;t have an account?{" "}
+              <button onClick={() => onNavigate("signup-phone")} className="text-primary font-semibold hover:underline">Sign Up</button>
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="flex flex-col gap-3.5">
+              <InputField placeholder="Username" value={username} onChange={setUsername} />
+              <div>
+                <InputField placeholder="Password" type={showPassword ? "text" : "password"} value={password} onChange={setPassword}
+                  rightElement={
+                    <button onClick={() => setShowPassword((p) => !p)} className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  } />
+                <div className="flex justify-end mt-2">
+                  <button onClick={() => onNavigate("forgot-phone")} className="text-[13px] font-medium text-primary hover:text-blue-700 transition-colors">
+                    Forgot Password?
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p className="text-center text-[13px] text-muted-foreground mt-5 px-4 leading-relaxed">
+              Your login credentials were provided by your admin.
+            </p>
+          </>
+        )}
       </div>
       <div className="px-6 pb-6 pt-3 shrink-0">
-        <PrimaryButton label="Login" onClick={() => onLogin(role)} />
+        {role === "mechanic"
+          ? <PrimaryButton label="Send Code" onClick={() => onNavigate("mechanic-login-otp")} />
+          : <PrimaryButton label="Login" onClick={() => onLogin("seller")} />
+        }
       </div>
     </div>
   );
@@ -324,8 +341,9 @@ function SignupPhoneScreen({ onNavigate, lang, setLang }: { onNavigate: (s: Auth
   );
 }
 
-function OtpScreen({ onNavigate, onBack, nextScreen, title, subtitle, lang, setLang }: {
+function OtpScreen({ onNavigate, onBack, nextScreen, onVerify, title, subtitle, lang, setLang }: {
   onNavigate: (s: AuthScreen) => void; onBack: () => void; nextScreen: AuthScreen;
+  onVerify?: () => void;
   title: string; subtitle: string; lang: Lang; setLang: (l: Lang) => void;
 }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -373,14 +391,13 @@ function OtpScreen({ onNavigate, onBack, nextScreen, title, subtitle, lang, setL
         </div>
       </div>
       <div className="px-6 pb-6 pt-3 shrink-0">
-        <PrimaryButton label="Verify" onClick={() => onNavigate(nextScreen)} />
+        <PrimaryButton label="Verify" onClick={() => { if (onVerify) { onVerify(); } else { onNavigate(nextScreen); } }} />
       </div>
     </div>
   );
 }
 
 function SignupDetailsScreen({ onNavigate, lang, setLang }: { onNavigate: (s: AuthScreen) => void; lang: Lang; setLang: (l: Lang) => void }) {
-  const [role, setRole] = useState<Role>("mechanic");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -393,29 +410,11 @@ function SignupDetailsScreen({ onNavigate, lang, setLang }: { onNavigate: (s: Au
       <TopBar showBack onBack={() => onNavigate("signup-otp")} lang={lang} setLang={setLang} />
       <div className="flex-1 overflow-y-auto px-6 pt-5">
         <div className="mb-5">
-          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">Set up your profile</h1>
-          <p className="text-sm text-muted-foreground mt-1">Choose your role and create your login</p>
-        </div>
-        <div className="mb-4">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">I am a...</p>
-          <div className="grid grid-cols-2 gap-3">
-            {([
-              { key: "mechanic" as Role, label: "Mechanic", sub: "Repair & service", icon: <Wrench size={20} /> },
-              { key: "seller" as Role, label: "Seller", sub: "Parts & supply", icon: <Store size={20} /> },
-            ] as const).map((r) => {
-              const sel = role === r.key;
-              return (
-                <button key={r.key} onClick={() => setRole(r.key)}
-                  className={`flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-2xl border-2 transition-all ${sel ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/30"}`}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${sel ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>{r.icon}</div>
-                  <div className="text-center">
-                    <div className={`text-[13px] font-semibold leading-tight ${sel ? "text-primary" : "text-foreground"}`}>{r.label}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">{r.sub}</div>
-                  </div>
-                </button>
-              );
-            })}
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <Wrench size={26} className="text-primary" />
           </div>
+          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">Almost there!</h1>
+          <p className="text-sm text-muted-foreground mt-1">Set a username and password for your mechanic account</p>
         </div>
         <div className="flex flex-col gap-3">
           <InputField placeholder="Username" value={username} onChange={setUsername} />
@@ -431,6 +430,33 @@ function SignupDetailsScreen({ onNavigate, lang, setLang }: { onNavigate: (s: Au
       </div>
       <div className="px-6 pb-6 pt-3 shrink-0">
         <PrimaryButton label="Create Account" onClick={() => onNavigate("login")} />
+      </div>
+    </div>
+  );
+}
+
+function ForgotPhoneScreen({ onNavigate, lang, setLang }: { onNavigate: (s: AuthScreen) => void; lang: Lang; setLang: (l: Lang) => void }) {
+  const [phone, setPhone] = useState("");
+  return (
+    <div className="flex flex-col h-full">
+      <TopBar showBack onBack={() => onNavigate("login")} lang={lang} setLang={setLang} />
+      <div className="flex-1 overflow-y-auto px-6 pt-5">
+        <div className="mb-7">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path d="M6.6 10.8C7.8 13.2 9.8 15.2 12.2 16.4L14.1 14.5C14.3 14.3 14.7 14.3 14.9 14.4C15.9 14.8 17 15 18 15C18.6 15 19 15.4 19 16V18.5C19 19.1 18.6 19.5 18 19.5C9.4 19.5 4.5 14.6 4.5 6C4.5 5.4 4.9 5 5.5 5H8C8.6 5 9 5.4 9 6C9 7 9.2 8.1 9.6 9.1C9.7 9.3 9.7 9.7 9.5 9.9L7.6 11.8L6.6 10.8Z" fill="#2563EB" />
+            </svg>
+          </div>
+          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">Reset Password</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">Enter your registered phone number to receive a verification code</p>
+        </div>
+        <div className="flex gap-2">
+          <div className="flex items-center gap-1.5 px-3 py-3.5 bg-[#F4F5F7] rounded-xl text-sm font-semibold text-foreground whitespace-nowrap">🇺🇿 +998</div>
+          <div className="flex-1"><InputField placeholder="90 123 45 67" type="tel" value={phone} onChange={setPhone} /></div>
+        </div>
+      </div>
+      <div className="px-6 pb-6 pt-3 shrink-0">
+        <PrimaryButton label="Send Code" onClick={() => onNavigate("forgot-otp")} />
       </div>
     </div>
   );
@@ -4453,7 +4479,7 @@ function SellerApp({ onLogout }: { onLogout: () => void }) {
 }
 
 // ─── AUTH FLOW ────────────────────────────────────────────────────────────────
-const AUTH_SCREENS: AuthScreen[] = ["login", "signup-phone", "signup-otp", "signup-details", "forgot-otp", "forgot-newpass"];
+const AUTH_SCREENS: AuthScreen[] = ["login", "mechanic-login-otp", "signup-phone", "signup-otp", "signup-details", "forgot-phone", "forgot-otp", "forgot-newpass"];
 
 function AuthFlow({ onLogin }: { onLogin: (role: Role) => void }) {
   const [screen, setScreen] = useState<AuthScreen>("login");
@@ -4466,12 +4492,14 @@ function AuthFlow({ onLogin }: { onLogin: (role: Role) => void }) {
         style={{ transform: `translateX(${-idx * (100 / AUTH_SCREENS.length)}%)`, width: `${AUTH_SCREENS.length * 100}%` }}>
         {AUTH_SCREENS.map((s) => (
           <div key={s} style={{ width: `${100 / AUTH_SCREENS.length}%` }} className="h-full overflow-hidden shrink-0">
-            {s === "login"           && <LoginScreen onLogin={onLogin} onNavigate={setScreen} lang={lang} setLang={setLang} />}
-            {s === "signup-phone"    && <SignupPhoneScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
-            {s === "signup-otp"      && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("signup-phone")} nextScreen="signup-details" title="Verify your number" subtitle="Enter the 6-digit code sent to your phone" lang={lang} setLang={setLang} />}
-            {s === "signup-details"  && <SignupDetailsScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
-            {s === "forgot-otp"      && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("login")} nextScreen="forgot-newpass" title="Verify it's you" subtitle="Enter the 6-digit code sent to your registered number" lang={lang} setLang={setLang} />}
-            {s === "forgot-newpass"  && <ForgotNewPassScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
+            {s === "login"               && <LoginScreen onLogin={onLogin} onNavigate={setScreen} lang={lang} setLang={setLang} />}
+            {s === "mechanic-login-otp"  && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("login")} nextScreen="login" onVerify={() => onLogin("mechanic")} title="Verify your number" subtitle="Enter the 6-digit code sent to your phone" lang={lang} setLang={setLang} />}
+            {s === "signup-phone"        && <SignupPhoneScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
+            {s === "signup-otp"          && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("signup-phone")} nextScreen="signup-details" title="Verify your number" subtitle="Enter the 6-digit code sent to your phone" lang={lang} setLang={setLang} />}
+            {s === "signup-details"      && <SignupDetailsScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
+            {s === "forgot-phone"        && <ForgotPhoneScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
+            {s === "forgot-otp"          && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("forgot-phone")} nextScreen="forgot-newpass" title="Verify it's you" subtitle="Enter the 6-digit code sent to your registered number" lang={lang} setLang={setLang} />}
+            {s === "forgot-newpass"      && <ForgotNewPassScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
           </div>
         ))}
       </div>
