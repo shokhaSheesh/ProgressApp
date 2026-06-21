@@ -310,8 +310,9 @@ function MechanicProfileScreen({ onLogin, lang, setLang }: { onLogin: () => void
   const [name, setName] = useState("");
   const UZ_REGIONS = ["Tashkent", "Samarkand", "Bukhara", "Namangan", "Andijan", "Fergana", "Nukus", "Termez", "Jizzakh", "Guliston", "Navoi", "Urgench"];
   const [region, setRegion] = useState("");
+  const [showRegionSheet, setShowRegionSheet] = useState(false);
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       <TopBar lang={lang} setLang={setLang} />
       <div className="flex-1 overflow-y-auto px-6 pt-5">
         <div className="mb-6">
@@ -328,20 +329,46 @@ function MechanicProfileScreen({ onLogin, lang, setLang }: { onLogin: () => void
           </div>
           <div>
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Region</p>
-            <div className="flex flex-wrap gap-2">
-              {UZ_REGIONS.map(r => (
-                <button key={r} onClick={() => setRegion(r)}
-                  className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border transition-all ${region === r ? "bg-primary text-white border-primary" : "bg-[#F4F5F7] text-foreground border-transparent hover:border-primary/30"}`}>
-                  {r}
-                </button>
-              ))}
-            </div>
+            <button onClick={() => setShowRegionSheet(true)}
+              className="w-full flex items-center justify-between px-4 py-3.5 bg-[#F4F5F7] rounded-xl border-2 border-transparent focus:outline-none transition-all hover:border-primary/20">
+              <span className={region ? "text-[14px] font-semibold text-foreground" : "text-[14px] text-muted-foreground"}>
+                {region || "Select your region"}
+              </span>
+              <ChevronRight size={18} className="text-muted-foreground shrink-0" />
+            </button>
           </div>
         </div>
       </div>
       <div className="px-6 pb-6 pt-3 shrink-0">
         <PrimaryButton label="Get Started" onClick={onLogin} />
       </div>
+
+      {/* Region bottom sheet */}
+      {showRegionSheet && (
+        <div className="absolute inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowRegionSheet(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-3xl overflow-hidden"
+            style={{ maxHeight: "70%" }}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
+              <span className="text-[16px] font-bold text-foreground">Select Region</span>
+              <button onClick={() => setShowRegionSheet(false)} className="w-8 h-8 rounded-full bg-[#F4F5F7] flex items-center justify-center text-muted-foreground">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="overflow-y-auto" style={{ maxHeight: "calc(70vh - 64px)" }}>
+              {UZ_REGIONS.map(r => (
+                <button key={r} onClick={() => { setRegion(r); setShowRegionSheet(false); }}
+                  className="w-full flex items-center justify-between px-5 py-4 border-b border-border last:border-0 hover:bg-[#F4F5F7] transition-all text-left">
+                  <span className="text-[14px] font-medium text-foreground">{r}</span>
+                  {region === r && <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
