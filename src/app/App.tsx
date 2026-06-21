@@ -1453,6 +1453,7 @@ function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setC
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLiked, setShowLiked] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState<FeedbackModalProps | null>(null);
   const [likedIds, setLikedIds] = useState<number[]>([PRODUCTS[0]?.id, PRODUCTS[2]?.id, PRODUCTS[4]?.id].filter(Boolean) as number[]);
   const [activeCatPage, setActiveCatPage] = useState<{ label: string; emoji: string } | null>(null);
   const catScrollRef = useRef<HTMLDivElement>(null);
@@ -1491,6 +1492,7 @@ function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setC
 
   return (
     <div className="flex flex-col h-full overflow-y-auto" style={{ minHeight: 0 }}>
+      {feedbackModal && <FeedbackModal {...feedbackModal} />}
       {/* Search page overlay */}
       {showSearch && (
         <div className="absolute inset-0 z-30 bg-background">
@@ -1565,6 +1567,29 @@ function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setC
         </div>
       </div>
 
+      {/* Dev: modal test strip */}
+      <div className="px-4 mb-2">
+        <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-widest mb-2">Preview modals</p>
+        <div className="flex gap-2">
+          <button onClick={() => setFeedbackModal({
+              type: "success", title: "Order Placed!", body: "Your order has been confirmed and will be ready in 30 min.",
+              primaryLabel: "Track Order", secondaryLabel: "Back to Home",
+              onPrimary: () => setFeedbackModal(null), onClose: () => setFeedbackModal(null),
+            })}
+            className="flex-1 py-2.5 rounded-xl text-[12px] font-semibold bg-green-50 text-green-600 border border-green-200">
+            Success modal
+          </button>
+          <button onClick={() => setFeedbackModal({
+              type: "error", title: "Payment Failed", body: "We couldn't process your payment. Please check your card details and try again.",
+              primaryLabel: "Try Again", secondaryLabel: "Cancel",
+              onPrimary: () => setFeedbackModal(null), onClose: () => setFeedbackModal(null),
+            })}
+            className="flex-1 py-2.5 rounded-xl text-[12px] font-semibold bg-red-50 text-red-500 border border-red-200">
+            Error modal
+          </button>
+        </div>
+      </div>
+
       {/* Products */}
       <div className="px-4 pb-4">
         <p className="text-[13px] font-bold text-foreground mb-3">All Products</p>
@@ -1612,6 +1637,67 @@ function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setC
               </div>
             );
           })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FEEDBACK MODAL ──────────────────────────────────────────────────────────
+interface FeedbackModalProps {
+  type: "success" | "error";
+  title: string;
+  body: string;
+  primaryLabel: string;
+  secondaryLabel?: string;
+  onPrimary: () => void;
+  onSecondary?: () => void;
+  onClose: () => void;
+}
+
+function FeedbackModal({ type, title, body, primaryLabel, secondaryLabel, onPrimary, onSecondary, onClose }: FeedbackModalProps) {
+  const isSuccess = type === "success";
+  return (
+    <div className="fixed inset-0 z-[100] flex items-end justify-center px-4 pb-8"
+      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}>
+      <div className="w-full max-w-sm bg-card rounded-3xl overflow-hidden"
+        style={{ boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* Icon area */}
+        <div className={`flex flex-col items-center pt-9 pb-6 ${isSuccess ? "bg-green-50" : "bg-red-50"}`}>
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-1 ${isSuccess ? "bg-green-100" : "bg-red-100"}`}>
+            {isSuccess ? (
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                <path d="M20 6L9 17l-5-5" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            ) : (
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6l12 12" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </div>
+        </div>
+
+        {/* Text + actions */}
+        <div className="px-6 pt-5 pb-7 flex flex-col gap-5">
+          <div className="flex flex-col items-center gap-1.5 text-center">
+            <p className="text-[18px] font-bold text-foreground">{title}</p>
+            <p className="text-[13px] text-muted-foreground leading-snug">{body}</p>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            <button onClick={onPrimary}
+              className={`w-full py-3.5 rounded-2xl text-[14px] font-bold text-white transition-all ${isSuccess ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"}`}>
+              {primaryLabel}
+            </button>
+            {secondaryLabel && (
+              <button onClick={onSecondary ?? onClose}
+                className="w-full py-3.5 rounded-2xl text-[14px] font-semibold text-muted-foreground bg-[#F4F5F7] hover:bg-[#E8E9EC] transition-all">
+                {secondaryLabel}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
