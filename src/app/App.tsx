@@ -1430,11 +1430,285 @@ function DirectionsSheet({ shop, onClose }: { shop: Shop; onClose: () => void })
   );
 }
 
-function ShopsPage() {
+function ShopProductCard({ p, inCart, qty, onAdd, onChangeQty, onSelect }: {
+  p: Product; inCart: boolean; qty: number;
+  onAdd: () => void; onChangeQty: (delta: number) => void; onSelect: () => void;
+}) {
+  return (
+    <div className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+      <button className="relative bg-muted h-32 overflow-hidden shrink-0" onClick={onSelect}>
+        <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
+        {p.discount && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">-{p.discount}%</span>}
+      </button>
+      <div className="p-2.5 flex flex-col flex-1">
+        <button onClick={onSelect} className="text-left mb-0.5">
+          <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
+        </button>
+        <p className="text-[10px] text-muted-foreground font-medium">{p.stock} in stock</p>
+        <div className="mt-0.5 mb-2">
+          {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
+          <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
+        </div>
+        <div className="mt-auto">
+          {inCart ? (
+            <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
+              <button onClick={() => onChangeQty(-1)} className="w-7 h-7 rounded-lg bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all"><Minus size={12} /></button>
+              <span className="text-[13px] font-bold text-primary">{qty}</span>
+              <button onClick={() => onChangeQty(1)} className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all"><Plus size={12} /></button>
+            </div>
+          ) : (
+            <button onClick={onAdd} className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
+              + Add to Cart
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShopDetailPage({ shop, onBack, onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
+  shop: Shop; onBack: () => void; onSelect: (p: Product) => void; onGoToCart: () => void;
+  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
+  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+}) {
+  const [search, setSearch] = useState("");
+  const [showFilter, setShowFilter] = useState(false);
+  const [sortBy, setSortBy] = useState<"default" | "low" | "high" | "discount">("default");
+  const [onlyDiscount, setOnlyDiscount] = useState(false);
+  const [onlyInStock, setOnlyInStock] = useState(false);
+
+  const shopProducts = PRODUCTS.filter(p => p.shop === shop.name);
+  const allPrices = shopProducts.map(p => priceToNum(p.price));
+  const absMin = allPrices.length ? Math.min(...allPrices) : 0;
+  const absMax = allPrices.length ? Math.max(...allPrices) : 1000000;
+  const [sliderMax, setSliderMax] = useState(absMax);
+
+  const priceFiltered = sliderMax < absMax;
+  const activeFilterCount = [sortBy !== "default", onlyDiscount, onlyInStock, priceFiltered].filter(Boolean).length;
+
+  const filtered = shopProducts
+    .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase()))
+    .filter(p => !onlyDiscount || !!p.discount)
+    .filter(p => !onlyInStock || p.stock > 0)
+    .filter(p => priceToNum(p.price) <= sliderMax)
+    .sort((a, b) => {
+      if (sortBy === "low") return priceToNum(a.price) - priceToNum(b.price);
+      if (sortBy === "high") return priceToNum(b.price) - priceToNum(a.price);
+      if (sortBy === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
+      return 0;
+    });
+
+  const getQ = (id: number) => cartQty[id] ?? 1;
+  const changeQ = (id: number, delta: number) => {
+    const next = getQ(id) + delta;
+    if (next < 1) {
+      setCartIds(ids => ids.filter(i => i !== id));
+      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
+    } else {
+      setCartQty(q => ({ ...q, [id]: next }));
+    }
+  };
+
+  if (showFilter) {
+    const SORT_OPTS: { key: typeof sortBy; label: string }[] = [
+      { key: "default", label: "Default" },
+      { key: "low", label: "Price: Low → High" },
+      { key: "high", label: "Price: High → Low" },
+      { key: "discount", label: "Biggest Discount" },
+    ];
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={() => setShowFilter(false)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft size={22} />
+          </button>
+          <p className="flex-1 text-[16px] font-bold text-foreground">Filters</p>
+          <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+            className="text-[12px] font-semibold text-primary hover:text-blue-700 transition-colors">
+            Reset all
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sort by</p>
+            <div className="flex flex-col gap-2">
+              {SORT_OPTS.map(o => (
+                <button key={o.key} onClick={() => setSortBy(o.key)}
+                  className={`flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all ${sortBy === o.key ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
+                  <span className={`text-[13px] font-semibold ${sortBy === o.key ? "text-primary" : "text-foreground"}`}>{o.label}</span>
+                  {sortBy === o.key && <Check size={16} className="text-primary" />}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Max price</p>
+              <span className={`text-[13px] font-bold ${priceFiltered ? "text-primary" : "text-muted-foreground"}`}>
+                {priceFiltered ? `${sliderMax.toLocaleString()} UZS` : "Any"}
+              </span>
+            </div>
+            <div className="px-1">
+              <input type="range" min={absMin} max={absMax}
+                step={Math.max(1000, Math.round((absMax - absMin) / 100))}
+                value={sliderMax} onChange={e => setSliderMax(Number(e.target.value))}
+                className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #2563EB ${((sliderMax - absMin) / (absMax - absMin)) * 100}%, #E5E7EB ${((sliderMax - absMin) / (absMax - absMin)) * 100}%)`,
+                  accentColor: "#2563EB",
+                }}
+              />
+              <div className="flex justify-between mt-2">
+                <span className="text-[10px] text-muted-foreground">{absMin.toLocaleString()} UZS</span>
+                <span className="text-[10px] text-muted-foreground">{absMax.toLocaleString()} UZS</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Show only</p>
+            <div className="flex flex-col gap-2">
+              {[
+                { label: "Has discount", sub: "Products with active price cuts", val: onlyDiscount, set: setOnlyDiscount },
+                { label: "In stock", sub: "Available for immediate purchase", val: onlyInStock, set: setOnlyInStock },
+              ].map(t => (
+                <button key={t.label} onClick={() => t.set(!t.val)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all ${t.val ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${t.val ? "bg-primary border-primary" : "border-border"}`}>
+                    {t.val && <Check size={12} className="text-white" />}
+                  </div>
+                  <div className="text-left">
+                    <p className={`text-[13px] font-semibold leading-tight ${t.val ? "text-primary" : "text-foreground"}`}>{t.label}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{t.sub}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="shrink-0 px-4 py-3 bg-card border-t border-border">
+          <button onClick={() => setShowFilter(false)}
+            className="w-full bg-primary text-white rounded-xl py-3.5 text-[14px] font-semibold shadow-md hover:bg-blue-700 active:scale-[0.98] transition-all">
+            Show {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-background relative">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={22} />
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-[16px] font-bold text-foreground leading-tight truncate">{shop.name}</p>
+          <p className="text-[11px] text-muted-foreground truncate">{shop.address}</p>
+        </div>
+        <div className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg ${shop.status === "open" ? "bg-emerald-50" : "bg-red-50"}`}>
+          <div className={`w-1.5 h-1.5 rounded-full ${shop.status === "open" ? "bg-emerald-500" : "bg-red-400"}`} />
+          <span className={`text-[11px] font-bold ${shop.status === "open" ? "text-emerald-600" : "text-red-500"}`}>
+            {shop.status === "open" ? "Open" : "Closed"}
+          </span>
+        </div>
+      </div>
+
+      {/* Search + filter */}
+      <div className="flex items-center gap-2 px-4 py-3 bg-card border-b border-border shrink-0">
+        <div className="flex-1 relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <input type="text" placeholder="Search in this shop..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full bg-[#F4F5F7] rounded-xl pl-9 pr-9 py-2.5 text-[13px] text-foreground placeholder-muted-foreground border border-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <button onClick={() => setShowFilter(true)}
+          className="relative shrink-0 w-10 h-10 rounded-xl bg-[#F4F5F7] border border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-all">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Count */}
+      <div className="px-4 pt-3 pb-1 shrink-0">
+        <p className="text-[12px] text-muted-foreground">{filtered.length} product{filtered.length !== 1 ? "s" : ""}</p>
+      </div>
+
+      {/* Grid */}
+      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-24">
+        {filtered.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3">
+            {filtered.map(p => (
+              <ShopProductCard key={p.id} p={p}
+                inCart={cartIds.includes(p.id)} qty={getQ(p.id)}
+                onAdd={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
+                onChangeQty={delta => changeQ(p.id, delta)}
+                onSelect={() => onSelect(p)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center py-16 gap-3">
+            <Store size={40} className="text-muted-foreground/40" />
+            <p className="text-[14px] font-semibold text-foreground">No products found</p>
+            {(search || activeFilterCount > 0) && (
+              <button onClick={() => { setSearch(""); setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+                className="text-[13px] font-semibold text-primary hover:underline">Clear filters</button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Cart FAB */}
+      {cartIds.length > 0 && (
+        <div className="absolute bottom-5 left-0 right-0 flex justify-center pointer-events-none">
+          <button onClick={onGoToCart}
+            className="pointer-events-auto flex items-center gap-3 bg-primary text-white pl-5 pr-4 py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all"
+            style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.45)" }}>
+            <ShoppingCart size={18} />
+            <span className="text-[14px] font-semibold">View Cart</span>
+            <span className="bg-white text-primary text-[12px] font-bold rounded-xl px-2 py-0.5 min-w-[24px] text-center">{cartIds.length}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ShopsPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
+  onSelect: (p: Product) => void; onGoToCart: () => void;
+  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
+  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+}) {
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
+  const [detailShop, setDetailShop] = useState<Shop | null>(null);
   const [showDirections, setShowDirections] = useState(false);
   const [search, setSearch] = useState("");
+
+  if (detailShop) {
+    return <ShopDetailPage shop={detailShop} onBack={() => setDetailShop(null)}
+      onSelect={onSelect} onGoToCart={onGoToCart}
+      cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />;
+  }
 
   const filteredShops = SHOPS.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -1558,7 +1832,8 @@ function ShopsPage() {
                     <Navigation size={15} />
                     {selectedShop.distance} · Directions
                   </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary hover:bg-blue-700 text-white text-[13px] font-semibold transition-all shadow-sm">
+                  <button onClick={() => { setDetailShop(selectedShop); setSelectedShop(null); }}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary hover:bg-blue-700 text-white text-[13px] font-semibold transition-all shadow-sm">
                     <Store size={15} />
                     View Catalog
                   </button>
@@ -1587,6 +1862,7 @@ function ShopsPage() {
               {filteredShops.map(shop => (
                 <button
                   key={shop.id}
+                  onClick={() => setDetailShop(shop)}
                   className="w-full bg-card rounded-2xl border border-border p-4 text-left hover:border-primary/40 transition-all"
                   style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
                 >
@@ -3301,7 +3577,7 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
           : tab === "main"
             ? <MechanicMainPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
             : tab === "shops"
-              ? <ShopsPage />
+              ? <ShopsPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
               : tab === "cart"
                 ? <CartPage cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
                 : tab === "profile"
