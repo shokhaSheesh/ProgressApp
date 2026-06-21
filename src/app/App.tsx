@@ -2868,7 +2868,93 @@ function OrderHistoryPage({ onBack }: { onBack: () => void }) {
   );
 }
 
-type ProfileSubPage = "wallet" | "history" | "info" | "orders" | null;
+// ─── FAQ PAGE ─────────────────────────────────────────────────────────────────
+const FAQ_ITEMS = [
+  {
+    q: "How do I earn bonus points?",
+    a: "You earn 3% bonus on every completed purchase. Bonuses are credited to your wallet automatically once the seller confirms the transaction.",
+  },
+  {
+    q: "How long does cash delivery take?",
+    a: "Cash delivery requests are processed within 1–2 business days. You can track the status of your request in Bonus History → Requests tab.",
+  },
+  {
+    q: "Can I cancel a withdrawal request?",
+    a: "Withdrawal requests can be cancelled while they are still in Pending status. Once processing has started, cancellation is no longer available.",
+  },
+  {
+    q: "What cards are supported for transfer?",
+    a: "We support UzCard and Humo cards issued by Uzbekistan banks. International cards are not currently supported.",
+  },
+  {
+    q: "How do I find a specific auto part?",
+    a: "Use the search bar on the main page to search by part name, model, or category. You can also filter by price range to narrow down results.",
+  },
+  {
+    q: "What happens if an item is out of stock?",
+    a: "Out-of-stock items are marked in the catalog. You can still view product details but cannot add them to your cart.",
+  },
+  {
+    q: "How do I contact support?",
+    a: "For any issues not covered here, please reach out through the Help section or call our support line at +998 71 000 00 00 (Mon–Sat, 9:00–18:00).",
+  },
+];
+
+function FAQPage({ onBack }: { onBack: () => void }) {
+  const [open, setOpen] = useState<number | null>(null);
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={20} />
+        </button>
+        <p className="flex-1 text-[17px] font-bold text-foreground">FAQ</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {/* Header banner */}
+        <div className="rounded-2xl bg-primary p-5 mb-5 flex items-center gap-4" style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.25)" }}>
+          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+            <HelpCircle size={24} className="text-white" />
+          </div>
+          <div>
+            <p className="text-white text-[15px] font-bold leading-tight">Got questions?</p>
+            <p className="text-white/70 text-[12px] mt-0.5">Find answers to the most common ones below.</p>
+          </div>
+        </div>
+
+        {/* Accordion */}
+        <div className="flex flex-col gap-2">
+          {FAQ_ITEMS.map((item, i) => {
+            const isOpen = open === i;
+            return (
+              <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                <button
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  className="w-full flex items-center gap-3 px-4 py-4 text-left">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${isOpen ? "bg-primary text-white" : "bg-[#F4F5F7] text-muted-foreground"}`}>
+                    <span className="text-[11px] font-bold">{i + 1}</span>
+                  </div>
+                  <p className={`flex-1 text-[13px] font-semibold leading-snug ${isOpen ? "text-primary" : "text-foreground"}`}>{item.q}</p>
+                  <ChevronDown size={16} className={`shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4 pt-0">
+                    <div className="ml-10 border-l-2 border-primary/20 pl-3">
+                      <p className="text-[13px] text-muted-foreground leading-relaxed">{item.a}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type ProfileSubPage = "wallet" | "history" | "info" | "orders" | "faq" | null;
 
 const LANGS = [
   { code: "en", label: "English",  native: "English",    flag: "🇬🇧" },
@@ -2882,6 +2968,7 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
 }) {
   const [sub, setSub] = useState<ProfileSubPage>(null);
   const [showLangSheet, setShowLangSheet] = useState(false);
+  const [showAboutSheet, setShowAboutSheet] = useState(false);
   const [activeLang, setActiveLang] = useState<LangCode>("en");
   const isSeller = role === "seller";
 
@@ -2893,6 +2980,7 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
   if (sub === "history") return <TransactionHistoryPage role={role} transactions={transactions} requests={MOCK_WITHDRAW_REQUESTS} onBack={goBack} />;
   if (sub === "info")    return <MyInfoPage role={role} name={name} phone={phone} onBack={goBack} />;
   if (sub === "orders")  return <OrderHistoryPage onBack={goBack} />;
+  if (sub === "faq")     return <FAQPage onBack={goBack} />;
 
   // ── Profile hub ──
   const menuSections = [
@@ -2914,8 +3002,8 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
     {
       title: "Support",
       items: [
-        { label: "FAQ",       icon: <HelpCircle size={18} />, color: "bg-indigo-500",action: () => {} },
-        { label: "About app", icon: <Info size={18} />,       color: "bg-slate-500", action: () => {} },
+        { label: "FAQ",       icon: <HelpCircle size={18} />, color: "bg-indigo-500", action: () => goSub("faq") },
+        { label: "About app", icon: <Info size={18} />,       color: "bg-slate-500",  action: () => setShowAboutSheet(true) },
       ],
     },
   ];
@@ -2974,6 +3062,26 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
           )}
         </div>
       </div>
+
+      {/* About app bottom sheet */}
+      {showAboutSheet && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setShowAboutSheet(false)}>
+          <div className="bg-card rounded-t-3xl px-4 pt-3 pb-12 flex flex-col items-center" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-8" />
+            {/* App logo */}
+            <div className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center mb-4"
+              style={{ boxShadow: "0 8px 32px rgba(37,99,235,0.35)" }}>
+              <span className="text-white text-[36px] font-black leading-none">P</span>
+            </div>
+            <p className="text-[20px] font-black text-foreground tracking-tight">Progress</p>
+            <p className="text-[13px] text-muted-foreground mt-1">Auto Parts Marketplace</p>
+            <div className="mt-5 px-4 py-2 rounded-full bg-[#F4F5F7]">
+              <p className="text-[12px] font-semibold text-muted-foreground">Version 1.0.0</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Language selector bottom sheet */}
       {showLangSheet && (
