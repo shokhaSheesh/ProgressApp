@@ -1314,7 +1314,6 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
   setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
 }) {
   const [showSearch, setShowSearch] = useState(false);
-  const [activeCat, setActiveCat] = useState<string | null>(null);
   const [activeCatPage, setActiveCatPage] = useState<{ label: string; emoji: string } | null>(null);
   const getQ = (id: number) => cartQty[id] ?? 1;
   const changeQ = (id: number, delta: number) => {
@@ -1451,12 +1450,6 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
             );
           })}
         </div>
-        {filtered.length === 0 && (
-          <div className="flex flex-col items-center py-10 gap-2">
-            <span className="text-3xl">🔍</span>
-            <p className="text-[13px] text-muted-foreground">No products found</p>
-          </div>
-        )}
       </div>
     </div>
   );
