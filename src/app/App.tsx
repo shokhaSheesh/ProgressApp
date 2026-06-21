@@ -1659,7 +1659,7 @@ interface FeedbackModalProps {
 function FeedbackModal({ type, title, body, onClose }: FeedbackModalProps) {
   const isSuccess = type === "success";
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-6"
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-10"
       style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
       onClick={onClose}>
       <div className="w-full max-w-sm bg-card rounded-3xl relative"
