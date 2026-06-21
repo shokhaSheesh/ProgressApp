@@ -11,7 +11,7 @@ import {
   BarChart2, UserCircle, Settings, LogOut,
 } from "lucide-react";
 
-type AuthScreen = "login" | "mechanic-login-otp" | "signup-phone" | "signup-otp" | "signup-details" | "forgot-phone" | "forgot-otp" | "forgot-newpass";
+type AuthScreen = "login" | "mechanic-login-otp" | "mechanic-profile" | "forgot-phone" | "forgot-otp" | "forgot-newpass";
 type Role = "mechanic" | "seller";
 type Lang = "en" | "ru" | "uz";
 type MechanicTab = "main" | "shops" | "scan" | "cart" | "profile";
@@ -263,16 +263,10 @@ function LoginScreen({ onLogin, onNavigate, lang, setLang }: {
         </div>
 
         {role === "mechanic" ? (
-          <>
-            <div className="flex gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-3.5 bg-[#F4F5F7] rounded-xl text-sm font-semibold text-foreground whitespace-nowrap">🇺🇿 +998</div>
-              <div className="flex-1"><InputField placeholder="90 123 45 67" type="tel" value={phone} onChange={setPhone} /></div>
-            </div>
-            <p className="text-center text-[13px] text-muted-foreground mt-6">
-              Don&apos;t have an account?{" "}
-              <button onClick={() => onNavigate("signup-phone")} className="text-primary font-semibold hover:underline">Sign Up</button>
-            </p>
-          </>
+          <div className="flex gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-3.5 bg-[#F4F5F7] rounded-xl text-sm font-semibold text-foreground whitespace-nowrap">🇺🇿 +998</div>
+            <div className="flex-1"><InputField placeholder="90 123 45 67" type="tel" value={phone} onChange={setPhone} /></div>
+          </div>
         ) : (
           <>
             <div className="flex flex-col gap-3.5">
@@ -307,35 +301,41 @@ function LoginScreen({ onLogin, onNavigate, lang, setLang }: {
   );
 }
 
-function SignupPhoneScreen({ onNavigate, lang, setLang }: { onNavigate: (s: AuthScreen) => void; lang: Lang; setLang: (l: Lang) => void }) {
-  const [phone, setPhone] = useState("");
+function MechanicProfileScreen({ onLogin, lang, setLang }: { onLogin: () => void; lang: Lang; setLang: (l: Lang) => void }) {
+  const [name, setName] = useState("");
+  const UZ_REGIONS = ["Tashkent", "Samarkand", "Bukhara", "Namangan", "Andijan", "Fergana", "Nukus", "Termez", "Jizzakh", "Guliston", "Navoi", "Urgench"];
+  const [region, setRegion] = useState("");
   return (
     <div className="flex flex-col h-full">
-      <TopBar showBack onBack={() => onNavigate("login")} lang={lang} setLang={setLang} />
+      <TopBar lang={lang} setLang={setLang} />
       <div className="flex-1 overflow-y-auto px-6 pt-5">
-        <div className="mb-7">
+        <div className="mb-6">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <path d="M6.6 10.8C7.8 13.2 9.8 15.2 12.2 16.4L14.1 14.5C14.3 14.3 14.7 14.3 14.9 14.4C15.9 14.8 17 15 18 15C18.6 15 19 15.4 19 16V18.5C19 19.1 18.6 19.5 18 19.5C9.4 19.5 4.5 14.6 4.5 6C4.5 5.4 4.9 5 5.5 5H8C8.6 5 9 5.4 9 6C9 7 9.2 8.1 9.6 9.1C9.7 9.3 9.7 9.7 9.5 9.9L7.6 11.8L6.6 10.8Z" fill="#2563EB" />
-            </svg>
+            <Wrench size={26} className="text-primary" />
           </div>
-          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">Enter your number</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">We&apos;ll send a verification code via SMS</p>
+          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">Welcome!</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">Looks like you&apos;re new here. Tell us a bit about yourself.</p>
         </div>
-        <div className="flex gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-3.5 bg-[#F4F5F7] rounded-xl text-sm font-semibold text-foreground whitespace-nowrap">🇺🇿 +998</div>
-          <div className="flex-1"><InputField placeholder="90 123 45 67" type="tel" value={phone} onChange={setPhone} /></div>
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Full Name</p>
+            <InputField placeholder="e.g. Akmal Karimov" value={name} onChange={setName} />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Region</p>
+            <div className="flex flex-wrap gap-2">
+              {UZ_REGIONS.map(r => (
+                <button key={r} onClick={() => setRegion(r)}
+                  className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border transition-all ${region === r ? "bg-primary text-white border-primary" : "bg-[#F4F5F7] text-foreground border-transparent hover:border-primary/30"}`}>
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <p className="text-center text-[13px] text-muted-foreground mt-6">
-          Already have an account?{" "}
-          <button onClick={() => onNavigate("login")} className="text-primary font-semibold hover:underline">Log In</button>
-        </p>
       </div>
       <div className="px-6 pb-6 pt-3 shrink-0">
-        <p className="text-[12px] text-muted-foreground text-center mb-3 leading-relaxed">
-          By continuing, you agree to our <span className="text-primary font-medium">Terms</span> and <span className="text-primary font-medium">Privacy Policy</span>
-        </p>
-        <PrimaryButton label="Send Code" onClick={() => onNavigate("signup-otp")} />
+        <PrimaryButton label="Get Started" onClick={onLogin} />
       </div>
     </div>
   );
@@ -392,44 +392,6 @@ function OtpScreen({ onNavigate, onBack, nextScreen, onVerify, title, subtitle, 
       </div>
       <div className="px-6 pb-6 pt-3 shrink-0">
         <PrimaryButton label="Verify" onClick={() => { if (onVerify) { onVerify(); } else { onNavigate(nextScreen); } }} />
-      </div>
-    </div>
-  );
-}
-
-function SignupDetailsScreen({ onNavigate, lang, setLang }: { onNavigate: (s: AuthScreen) => void; lang: Lang; setLang: (l: Lang) => void }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const passwordMatch = confirm.length > 0 && password === confirm;
-  const passwordMismatch = confirm.length > 0 && password !== confirm;
-  return (
-    <div className="flex flex-col h-full">
-      <TopBar showBack onBack={() => onNavigate("signup-otp")} lang={lang} setLang={setLang} />
-      <div className="flex-1 overflow-y-auto px-6 pt-5">
-        <div className="mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-            <Wrench size={26} className="text-primary" />
-          </div>
-          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">Almost there!</h1>
-          <p className="text-sm text-muted-foreground mt-1">Set a username and password for your mechanic account</p>
-        </div>
-        <div className="flex flex-col gap-3">
-          <InputField placeholder="Username" value={username} onChange={setUsername} />
-          <InputField placeholder="Password" type={showPass ? "text" : "password"} value={password} onChange={setPassword}
-            rightElement={<button onClick={() => setShowPass((p) => !p)} className="text-muted-foreground hover:text-foreground p-0.5 transition-colors">{showPass ? <EyeOff size={17} /> : <Eye size={17} />}</button>} />
-          <div>
-            <InputField placeholder="Confirm Password" type={showConfirm ? "text" : "password"} value={confirm} onChange={setConfirm}
-              rightElement={<button onClick={() => setShowConfirm((p) => !p)} className="text-muted-foreground hover:text-foreground p-0.5 transition-colors">{showConfirm ? <EyeOff size={17} /> : <Eye size={17} />}</button>} />
-            {passwordMismatch && <p className="text-[12px] text-destructive mt-1.5 ml-1">Passwords do not match</p>}
-            {passwordMatch && <p className="text-[12px] text-emerald-600 mt-1.5 ml-1">Passwords match ✓</p>}
-          </div>
-        </div>
-      </div>
-      <div className="px-6 pb-6 pt-3 shrink-0">
-        <PrimaryButton label="Create Account" onClick={() => onNavigate("login")} />
       </div>
     </div>
   );
@@ -4479,7 +4441,7 @@ function SellerApp({ onLogout }: { onLogout: () => void }) {
 }
 
 // ─── AUTH FLOW ────────────────────────────────────────────────────────────────
-const AUTH_SCREENS: AuthScreen[] = ["login", "mechanic-login-otp", "signup-phone", "signup-otp", "signup-details", "forgot-phone", "forgot-otp", "forgot-newpass"];
+const AUTH_SCREENS: AuthScreen[] = ["login", "mechanic-login-otp", "mechanic-profile", "forgot-phone", "forgot-otp", "forgot-newpass"];
 
 function AuthFlow({ onLogin }: { onLogin: (role: Role) => void }) {
   const [screen, setScreen] = useState<AuthScreen>("login");
@@ -4492,14 +4454,12 @@ function AuthFlow({ onLogin }: { onLogin: (role: Role) => void }) {
         style={{ transform: `translateX(${-idx * (100 / AUTH_SCREENS.length)}%)`, width: `${AUTH_SCREENS.length * 100}%` }}>
         {AUTH_SCREENS.map((s) => (
           <div key={s} style={{ width: `${100 / AUTH_SCREENS.length}%` }} className="h-full overflow-hidden shrink-0">
-            {s === "login"               && <LoginScreen onLogin={onLogin} onNavigate={setScreen} lang={lang} setLang={setLang} />}
-            {s === "mechanic-login-otp"  && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("login")} nextScreen="login" onVerify={() => onLogin("mechanic")} title="Verify your number" subtitle="Enter the 6-digit code sent to your phone" lang={lang} setLang={setLang} />}
-            {s === "signup-phone"        && <SignupPhoneScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
-            {s === "signup-otp"          && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("signup-phone")} nextScreen="signup-details" title="Verify your number" subtitle="Enter the 6-digit code sent to your phone" lang={lang} setLang={setLang} />}
-            {s === "signup-details"      && <SignupDetailsScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
-            {s === "forgot-phone"        && <ForgotPhoneScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
-            {s === "forgot-otp"          && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("forgot-phone")} nextScreen="forgot-newpass" title="Verify it's you" subtitle="Enter the 6-digit code sent to your registered number" lang={lang} setLang={setLang} />}
-            {s === "forgot-newpass"      && <ForgotNewPassScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
+            {s === "login"              && <LoginScreen onLogin={onLogin} onNavigate={setScreen} lang={lang} setLang={setLang} />}
+            {s === "mechanic-login-otp" && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("login")} nextScreen="mechanic-profile" onVerify={() => onLogin("mechanic")} title="Verify your number" subtitle="Enter the 6-digit code sent to your phone" lang={lang} setLang={setLang} />}
+            {s === "mechanic-profile"   && <MechanicProfileScreen onLogin={() => onLogin("mechanic")} lang={lang} setLang={setLang} />}
+            {s === "forgot-phone"       && <ForgotPhoneScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
+            {s === "forgot-otp"         && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("forgot-phone")} nextScreen="forgot-newpass" title="Verify it's you" subtitle="Enter the 6-digit code sent to your registered number" lang={lang} setLang={setLang} />}
+            {s === "forgot-newpass"     && <ForgotNewPassScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
           </div>
         ))}
       </div>
