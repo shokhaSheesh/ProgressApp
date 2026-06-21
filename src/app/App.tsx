@@ -2870,14 +2870,24 @@ function OrderHistoryPage({ onBack }: { onBack: () => void }) {
 
 type ProfileSubPage = "wallet" | "history" | "info" | "orders" | null;
 
+const LANGS = [
+  { code: "en", label: "English",  native: "English",    flag: "🇬🇧" },
+  { code: "ru", label: "Russian",  native: "Русский",    flag: "🇷🇺" },
+  { code: "uz", label: "Uzbek",    native: "O'zbek",     flag: "🇺🇿" },
+] as const;
+type LangCode = typeof LANGS[number]["code"];
+
 function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSubPageChange }: {
   role: Role; name: string; phone: string; balance: number; transactions: WalletTxn[]; onLogout?: () => void; onSubPageChange?: (active: boolean) => void;
 }) {
   const [sub, setSub] = useState<ProfileSubPage>(null);
+  const [showLangSheet, setShowLangSheet] = useState(false);
+  const [activeLang, setActiveLang] = useState<LangCode>("en");
   const isSeller = role === "seller";
 
   const goSub = (s: ProfileSubPage) => { setSub(s); onSubPageChange?.(s !== null); };
   const goBack = () => { setSub(null); onSubPageChange?.(false); };
+  const currentLang = LANGS.find(l => l.code === activeLang)!;
 
   if (sub === "wallet")  return <WalletPage role={role} balance={balance} name={name} phone={phone} onBack={goBack} />;
   if (sub === "history") return <TransactionHistoryPage role={role} transactions={transactions} requests={MOCK_WITHDRAW_REQUESTS} onBack={goBack} />;
@@ -2898,7 +2908,7 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
     {
       title: "Settings",
       items: [
-        { label: "Language", icon: <Globe size={18} />,   color: "bg-sky-500",   action: () => {} },
+        { label: "Language", icon: <Globe size={18} />,   color: "bg-sky-500",   action: () => setShowLangSheet(true), right: <span className="text-[12px] font-semibold text-muted-foreground mr-1">{currentLang.flag} {currentLang.label}</span> },
         { label: "Theme",    icon: <SunMoon size={18} />, color: "bg-amber-500", action: () => {} },
       ],
     },
@@ -2949,6 +2959,7 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
                       {item.icon}
                     </div>
                     <p className="flex-1 text-[14px] font-semibold text-foreground">{item.label}</p>
+                    {"right" in item && item.right}
                     <ChevronRight size={16} className="text-muted-foreground shrink-0" />
                   </button>
                 ))}
@@ -2965,6 +2976,46 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
           )}
         </div>
       </div>
+
+      {/* Language selector bottom sheet */}
+      {showLangSheet && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setShowLangSheet(false)}>
+          <div className="bg-card rounded-t-3xl px-4 pt-3 pb-10" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />
+            <p className="text-[18px] font-bold text-foreground mb-1">Select Language</p>
+            <p className="text-[13px] text-muted-foreground mb-6">Choose your preferred language</p>
+
+            <div className="flex flex-col gap-3">
+              {LANGS.map(lang => {
+                const isActive = activeLang === lang.code;
+                return (
+                  <button key={lang.code}
+                    onClick={() => { setActiveLang(lang.code); setShowLangSheet(false); }}
+                    className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all active:scale-[0.98] ${isActive ? "border-primary bg-primary/5" : "border-border bg-background"}`}
+                    style={{ boxShadow: isActive ? "0 4px 16px rgba(37,99,235,0.12)" : "0 2px 8px rgba(0,0,0,0.04)" }}>
+                    {/* Flag */}
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-[32px] shrink-0 ${isActive ? "bg-primary/10" : "bg-[#F4F5F7]"}`}>
+                      {lang.flag}
+                    </div>
+                    {/* Labels */}
+                    <div className="flex-1 text-left">
+                      <p className={`text-[15px] font-bold ${isActive ? "text-primary" : "text-foreground"}`}>{lang.label}</p>
+                      <p className={`text-[12px] mt-0.5 ${isActive ? "text-primary/70" : "text-muted-foreground"}`}>{lang.native}</p>
+                    </div>
+                    {/* Active check */}
+                    {isActive && (
+                      <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
+                        <Check size={13} className="text-white" strokeWidth={3} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
