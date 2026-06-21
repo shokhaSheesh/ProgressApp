@@ -2908,7 +2908,7 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
     {
       title: "Settings",
       items: [
-        { label: "Language", icon: <Globe size={18} />,   color: "bg-sky-500",   action: () => setShowLangSheet(true), right: <span className="text-[12px] font-semibold text-muted-foreground mr-1">{currentLang.flag} {currentLang.label}</span> },
+        { label: "Language", icon: <Globe size={18} />,   color: "bg-sky-500",   action: () => setShowLangSheet(true) },
         { label: "Theme",    icon: <SunMoon size={18} />, color: "bg-amber-500", action: () => {} },
       ],
     },
