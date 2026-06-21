@@ -679,6 +679,33 @@ const PRODUCT_EXTRA_IMGS: Record<string, string[]> = {
   ],
 };
 
+interface ProductVariation { name: string; options: string[]; }
+const PRODUCT_VARIATIONS: Record<string, ProductVariation[]> = {
+  "BSH-OF-4722": [
+    { name: "Engine Type", options: ["Petrol", "Diesel", "Hybrid"] },
+    { name: "Pack Size",   options: ["1 unit", "2 units", "5 units"] },
+  ],
+  "BRM-BD-09A778": [
+    { name: "Axle",     options: ["Front", "Rear"] },
+    { name: "Material", options: ["Standard", "Drilled", "Slotted"] },
+  ],
+  "NGK-BKR6E-4PK": [
+    { name: "Heat Range", options: ["5", "6", "7", "8"] },
+    { name: "Gap",        options: ["0.8 mm", "1.0 mm", "1.1 mm"] },
+  ],
+  "CNT-205-55R16-91V": [
+    { name: "Size",         options: ["205/55R16", "215/55R16", "225/55R16"] },
+    { name: "Speed Rating", options: ["H · 210 km/h", "V · 240 km/h"] },
+  ],
+  "DNS-AF-268": [
+    { name: "Type", options: ["Standard", "Performance", "Carbon Fibre"] },
+  ],
+  "MNR-E1156": [
+    { name: "Position", options: ["Front Left", "Front Right", "Rear Left", "Rear Right"] },
+    { name: "Type",     options: ["Standard", "Sport", "Heavy Duty"] },
+  ],
+};
+
 // ─── SEARCH PAGE ──────────────────────────────────────────────────────────────
 function SearchPage({ onSelect, onClose, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
   onSelect: (p: Product) => void; onClose: () => void; onGoToCart?: () => void;
@@ -781,10 +808,7 @@ function SearchPage({ onSelect, onClose, onGoToCart, cartIds, setCartIds, cartQt
     const inCart = cartIds.includes(p.id);
     return (
       <div className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-        <button className="relative bg-muted h-32 overflow-hidden shrink-0" onClick={() => { onSelect(p); onClose(); }}>
-          <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
-          {p.discount && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">-{p.discount}%</span>}
-        </button>
+        <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={() => { onSelect(p); onClose(); }} />
         <div className="p-2.5 flex flex-col flex-1">
           <button onClick={() => { onSelect(p); onClose(); }} className="text-left mb-0.5">
             <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-1">{p.shop}</p>
@@ -1031,6 +1055,37 @@ function SearchPage({ onSelect, onClose, onGoToCart, cartIds, setCartIds, cartQt
   );
 }
 
+function ProductCardImage({ images, discount, height = "h-32", onClick }: {
+  images: string[]; discount?: number; height?: string; onClick: () => void;
+}) {
+  const [idx, setIdx] = useState(0);
+  const gesture = useRef<{ x: number; moved: boolean }>({ x: 0, moved: false });
+
+  return (
+    <div
+      className={`relative bg-muted ${height} overflow-hidden shrink-0 cursor-pointer`}
+      onTouchStart={e => { gesture.current = { x: e.touches[0].clientX, moved: false }; }}
+      onTouchMove={e => { if (Math.abs(e.touches[0].clientX - gesture.current.x) > 8) gesture.current.moved = true; }}
+      onTouchEnd={e => {
+        const dx = e.changedTouches[0].clientX - gesture.current.x;
+        if (gesture.current.moved && Math.abs(dx) > 28)
+          setIdx(i => dx < 0 ? (i + 1) % images.length : (i - 1 + images.length) % images.length);
+      }}
+      onClick={() => { if (!gesture.current.moved) onClick(); }}
+    >
+      <img src={images[idx]} alt="" className="w-full h-full object-cover" />
+      {discount && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">-{discount}%</span>}
+      {images.length > 1 && (
+        <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1 pointer-events-none">
+          {images.map((_, i) => (
+            <div key={i} className={`rounded-full transition-all duration-150 ${i === idx ? "w-3 h-[5px] bg-white" : "w-[5px] h-[5px] bg-white/55"}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
   onSelect: (p: Product) => void;
   onGoToCart: () => void;
@@ -1133,15 +1188,7 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
             const inCart = cartIds.includes(p.id);
             return (
               <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                {/* Image + discount badge */}
-                <button className="relative bg-muted h-32 overflow-hidden shrink-0" onClick={() => onSelect(p)}>
-                  <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
-                  {p.discount && (
-                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">
-                      -{p.discount}%
-                    </span>
-                  )}
-                </button>
+                <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={() => onSelect(p)} />
                 <div className="p-2.5 flex flex-col flex-1">
                   <button onClick={() => onSelect(p)} className="text-left mb-0.5">
                     <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
@@ -1268,6 +1315,10 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setC
     }
   };
   const lowStock = product.stock <= 15;
+  const variations = PRODUCT_VARIATIONS[product.sku] ?? [];
+  const [selVars, setSelVars] = useState<Record<string, string>>(() =>
+    Object.fromEntries(variations.map(v => [v.name, v.options[0]]))
+  );
 
   return (
     <div className="flex flex-col h-full relative">
@@ -1339,6 +1390,34 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setC
             </div>
           </div>
 
+          {/* Variations */}
+          {variations.length > 0 && (
+            <div className="mb-4">
+              {variations.map(v => (
+                <div key={v.name} className="mb-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{v.name}</p>
+                    <span className="text-[11px] font-bold text-foreground">· {selVars[v.name]}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {v.options.map(opt => {
+                      const active = selVars[v.name] === opt;
+                      return (
+                        <button key={opt}
+                          onClick={() => setSelVars(s => ({ ...s, [v.name]: opt }))}
+                          className={`px-3 py-1.5 rounded-xl border-2 text-[12px] font-semibold transition-all ${
+                            active ? "border-primary bg-primary/8 text-primary" : "border-border bg-card text-foreground hover:border-primary/40"
+                          }`}>
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Divider */}
           <div className="h-px bg-border mb-4" />
 
@@ -1390,10 +1469,7 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setC
                   const spInCart = cartIds.includes(sp.id);
                   return (
                     <div key={sp.id} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                      <div className="relative h-28 bg-muted overflow-hidden shrink-0">
-                        <img src={sp.img} alt={sp.name} className="w-full h-full object-cover" />
-                        {sp.discount && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">-{sp.discount}%</span>}
-                      </div>
+                      <ProductCardImage images={[sp.img, ...(PRODUCT_EXTRA_IMGS[sp.sku] ?? [])]} discount={sp.discount} height="h-28" onClick={() => {}} />
                       <div className="p-2.5 flex flex-col flex-1">
                         <p className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2 mb-0.5">{sp.name}</p>
                         <p className="text-[10px] text-muted-foreground mb-1">{sp.shop}</p>
@@ -1582,10 +1658,7 @@ function ShopProductCard({ p, inCart, qty, onAdd, onChangeQty, onSelect }: {
 }) {
   return (
     <div className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-      <button className="relative bg-muted h-32 overflow-hidden shrink-0" onClick={onSelect}>
-        <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
-        {p.discount && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">-{p.discount}%</span>}
-      </button>
+      <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={onSelect} />
       <div className="p-2.5 flex flex-col flex-1">
         <button onClick={onSelect} className="text-left mb-0.5">
           <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
