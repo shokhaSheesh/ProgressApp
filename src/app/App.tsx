@@ -2307,11 +2307,11 @@ function TransactionHistoryPage({ role, transactions, requests, onBack }: {
   const isSeller = role === "seller";
   const [activeTab, setActiveTab] = useState<"history"|"requests">("history");
   const [showFilter, setShowFilter] = useState(false);
+  const [filterStep, setFilterStep] = useState<"main"|"from"|"to">("main");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate]     = useState("");
   const [appliedFrom, setAppliedFrom] = useState("");
   const [appliedTo, setAppliedTo]     = useState("");
-  const [activeWheel, setActiveWheel] = useState<"from"|"to"|null>(null);
 
   const isFiltered = appliedFrom || appliedTo;
   const parseDate  = (s: string) => s ? new Date(s).getTime() : null;
@@ -2368,7 +2368,7 @@ function TransactionHistoryPage({ role, transactions, requests, onBack }: {
         </button>
         <p className="flex-1 text-[17px] font-bold text-foreground">Bonus History</p>
         {activeTab === "history" && (
-          <button onClick={() => { setShowFilter(true); setActiveWheel(null); }}
+          <button onClick={() => { setShowFilter(true); setFilterStep("main"); }}
             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors relative ${isFiltered ? "bg-primary text-white" : "bg-[#F4F5F7] text-muted-foreground hover:text-foreground"}`}>
             <List size={18} />
             {isFiltered && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-card" />}
@@ -2376,16 +2376,21 @@ function TransactionHistoryPage({ role, transactions, requests, onBack }: {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 px-4 pt-3 pb-0 shrink-0">
+      {/* Tabs — underline style */}
+      <div className="flex border-b border-border shrink-0 px-4">
         {([["history", "History"], ["requests", "Requests"]] as const).map(([key, label]) => (
           <button key={key} onClick={() => setActiveTab(key)}
-            className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all relative ${activeTab === key ? "bg-primary text-white" : "bg-[#F4F5F7] text-muted-foreground"}`}>
-            {label}
-            {key === "requests" && hasRequests && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                {pendingRequests.length}
-              </span>
+            className={`flex-1 py-3 text-[13px] font-semibold transition-all relative ${activeTab === key ? "text-primary" : "text-muted-foreground"}`}>
+            <span className="flex items-center justify-center gap-1.5">
+              {label}
+              {key === "requests" && hasRequests && (
+                <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {pendingRequests.length}
+                </span>
+              )}
+            </span>
+            {activeTab === key && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
             )}
           </button>
         ))}
@@ -2500,38 +2505,30 @@ function TransactionHistoryPage({ role, transactions, requests, onBack }: {
         </div>
       )}
 
-      {/* Filter bottom sheet */}
-      {showFilter && (
+      {/* Filter bottom sheet — step 1: From / To cards */}
+      {showFilter && filterStep === "main" && (
         <div className="absolute inset-0 z-40 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.45)" }}
           onClick={() => setShowFilter(false)}>
           <div className="bg-card rounded-t-3xl px-4 pt-3 pb-8" onClick={e => e.stopPropagation()}>
             <div className="w-10 h-1 rounded-full bg-border mx-auto mb-4" />
             <p className="text-[16px] font-bold text-foreground mb-4">Filter by Date</p>
 
-            <div className="flex gap-3 mb-4">
+            <div className="flex gap-3 mb-6">
               {(["from","to"] as const).map(side => (
-                <button key={side} onClick={() => setActiveWheel(activeWheel === side ? null : side)}
-                  className={`flex-1 rounded-2xl px-3 py-3 text-left border-2 transition-all ${activeWheel === side ? "border-primary bg-primary/5" : "border-border bg-background"}`}>
-                  <p className={`text-[10px] font-semibold uppercase tracking-wider mb-0.5 ${activeWheel === side ? "text-primary" : "text-muted-foreground"}`}>
+                <button key={side} onClick={() => setFilterStep(side)}
+                  className="flex-1 rounded-2xl px-3 py-3.5 text-left border border-border bg-background active:scale-[0.98] transition-all"
+                  style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1 text-muted-foreground">
                     {side === "from" ? "From" : "To"}
                   </p>
-                  <p className={`text-[13px] font-semibold ${(side === "from" ? fromDate : toDate) ? "text-foreground" : "text-muted-foreground"}`}>
+                  <p className={`text-[14px] font-semibold ${(side === "from" ? fromDate : toDate) ? "text-foreground" : "text-muted-foreground"}`}>
                     {fmtLabel(side === "from" ? fromDate : toDate)}
                   </p>
                 </button>
               ))}
             </div>
 
-            {activeWheel && (
-              <div className="mb-2">
-                <DatePickerWheel
-                  value={activeWheel === "from" ? fromDate : toDate}
-                  onChange={v => activeWheel === "from" ? setFromDate(v) : setToDate(v)}
-                />
-              </div>
-            )}
-
-            <div className="flex gap-3 mt-4">
+            <div className="flex gap-3">
               <button onClick={clearFilter}
                 className="flex-1 rounded-2xl py-3.5 text-[14px] font-semibold text-muted-foreground bg-[#F4F5F7] active:scale-[0.98] transition-all">
                 Clear
@@ -2542,6 +2539,34 @@ function TransactionHistoryPage({ role, transactions, requests, onBack }: {
                 Apply
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filter bottom sheet — step 2: drum-roll picker */}
+      {showFilter && (filterStep === "from" || filterStep === "to") && (
+        <div className="absolute inset-0 z-40 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.45)" }}
+          onClick={() => setFilterStep("main")}>
+          <div className="bg-card rounded-t-3xl px-4 pt-3 pb-8" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-2" />
+            <div className="flex items-center gap-2 mb-4">
+              <button onClick={() => setFilterStep("main")} className="w-8 h-8 flex items-center justify-center text-muted-foreground">
+                <ChevronLeft size={20} />
+              </button>
+              <p className="text-[16px] font-bold text-foreground">{filterStep === "from" ? "From date" : "To date"}</p>
+            </div>
+
+            <DatePickerWheel
+              value={filterStep === "from" ? fromDate : toDate}
+              onChange={v => filterStep === "from" ? setFromDate(v) : setToDate(v)}
+            />
+
+            <button
+              onClick={() => setFilterStep("main")}
+              className="w-full mt-5 rounded-2xl py-3.5 text-[14px] font-semibold text-white bg-primary active:scale-[0.98] transition-all"
+              style={{ boxShadow: "0 4px 16px rgba(37,99,235,0.35)" }}>
+              Done
+            </button>
           </div>
         </div>
       )}
