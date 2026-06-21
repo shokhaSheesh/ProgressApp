@@ -292,6 +292,11 @@ function LoginScreen({ onLogin, onNavigate, lang, setLang }: {
         )}
       </div>
       <div className="px-6 pb-6 pt-3 shrink-0">
+        {role === "mechanic" && (
+          <p className="text-[12px] text-muted-foreground text-center mb-3 leading-relaxed">
+            By continuing, you agree to our <span className="text-primary font-medium">Terms</span> and <span className="text-primary font-medium">Privacy Policy</span>
+          </p>
+        )}
         {role === "mechanic"
           ? <PrimaryButton label="Send Code" onClick={() => onNavigate("mechanic-login-otp")} />
           : <PrimaryButton label="Login" onClick={() => onLogin("seller")} />
@@ -4455,7 +4460,7 @@ function AuthFlow({ onLogin }: { onLogin: (role: Role) => void }) {
         {AUTH_SCREENS.map((s) => (
           <div key={s} style={{ width: `${100 / AUTH_SCREENS.length}%` }} className="h-full overflow-hidden shrink-0">
             {s === "login"              && <LoginScreen onLogin={onLogin} onNavigate={setScreen} lang={lang} setLang={setLang} />}
-            {s === "mechanic-login-otp" && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("login")} nextScreen="mechanic-profile" onVerify={() => onLogin("mechanic")} title="Verify your number" subtitle="Enter the 6-digit code sent to your phone" lang={lang} setLang={setLang} />}
+            {s === "mechanic-login-otp" && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("login")} nextScreen="mechanic-profile" title="Verify your number" subtitle="Enter the 6-digit code sent to your phone" lang={lang} setLang={setLang} />}
             {s === "mechanic-profile"   && <MechanicProfileScreen onLogin={() => onLogin("mechanic")} lang={lang} setLang={setLang} />}
             {s === "forgot-phone"       && <ForgotPhoneScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
             {s === "forgot-otp"         && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("forgot-phone")} nextScreen="forgot-newpass" title="Verify it's you" subtitle="Enter the 6-digit code sent to your registered number" lang={lang} setLang={setLang} />}
