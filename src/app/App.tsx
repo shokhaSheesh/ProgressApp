@@ -982,7 +982,8 @@ function SearchPage({ onSelect, onClose, onGoToCart, onSelectCategory, cartIds, 
               {filteredListings.map(p => <ListingCard key={p.id} p={p} />)}
             </div>
           ) : (
-            <div className="flex flex-col items-center py-16 gap-3">
+            <div className="flex flex-col items-center py-10 gap-3">
+              <EmptySearch />
               <p className="text-[14px] font-semibold text-foreground">No results match your filters</p>
               <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
                 className="text-[13px] font-semibold text-primary hover:underline">Clear filters</button>
@@ -1029,7 +1030,8 @@ function SearchPage({ onSelect, onClose, onGoToCart, onSelectCategory, cartIds, 
                 <span className="text-[11px] text-muted-foreground shrink-0">{p.category}</span>
               </button>
             )) : (
-              <div className="flex flex-col items-center py-16 gap-3">
+              <div className="flex flex-col items-center py-10 gap-3">
+                <EmptySearch />
                 <p className="text-[14px] font-semibold text-foreground">No results found</p>
                 <p className="text-[12px] text-muted-foreground">Try a different name or brand.</p>
               </div>
@@ -1269,8 +1271,8 @@ function CategoryPage({ category, emoji, onBack, onSelect, onGoToCart, cartIds, 
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center py-16 gap-3">
-            <span className="text-4xl">{emoji}</span>
+          <div className="flex flex-col items-center py-10 gap-3">
+            <EmptyCategory />
             <p className="text-[14px] font-semibold text-foreground">No products found</p>
             {(search || activeFilterCount > 0) && (
               <button onClick={() => { setSearch(""); setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
@@ -1335,7 +1337,7 @@ function NotificationsPage({ onBack }: { onBack: () => void }) {
       <div className="flex-1 overflow-y-auto">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 pb-16">
-            <div className="w-16 h-16 rounded-full bg-[#F4F5F7] flex items-center justify-center text-3xl">🔔</div>
+            <EmptyNotifications />
             <p className="text-[14px] font-semibold text-foreground">No notifications</p>
             <p className="text-[12px] text-muted-foreground">You're all caught up!</p>
           </div>
@@ -1395,7 +1397,7 @@ function LikedItemsPage({ likedIds, onSelect, onGoToCart, onBack, cartIds, setCa
       {/* Content */}
       {liked.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1 gap-3 pb-16">
-          <div className="w-16 h-16 rounded-full bg-[#F4F5F7] flex items-center justify-center text-3xl">🤍</div>
+          <EmptyLiked />
           <p className="text-[14px] font-semibold text-foreground">No liked items yet</p>
           <p className="text-[12px] text-muted-foreground">Tap the heart on any product to save it</p>
         </div>
@@ -1643,6 +1645,117 @@ function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setC
   );
 }
 
+// ─── EMPTY STATE ILLUSTRATIONS ───────────────────────────────────────────────
+function EmptyCart() {
+  return (
+    <svg width="180" height="160" viewBox="0 0 180 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ec-bag" x1="50" y1="55" x2="135" y2="150" gradientUnits="userSpaceOnUse"><stop stopColor="#C7D2FE"/><stop offset="1" stopColor="#6366F1"/></linearGradient>
+        <linearGradient id="ec-face" x1="55" y1="60" x2="55" y2="148" gradientUnits="userSpaceOnUse"><stop stopColor="#EEF2FF"/><stop offset="1" stopColor="#C7D2FE"/></linearGradient>
+        <linearGradient id="ec-i1" x1="40" y1="20" x2="40" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#A7F3D0"/><stop offset="1" stopColor="#10B981"/></linearGradient>
+        <linearGradient id="ec-i2" x1="130" y1="25" x2="130" y2="52" gradientUnits="userSpaceOnUse"><stop stopColor="#FECDD3"/><stop offset="1" stopColor="#F43F5E"/></linearGradient>
+        <radialGradient id="ec-sh" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(90 150) scale(56 9)"><stop stopColor="#312E81" stopOpacity="0.18"/><stop offset="1" stopColor="#312E81" stopOpacity="0"/></radialGradient>
+      </defs>
+      <ellipse cx="90" cy="150" rx="56" ry="9" fill="url(#ec-sh)"/>
+      <circle cx="40" cy="34" r="14" fill="url(#ec-i1)"/><circle cx="40" cy="34" r="14" fill="#fff" fillOpacity="0.12"/>
+      <rect x="118" y="25" width="26" height="26" rx="7" fill="url(#ec-i2)"/><rect x="118" y="25" width="26" height="13" rx="6" fill="#fff" fillOpacity="0.18"/>
+      <circle cx="148" cy="78" r="8" fill="#FBBF24"/>
+      <path d="M52 64H128L134 142a8 8 0 01-8 8H54a8 8 0 01-8-8Z" fill="url(#ec-bag)"/>
+      <path d="M58 64H122L127 140a6 6 0 01-6 6H64a6 6 0 01-6-6Z" fill="url(#ec-face)"/>
+      <path d="M68 66V52a22 22 0 0144 0V66" stroke="#6366F1" strokeWidth="6" strokeLinecap="round" fill="none"/>
+      <path d="M68 66V52a22 22 0 0144 0V66" stroke="#312E81" strokeOpacity="0.25" strokeWidth="2" strokeLinecap="round" fill="none"/>
+      <path d="M66 76L62 132" stroke="#fff" strokeOpacity="0.5" strokeWidth="4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function EmptyLiked() {
+  return (
+    <svg width="180" height="160" viewBox="0 0 180 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="el-h" x1="55" y1="48" x2="125" y2="135" gradientUnits="userSpaceOnUse"><stop stopColor="#FECDD3"/><stop offset="1" stopColor="#F43F5E"/></linearGradient>
+        <linearGradient id="el-hs" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#FFF1F2"/><stop offset="1" stopColor="#FECDD3"/></linearGradient>
+        <radialGradient id="el-sh" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(90 148) scale(48 8)"><stop stopColor="#9F1239" stopOpacity="0.18"/><stop offset="1" stopColor="#9F1239" stopOpacity="0"/></radialGradient>
+      </defs>
+      <ellipse cx="90" cy="148" rx="48" ry="8" fill="url(#el-sh)"/>
+      <path d="M42 40l3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#FBBF24"/>
+      <path d="M140 58l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5Z" fill="#6366F1"/>
+      <circle cx="132" cy="38" r="4" fill="#A7F3D0"/>
+      <path d="M138 92c-3-6-12-5-12 2 0 6 12 12 12 12s12-6 12-12c0-7-9-8-12-2Z" fill="url(#el-hs)"/>
+      <path d="M90 134C58 112 48 92 48 74c0-16 12-26 25-26 9 0 15 5 17 12 2-7 8-12 17-12 13 0 25 10 25 26 0 18-10 38-42 60Z" fill="url(#el-h)"/>
+      <path d="M90 134C58 112 48 92 48 74c0-16 12-26 25-26 9 0 15 5 17 12 2-7 8-12 17-12 13 0 25 10 25 26 0 18-10 38-42 60Z" stroke="#9F1239" strokeOpacity="0.15" strokeWidth="2"/>
+      <path d="M68 62c-6 4-8 10-7 18" stroke="#fff" strokeOpacity="0.6" strokeWidth="5" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
+function EmptyNotifications() {
+  return (
+    <svg width="180" height="160" viewBox="0 0 180 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="en-b" x1="60" y1="40" x2="120" y2="120" gradientUnits="userSpaceOnUse"><stop stopColor="#C7D2FE"/><stop offset="1" stopColor="#6366F1"/></linearGradient>
+        <linearGradient id="en-f" x1="65" y1="48" x2="65" y2="112" gradientUnits="userSpaceOnUse"><stop stopColor="#EEF2FF"/><stop offset="1" stopColor="#C7D2FE"/></linearGradient>
+        <linearGradient id="en-bub" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#A7F3D0"/><stop offset="1" stopColor="#10B981"/></linearGradient>
+        <radialGradient id="en-sh" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(90 146) scale(46 8)"><stop stopColor="#312E81" stopOpacity="0.18"/><stop offset="1" stopColor="#312E81" stopOpacity="0"/></radialGradient>
+      </defs>
+      <ellipse cx="90" cy="146" rx="46" ry="8" fill="url(#en-sh)"/>
+      <path d="M118 38h26a8 8 0 018 8v14a8 8 0 01-8 8h-10l-7 8v-8h-2a8 8 0 01-8-8V46a8 8 0 018-8Z" fill="url(#en-bub)"/>
+      <circle cx="125" cy="53" r="2.2" fill="#fff"/><circle cx="133" cy="53" r="2.2" fill="#fff"/><circle cx="141" cy="53" r="2.2" fill="#fff"/>
+      <path d="M40 50h12L40 62h12" stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      <path d="M30 72h8l-8 8h8" stroke="#CBD5E1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      <path d="M90 40a8 8 0 018 8v2c14 6 22 20 22 38v8l8 10H52l8-10v-8c0-18 8-32 22-38v-2a8 8 0 018-8Z" fill="url(#en-b)"/>
+      <path d="M90 48c11 4 18 16 18 32v10H72V80c0-16 7-28 18-32Z" fill="url(#en-f)"/>
+      <path d="M80 110a10 10 0 0020 0Z" fill="#6366F1"/>
+      <circle cx="90" cy="40" r="6" fill="#6366F1"/>
+      <path d="M78 58c-5 6-7 14-7 24" stroke="#fff" strokeOpacity="0.55" strokeWidth="4" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
+function EmptySearch() {
+  return (
+    <svg width="180" height="160" viewBox="0 0 180 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="es-r" x1="55" y1="40" x2="110" y2="95" gradientUnits="userSpaceOnUse"><stop stopColor="#818CF8"/><stop offset="1" stopColor="#6366F1"/></linearGradient>
+        <linearGradient id="es-g" x1="60" y1="45" x2="105" y2="90" gradientUnits="userSpaceOnUse"><stop stopColor="#EEF2FF"/><stop offset="1" stopColor="#C7D2FE" stopOpacity="0.7"/></linearGradient>
+        <linearGradient id="es-p" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#FFFFFF"/><stop offset="1" stopColor="#E2E8F0"/></linearGradient>
+        <radialGradient id="es-sh" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(90 148) scale(50 8)"><stop stopColor="#312E81" stopOpacity="0.16"/><stop offset="1" stopColor="#312E81" stopOpacity="0"/></radialGradient>
+      </defs>
+      <ellipse cx="90" cy="148" rx="50" ry="8" fill="url(#es-sh)"/>
+      <g transform="rotate(-12 120 70)"><rect x="104" y="48" width="40" height="52" rx="6" fill="url(#es-p)" stroke="#E2E8F0"/><rect x="112" y="60" width="24" height="4" rx="2" fill="#CBD5E1"/><rect x="112" y="70" width="20" height="4" rx="2" fill="#E2E8F0"/><rect x="112" y="80" width="24" height="4" rx="2" fill="#E2E8F0"/></g>
+      <g transform="rotate(8 50 96)"><rect x="32" y="84" width="40" height="52" rx="6" fill="url(#es-p)" stroke="#E2E8F0"/><rect x="40" y="96" width="24" height="4" rx="2" fill="#CBD5E1"/><rect x="40" y="106" width="18" height="4" rx="2" fill="#E2E8F0"/></g>
+      <path d="M138 30l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z" fill="#FBBF24"/>
+      <circle cx="82" cy="68" r="32" fill="url(#es-g)"/>
+      <circle cx="82" cy="68" r="32" fill="#fff" fillOpacity="0.25"/>
+      <circle cx="82" cy="68" r="32" stroke="url(#es-r)" strokeWidth="9"/>
+      <circle cx="73" cy="64" r="3" fill="#475569" fillOpacity="0.6"/><circle cx="91" cy="64" r="3" fill="#475569" fillOpacity="0.6"/>
+      <path d="M73 80q9-6 18 0" stroke="#475569" strokeOpacity="0.6" strokeWidth="3" strokeLinecap="round" fill="none"/>
+      <path d="M64 52q-8 8-6 22" stroke="#fff" strokeOpacity="0.7" strokeWidth="5" strokeLinecap="round" fill="none"/>
+      <rect x="104" y="90" width="14" height="34" rx="7" transform="rotate(-45 104 90)" fill="url(#es-r)"/>
+    </svg>
+  );
+}
+function EmptyCategory() {
+  return (
+    <svg width="180" height="160" viewBox="0 0 180 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ecat-sh2" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#E2E8F0"/><stop offset="1" stopColor="#94A3B8"/></linearGradient>
+        <linearGradient id="ecat-t" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#EEF2FF"/><stop offset="1" stopColor="#C7D2FE"/></linearGradient>
+        <linearGradient id="ecat-ta" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#C7D2FE"/><stop offset="1" stopColor="#6366F1"/></linearGradient>
+        <radialGradient id="ecat-sh" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(90 150) scale(54 8)"><stop stopColor="#312E81" stopOpacity="0.16"/><stop offset="1" stopColor="#312E81" stopOpacity="0"/></radialGradient>
+      </defs>
+      <ellipse cx="90" cy="150" rx="54" ry="8" fill="url(#ecat-sh)"/>
+      <rect x="42" y="34" width="96" height="92" rx="12" fill="#F8FAFC" stroke="#E2E8F0" strokeWidth="2"/>
+      <rect x="54" y="46" width="32" height="32" rx="8" fill="#fff" stroke="#CBD5E1" strokeWidth="2" strokeDasharray="5 5"/>
+      <rect x="94" y="46" width="32" height="32" rx="8" fill="#fff" stroke="#CBD5E1" strokeWidth="2" strokeDasharray="5 5"/>
+      <rect x="54" y="84" width="32" height="32" rx="8" fill="#fff" stroke="#CBD5E1" strokeWidth="2" strokeDasharray="5 5"/>
+      <rect x="94" y="84" width="32" height="32" rx="8" fill="url(#ecat-ta)"/>
+      <rect x="94" y="84" width="32" height="16" rx="8" fill="#fff" fillOpacity="0.18"/>
+      <circle cx="110" cy="100" r="7" fill="#fff" fillOpacity="0.85"/>
+      <g transform="rotate(-10 40 30)"><rect x="26" y="20" width="26" height="26" rx="7" fill="url(#ecat-t)"/><rect x="26" y="20" width="26" height="13" rx="6" fill="#fff" fillOpacity="0.3"/></g>
+      <path d="M142 24l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5Z" fill="#FBBF24"/>
+      <rect x="36" y="126" width="108" height="8" rx="4" fill="url(#ecat-sh2)"/>
+    </svg>
+  );
+}
+
 // ─── FEEDBACK MODAL ──────────────────────────────────────────────────────────
 interface FeedbackModalProps {
   type: "success" | "error";
@@ -1662,7 +1775,7 @@ function FeedbackModal({ type, title, body, onClose }: FeedbackModalProps) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center"
       style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
       onClick={onClose}>
-      <div className="w-64 bg-card rounded-3xl relative"
+      <div className="w-90 bg-card rounded-3xl relative"
         style={{ boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}
         onClick={e => e.stopPropagation()}>
 
@@ -2351,8 +2464,8 @@ function ShopDetailPage({ shop, onBack, onSelect, onGoToCart, cartIds, setCartId
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center py-16 gap-3">
-            <Store size={40} className="text-muted-foreground/40" />
+          <div className="flex flex-col items-center py-10 gap-3">
+            <EmptySearch />
             <p className="text-[14px] font-semibold text-foreground">No products found</p>
             {(search || activeFilterCount > 0) && (
               <button onClick={() => { setSearch(""); setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
@@ -2666,9 +2779,7 @@ function CartPage({ cartIds, setCartIds, cartQty, setCartQty }: {
           <p className="text-[13px] text-muted-foreground mt-0.5">0 items</p>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8 pb-12">
-          <div className="w-20 h-20 rounded-3xl bg-primary/8 flex items-center justify-center">
-            <ShoppingCart size={36} className="text-primary" />
-          </div>
+          <EmptyCart />
           <div className="text-center">
             <p className="text-[16px] font-bold text-foreground">Your cart is empty</p>
             <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">Browse the catalog and add parts to generate a purchase QR.</p>
