@@ -1296,6 +1296,175 @@ function CategoryPage({ category, emoji, onBack, onSelect, onGoToCart, cartIds, 
   );
 }
 
+// ─── NOTIFICATIONS PAGE ───────────────────────────────────────────────────────
+const NOTIF_DATA = [
+  { id: 1, type: "order",  title: "Order Shipped",     body: "Your order #2041 is on its way to you",          time: "2 min ago",  read: false },
+  { id: 2, type: "price",  title: "Price Drop",        body: "Bosch Oil Filter dropped to 45,000 UZS",         time: "1 hr ago",   read: false },
+  { id: 3, type: "promo",  title: "Flash Sale",        body: "20% off all Brakes & Filters — today only",      time: "3 hr ago",   read: false },
+  { id: 4, type: "order",  title: "Order Delivered",   body: "Order #2038 has been delivered successfully",    time: "Yesterday",  read: true  },
+  { id: 5, type: "new",    title: "New Arrivals",      body: "10 new products added in Engine category",       time: "2 days ago", read: true  },
+  { id: 6, type: "price",  title: "Price Drop",        body: "NGK Spark Plugs now 89,000 UZS",                 time: "3 days ago", read: true  },
+  { id: 7, type: "promo",  title: "Tire Season",       body: "Get ready for summer — 15% off all tires",      time: "1 week ago", read: true  },
+];
+
+function NotifIcon({ type }: { type: string }) {
+  const cfg: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {
+    order: { bg: "bg-blue-50",   color: "text-blue-500",  icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2L19 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    price: { bg: "bg-green-50",  color: "text-green-500", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    promo: { bg: "bg-orange-50", color: "text-orange-500",icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    new:   { bg: "bg-purple-50", color: "text-purple-500",icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg> },
+  };
+  const c = cfg[type] ?? cfg.new;
+  return (
+    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${c.bg} ${c.color}`}>
+      {c.icon}
+    </div>
+  );
+}
+
+function NotificationsPage({ onBack }: { onBack: () => void }) {
+  const [tab, setTab] = useState<"all" | "unread">("all");
+  const [items, setItems] = useState(NOTIF_DATA);
+  const displayed = tab === "unread" ? items.filter(n => !n.read) : items;
+  const unreadCount = items.filter(n => !n.read).length;
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-5 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={22} />
+        </button>
+        <span className="flex-1 text-[17px] font-bold text-foreground">Notifications</span>
+        {unreadCount > 0 && (
+          <button onClick={() => setItems(its => its.map(n => ({ ...n, read: true })))}
+            className="text-[12px] font-semibold text-primary">
+            Mark all read
+          </button>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 px-4 pt-3 pb-2 shrink-0">
+        {(["all", "unread"] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-4 py-1.5 rounded-xl text-[13px] font-semibold transition-all capitalize ${tab === t ? "bg-primary text-white" : "bg-[#F4F5F7] text-muted-foreground"}`}>
+            {t === "unread" ? `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}` : "All"}
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      <div className="flex-1 overflow-y-auto">
+        {displayed.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3 pb-16">
+            <div className="w-16 h-16 rounded-full bg-[#F4F5F7] flex items-center justify-center text-3xl">🔔</div>
+            <p className="text-[14px] font-semibold text-foreground">No unread notifications</p>
+            <p className="text-[12px] text-muted-foreground">You're all caught up!</p>
+          </div>
+        ) : (
+          <div className="px-4 py-2 flex flex-col gap-1">
+            {displayed.map(n => (
+              <button key={n.id} onClick={() => setItems(its => its.map(i => i.id === n.id ? { ...i, read: true } : i))}
+                className={`flex items-start gap-3 px-3 py-3.5 rounded-2xl text-left transition-all ${n.read ? "bg-transparent" : "bg-primary/5"}`}>
+                <NotifIcon type={n.type} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[13px] font-bold text-foreground leading-tight">{n.title}</p>
+                    {!n.read && <div className="w-2 h-2 rounded-full bg-primary shrink-0" />}
+                  </div>
+                  <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug">{n.body}</p>
+                  <p className="text-[11px] text-muted-foreground/70 mt-1">{n.time}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── LIKED ITEMS PAGE ────────────────────────────────────────────────────────
+function LikedItemsPage({ likedIds, onSelect, onGoToCart, onBack, cartIds, setCartIds, cartQty, setCartQty }: {
+  likedIds: number[]; onSelect: (p: Product) => void; onGoToCart: () => void; onBack: () => void;
+  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
+  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+}) {
+  const liked = PRODUCTS.filter(p => likedIds.includes(p.id));
+  const getQ = (id: number) => cartQty[id] ?? 1;
+  const changeQ = (id: number, delta: number) => {
+    const next = getQ(id) + delta;
+    if (next < 1) {
+      setCartIds(ids => ids.filter(i => i !== id));
+      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
+    } else {
+      setCartQty(q => ({ ...q, [id]: next }));
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-5 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={22} />
+        </button>
+        <span className="flex-1 text-[17px] font-bold text-foreground">Liked Items</span>
+        {liked.length > 0 && (
+          <span className="text-[12px] text-muted-foreground font-medium">{liked.length} item{liked.length !== 1 ? "s" : ""}</span>
+        )}
+      </div>
+
+      {/* Content */}
+      {liked.length === 0 ? (
+        <div className="flex flex-col items-center justify-center flex-1 gap-3 pb-16">
+          <div className="w-16 h-16 rounded-full bg-[#F4F5F7] flex items-center justify-center text-3xl">🤍</div>
+          <p className="text-[14px] font-semibold text-foreground">No liked items yet</p>
+          <p className="text-[12px] text-muted-foreground">Tap the heart on any product to save it</p>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4">
+          <div className="grid grid-cols-2 gap-3">
+            {liked.map(p => {
+              const inCart = cartIds.includes(p.id);
+              return (
+                <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                  <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={() => onSelect(p)} />
+                  <div className="p-2.5 flex flex-col flex-1">
+                    <button onClick={() => onSelect(p)} className="text-left mb-0.5">
+                      <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
+                    </button>
+                    <p className="text-[10px] text-muted-foreground font-medium">{p.shop}</p>
+                    <div className="mt-0.5 mb-2">
+                      {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
+                      <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
+                    </div>
+                    <div className="mt-auto">
+                      {inCart ? (
+                        <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
+                          <button onClick={() => changeQ(p.id, -1)} className="w-7 h-7 rounded-lg bg-white border border-border flex items-center justify-center text-foreground hover:border-primary hover:text-primary transition-all"><Minus size={12} /></button>
+                          <span className="text-[13px] font-bold text-primary">{getQ(p.id)}</span>
+                          <button onClick={() => changeQ(p.id, 1)} className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all"><Plus size={12} /></button>
+                        </div>
+                      ) : (
+                        <button onClick={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
+                          className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
+                          Add to Cart
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
   onSelect: (p: Product) => void;
   onGoToCart: () => void;
@@ -1305,6 +1474,9 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
   setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
 }) {
   const [showSearch, setShowSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showLiked, setShowLiked] = useState(false);
+  const [likedIds, setLikedIds] = useState<number[]>([PRODUCTS[0]?.id, PRODUCTS[2]?.id, PRODUCTS[4]?.id].filter(Boolean) as number[]);
   const [activeCatPage, setActiveCatPage] = useState<{ label: string; emoji: string } | null>(null);
   const catScrollRef = useRef<HTMLDivElement>(null);
   const [catDotIdx, setCatDotIdx] = useState(0);
@@ -1330,6 +1502,10 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
   const row1 = CATEGORIES.slice(0, Math.ceil(CATEGORIES.length / 2));
   const row2 = CATEGORIES.slice(Math.ceil(CATEGORIES.length / 2));
 
+  if (showNotifications) return <NotificationsPage onBack={() => setShowNotifications(false)} />;
+  if (showLiked) return <LikedItemsPage likedIds={likedIds} onBack={() => setShowLiked(false)}
+    onSelect={p => { setShowLiked(false); onSelect(p); }} onGoToCart={onGoToCart}
+    cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />;
   if (activeCatPage) {
     return <CategoryPage category={activeCatPage.label} emoji={activeCatPage.emoji}
       onBack={() => setActiveCatPage(null)} onSelect={onSelect} onGoToCart={onGoToCart}
@@ -1363,14 +1539,14 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
             Search parts, brands...
           </div>
         </button>
-        <button className="relative w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shrink-0">
+        <button onClick={() => setShowNotifications(true)} className="relative w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-white" />
         </button>
-        <button className="w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-all shrink-0">
+        <button onClick={() => setShowLiked(true)} className="w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-all shrink-0">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
