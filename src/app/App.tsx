@@ -1688,6 +1688,7 @@ function CartPage({ cartIds, setCartIds, cartQty, setCartQty }: {
 }) {
   const items = PRODUCTS.filter(p => cartIds.includes(p.id));
   const [showQR, setShowQR] = useState(false);
+
   const getQ = (id: number) => cartQty[id] ?? 1;
   const setQ = (id: number, n: number) => {
     if (n < 1) {
@@ -1700,116 +1701,220 @@ function CartPage({ cartIds, setCartIds, cartQty, setCartQty }: {
 
   const total = items.reduce((sum, p) => sum + priceToNum(p.price) * getQ(p.id), 0);
   const totalUnits = items.reduce((sum, p) => sum + getQ(p.id), 0);
-  const bonus = Math.round(total * 0.03); // 3% loyalty bonus
+  const bonus = Math.round(total * 0.03);
 
+  // ── Empty state ──
   if (items.length === 0) {
     return (
-      <div className="flex flex-col h-full">
-        <PageHeader title="My Cart" subtitle="0 items" />
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 px-8">
-          <div className="w-16 h-16 rounded-2xl bg-primary/8 flex items-center justify-center text-primary">
-            <ShoppingCart size={32} />
+      <div className="flex flex-col h-full bg-background">
+        <div className="px-5 pt-5 pb-4 shrink-0">
+          <p className="text-[22px] font-bold text-foreground">My Cart</p>
+          <p className="text-[13px] text-muted-foreground mt-0.5">0 items</p>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8 pb-12">
+          <div className="w-20 h-20 rounded-3xl bg-primary/8 flex items-center justify-center">
+            <ShoppingCart size={36} className="text-primary" />
           </div>
-          <p className="text-[15px] font-semibold text-foreground">Your cart is empty</p>
-          <p className="text-[13px] text-muted-foreground text-center leading-relaxed">Browse the catalog and add parts to generate a purchase QR.</p>
+          <div className="text-center">
+            <p className="text-[16px] font-bold text-foreground">Your cart is empty</p>
+            <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">Browse the catalog and add parts to generate a purchase QR.</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col h-full">
-      <PageHeader title="My Cart" subtitle={`${items.length} item${items.length > 1 ? "s" : ""} · ${totalUnits} units`} />
+  // ── QR full-screen view ──
+  if (showQR) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={() => setShowQR(false)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft size={20} />
+          </button>
+          <div className="flex-1">
+            <p className="text-[17px] font-bold text-foreground leading-tight">Purchase QR</p>
+            <p className="text-[12px] text-muted-foreground">Show to seller to confirm order</p>
+          </div>
+        </div>
 
-      {/* Items */}
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="flex-1 overflow-y-auto flex flex-col items-center px-6 py-6 gap-5">
+          {/* QR code */}
+          <div className="bg-white rounded-3xl p-5 border border-border w-full flex justify-center" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.07)" }}>
+            <QRCodePlaceholder seed={`CART-${cartIds.join("-")}-${total}`} size={220} />
+          </div>
+
+          {/* Amount */}
+          <div className="w-full bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">Order summary</p>
+              <span className="text-[11px] text-muted-foreground">{items.length} product{items.length > 1 ? "s" : ""}</span>
+            </div>
+            <div className="flex items-center justify-between text-[13px] mb-2">
+              <span className="text-muted-foreground">Total units</span>
+              <span className="font-semibold text-foreground">{totalUnits}</span>
+            </div>
+            <div className="flex items-center justify-between text-[13px] mb-2">
+              <span className="text-muted-foreground">Amount</span>
+              <span className="font-semibold text-foreground">{fmtUZS(total)} UZS</span>
+            </div>
+            <div className="h-px bg-border my-2.5" />
+            <div className="flex items-center justify-between">
+              <span className="text-[15px] font-bold text-foreground">Total</span>
+              <span className="text-[20px] font-bold text-primary">{fmtUZS(total)} <span className="text-[11px] font-normal text-muted-foreground">UZS</span></span>
+            </div>
+          </div>
+
+          {/* Bonus pill */}
+          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3 w-full">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+              <Gift size={16} className="text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-[12px] font-semibold text-emerald-700">You'll earn <span className="text-emerald-600">+{fmtUZS(bonus)} UZS</span> bonus</p>
+              <p className="text-[11px] text-emerald-500 mt-0.5">3% loyalty reward · added after seller confirms</p>
+            </div>
+          </div>
+
+          {/* Items recap */}
+          <div className="w-full">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Items in this order</p>
+            <div className="flex flex-col gap-2">
+              {items.map(p => (
+                <div key={p.id} className="flex items-center gap-3 bg-card rounded-xl border border-border px-3 py-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-muted overflow-hidden shrink-0">
+                    <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-semibold text-foreground line-clamp-1">{p.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{p.shop}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[12px] font-bold text-primary">{fmtUZS(priceToNum(p.price) * getQ(p.id))}</p>
+                    <p className="text-[10px] text-muted-foreground">×{getQ(p.id)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Cart list ──
+  return (
+    <div className="flex flex-col h-full bg-background">
+      {/* Title */}
+      <div className="px-5 pt-5 pb-3 shrink-0">
+        <p className="text-[22px] font-bold text-foreground">My Cart</p>
+        <p className="text-[13px] text-muted-foreground mt-0.5">{items.length} item{items.length > 1 ? "s" : ""} · {totalUnits} unit{totalUnits > 1 ? "s" : ""}</p>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
         <div className="flex flex-col gap-3">
-          {items.map(p => (
-            <div key={p.id} className="bg-card rounded-2xl border border-border p-3 flex gap-3" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden shrink-0">
+
+        {/* Item rows */}
+        {items.map(p => (
+          <div key={p.id} className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <div className="flex gap-3 p-3">
+              {/* Thumbnail */}
+              <div className="w-[72px] h-[72px] rounded-xl bg-muted overflow-hidden shrink-0">
                 <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
               </div>
-              <div className="flex-1 min-w-0">
+
+              {/* Info */}
+              <div className="flex-1 min-w-0 flex flex-col justify-between">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[13px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2">{p.name}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{p.shop}</p>
+                  </div>
                   <button onClick={() => setCartIds(ids => ids.filter(i => i !== p.id))}
-                    className="shrink-0 w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors">
-                    <Trash2 size={14} />
+                    className="shrink-0 w-7 h-7 rounded-lg bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors mt-0.5">
+                    <Trash2 size={13} />
                   </button>
                 </div>
-                <p className="text-[10px] text-muted-foreground font-medium mt-0.5">{p.shop}</p>
+
+                {/* Price + stepper */}
                 <div className="flex items-center justify-between mt-2">
-                  <p className="text-[14px] font-bold text-primary">{fmtUZS(priceToNum(p.price) * getQ(p.id))} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
-                  {/* Quantity stepper */}
-                  <div className="flex items-center gap-2">
+                  <div>
+                    {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
+                    <p className="text-[15px] font-bold text-primary leading-tight">
+                      {fmtUZS(priceToNum(p.price) * getQ(p.id))} <span className="text-[10px] font-normal text-muted-foreground">UZS</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center bg-[#F4F5F7] rounded-xl overflow-hidden border border-border">
                     <button onClick={() => setQ(p.id, getQ(p.id) - 1)}
-                      className="w-7 h-7 rounded-lg bg-[#F4F5F7] border border-border flex items-center justify-center text-foreground hover:border-primary hover:text-primary transition-all">
+                      className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors">
                       <Minus size={13} />
                     </button>
-                    <span className="text-[13px] font-bold text-foreground w-5 text-center">{getQ(p.id)}</span>
+                    <span className="text-[13px] font-bold text-foreground px-2">{getQ(p.id)}</span>
                     <button onClick={() => setQ(p.id, getQ(p.id) + 1)}
-                      className="w-7 h-7 rounded-lg bg-[#F4F5F7] border border-border flex items-center justify-center text-foreground hover:border-primary hover:text-primary transition-all">
+                      className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors">
                       <Plus size={13} />
                     </button>
                   </div>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* Summary */}
-        <div className="bg-card rounded-2xl border border-border p-4 mt-3" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-          <div className="flex items-center justify-between text-[13px] text-muted-foreground">
-            <span>Subtotal ({totalUnits} units)</span>
+            {/* Per-unit price footer */}
+            <div className="border-t border-border px-3 py-1.5 bg-[#FAFAFA]">
+              <p className="text-[11px] text-muted-foreground">{p.price} UZS per unit</p>
+            </div>
+          </div>
+        ))}
+
+        {/* Order summary card */}
+        <div className="bg-card rounded-2xl border border-border p-4 mt-1" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+          <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Order summary</p>
+
+          <div className="flex items-center justify-between text-[13px] mb-2">
+            <span className="text-muted-foreground">Products</span>
+            <span className="font-medium text-foreground">{items.length}</span>
+          </div>
+          <div className="flex items-center justify-between text-[13px] mb-2">
+            <span className="text-muted-foreground">Total units</span>
+            <span className="font-medium text-foreground">{totalUnits}</span>
+          </div>
+          <div className="flex items-center justify-between text-[13px] mb-2">
+            <span className="text-muted-foreground">Subtotal</span>
             <span className="font-semibold text-foreground">{fmtUZS(total)} UZS</span>
           </div>
-          <div className="flex items-center justify-between text-[13px] text-muted-foreground mt-2">
-            <span className="flex items-center gap-1.5"><Gift size={13} className="text-emerald-500" /> Loyalty bonus (3%)</span>
-            <span className="font-semibold text-emerald-600">+{fmtUZS(bonus)} UZS</span>
-          </div>
+
           <div className="h-px bg-border my-3" />
-          <div className="flex items-center justify-between">
-            <span className="text-[14px] font-bold text-foreground">Total</span>
-            <span className="text-[18px] font-bold text-primary">{fmtUZS(total)} <span className="text-[11px] font-normal text-muted-foreground">UZS</span></span>
+
+          {/* Bonus row */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1.5">
+              <Gift size={13} className="text-emerald-500" />
+              <span className="text-[13px] text-emerald-600 font-medium">Loyalty bonus</span>
+              <span className="text-[10px] bg-emerald-50 text-emerald-500 px-1.5 py-0.5 rounded-md font-semibold">3%</span>
+            </div>
+            <span className="text-[13px] font-bold text-emerald-600">+{fmtUZS(bonus)} UZS</span>
+          </div>
+
+          {/* Total */}
+          <div className="flex items-center justify-between bg-primary/5 rounded-xl px-3 py-2.5">
+            <span className="text-[14px] font-bold text-foreground">Total to pay</span>
+            <span className="text-[20px] font-bold text-primary">{fmtUZS(total)} <span className="text-[11px] font-normal text-muted-foreground">UZS</span></span>
           </div>
         </div>
-      </div>
+        </div>{/* end inner flex-col */}
+      </div>{/* end scroll */}
 
-      {/* Generate QR CTA */}
-      <div className="shrink-0 bg-card border-t border-border px-5 py-3">
+      {/* Generate QR button */}
+      <div className="shrink-0 bg-card border-t border-border px-4 py-3">
         <button onClick={() => setShowQR(true)}
-          className="w-full bg-primary text-white rounded-xl py-4 text-[15px] font-semibold shadow-md hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-          <QrCode size={18} /> Generate Purchase QR
+          className="w-full bg-primary text-white rounded-2xl py-4 text-[15px] font-bold flex items-center justify-center gap-2.5 hover:bg-blue-700 active:scale-[0.98] transition-all"
+          style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.35)" }}>
+          <QrCode size={20} />
+          Generate Purchase QR
         </button>
       </div>
-
-      {/* QR modal */}
-      {showQR && (
-        <div className="absolute inset-0 z-50 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.5)" }} onClick={() => setShowQR(false)}>
-          <div className="bg-card rounded-t-3xl px-5 pt-2 pb-6" onClick={e => e.stopPropagation()} style={{ boxShadow: "0 -8px 40px rgba(0,0,0,0.18)" }}>
-            <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-[16px] font-bold text-foreground">Purchase QR</p>
-              <button onClick={() => setShowQR(false)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                <X size={15} />
-              </button>
-            </div>
-            <p className="text-[12px] text-muted-foreground mb-4">Show this code to the seller to confirm your purchase.</p>
-            <div className="flex flex-col items-center">
-              <div className="p-4 rounded-2xl border border-border bg-white" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                <QRCodePlaceholder seed={`CART-${cartIds.join("-")}-${total}`} size={208} />
-              </div>
-              <p className="text-[12px] text-muted-foreground mt-3">{totalUnits} units · {items.length} products</p>
-              <p className="text-[22px] font-bold text-primary mt-1">{fmtUZS(total)} <span className="text-[12px] font-normal text-muted-foreground">UZS</span></p>
-              <div className="flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-lg bg-emerald-50">
-                <Gift size={13} className="text-emerald-500" />
-                <span className="text-[12px] font-semibold text-emerald-600">+{fmtUZS(bonus)} UZS bonus on confirmation</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -2137,8 +2242,16 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
                 <button key={t.key} onClick={() => setTab(t.key)}
                   className="flex flex-col items-center gap-1 flex-1 py-1 transition-all"
                   style={{ minWidth: 48 }}>
-                  <div className={`transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                  <div className={`relative transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                     {t.icon(isActive)}
+                    {t.key === "cart" && cartIds.length > 0 && (() => {
+                      const totalUnits = cartIds.reduce((s, id) => s + (cartQty[id] ?? 1), 0);
+                      return (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                          {totalUnits > 99 ? "99+" : totalUnits}
+                        </span>
+                      );
+                    })()}
                   </div>
                   <span className={`text-[10px] font-semibold transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                     {t.label}
