@@ -537,55 +537,480 @@ interface Product {
   id: number; name: string; shop: string; price: string;
   img: string; category: string; sku: string; stock: number;
   brand: string; description: string;
+  originalPrice?: string; discount?: number;
 }
 
 const PRODUCTS: Product[] = [
+  // ── Bosch Oil Filter Premium — 3 shops ──
   {
     id: 1, name: "Bosch Oil Filter Premium", shop: "AutoZone Tashkent",
-    price: "45 000", img: "https://images.unsplash.com/photo-1523559094051-53bac879eb80?w=600&h=600&fit=crop&auto=format",
+    price: "45 000", originalPrice: "60 000", discount: 25,
+    img: "https://images.unsplash.com/photo-1523559094051-53bac879eb80?w=600&h=600&fit=crop&auto=format",
     category: "Filters", sku: "BSH-OF-4722", stock: 38, brand: "Bosch",
     description: "High-performance oil filter with multi-layer filtration media. Removes up to 99% of contaminants, protecting your engine from wear. Compatible with most gasoline and diesel engines. Recommended replacement every 10,000 km.",
   },
   {
+    id: 101, name: "Bosch Oil Filter Premium", shop: "CarParts Express",
+    price: "47 000",
+    img: "https://images.unsplash.com/photo-1523559094051-53bac879eb80?w=600&h=600&fit=crop&auto=format",
+    category: "Filters", sku: "BSH-OF-4722", stock: 14, brand: "Bosch",
+    description: "High-performance oil filter with multi-layer filtration media. Removes up to 99% of contaminants, protecting your engine from wear. Compatible with most gasoline and diesel engines. Recommended replacement every 10,000 km.",
+  },
+  {
+    id: 102, name: "Bosch Oil Filter Premium", shop: "SparkMaster Pro",
+    price: "43 500", originalPrice: "48 000", discount: 9,
+    img: "https://images.unsplash.com/photo-1523559094051-53bac879eb80?w=600&h=600&fit=crop&auto=format",
+    category: "Filters", sku: "BSH-OF-4722", stock: 6, brand: "Bosch",
+    description: "High-performance oil filter with multi-layer filtration media. Removes up to 99% of contaminants, protecting your engine from wear. Compatible with most gasoline and diesel engines. Recommended replacement every 10,000 km.",
+  },
+  // ── Brembo Brake Disc Set — 2 shops ──
+  {
     id: 2, name: "Brembo Brake Disc Set", shop: "CarParts Express",
-    price: "320 000", img: "https://images.unsplash.com/photo-1613214150384-14921ff659b2?w=600&h=600&fit=crop&auto=format",
+    price: "320 000",
+    img: "https://images.unsplash.com/photo-1613214150384-14921ff659b2?w=600&h=600&fit=crop&auto=format",
     category: "Brakes", sku: "BRM-BD-09A778", stock: 12, brand: "Brembo",
     description: "OEM-quality ventilated brake disc set for superior stopping power. UV-coated to prevent rust on the hat and edges. Pre-mounted hub reduces installation time. Fits most European and Asian models (check fitment guide).",
   },
   {
+    id: 201, name: "Brembo Brake Disc Set", shop: "SuspensionKing",
+    price: "295 000", originalPrice: "320 000", discount: 8,
+    img: "https://images.unsplash.com/photo-1613214150384-14921ff659b2?w=600&h=600&fit=crop&auto=format",
+    category: "Brakes", sku: "BRM-BD-09A778", stock: 5, brand: "Brembo",
+    description: "OEM-quality ventilated brake disc set for superior stopping power. UV-coated to prevent rust on the hat and edges. Pre-mounted hub reduces installation time. Fits most European and Asian models (check fitment guide).",
+  },
+  // ── NGK Spark Plug x4 — 3 shops ──
+  {
     id: 3, name: "NGK Spark Plug x4", shop: "SparkMaster Pro",
-    price: "88 000", img: "https://images.unsplash.com/photo-1552656967-7a0991a13906?w=600&h=600&fit=crop&auto=format",
+    price: "88 000", originalPrice: "110 000", discount: 20,
+    img: "https://images.unsplash.com/photo-1552656967-7a0991a13906?w=600&h=600&fit=crop&auto=format",
     category: "Engine", sku: "NGK-BKR6E-4PK", stock: 74, brand: "NGK",
     description: "Set of 4 iridium-tipped spark plugs for improved ignition efficiency and fuel economy. Laser-welded fine-wire iridium centre electrode ensures consistent spark. Lifespan up to 100,000 km under normal driving conditions.",
   },
   {
+    id: 301, name: "NGK Spark Plug x4", shop: "AutoZone Tashkent",
+    price: "92 000",
+    img: "https://images.unsplash.com/photo-1552656967-7a0991a13906?w=600&h=600&fit=crop&auto=format",
+    category: "Engine", sku: "NGK-BKR6E-4PK", stock: 29, brand: "NGK",
+    description: "Set of 4 iridium-tipped spark plugs for improved ignition efficiency and fuel economy. Laser-welded fine-wire iridium centre electrode ensures consistent spark. Lifespan up to 100,000 km under normal driving conditions.",
+  },
+  {
+    id: 302, name: "NGK Spark Plug x4", shop: "TireHub Uzbekistan",
+    price: "90 000", originalPrice: "95 000", discount: 5,
+    img: "https://images.unsplash.com/photo-1552656967-7a0991a13906?w=600&h=600&fit=crop&auto=format",
+    category: "Engine", sku: "NGK-BKR6E-4PK", stock: 11, brand: "NGK",
+    description: "Set of 4 iridium-tipped spark plugs for improved ignition efficiency and fuel economy. Laser-welded fine-wire iridium centre electrode ensures consistent spark. Lifespan up to 100,000 km under normal driving conditions.",
+  },
+  // ── Continental Tire — 2 shops ──
+  {
     id: 4, name: "Continental Tire 205/55R16", shop: "TireHub Uzbekistan",
-    price: "780 000", img: "https://images.unsplash.com/photo-1656232976683-7b688560e427?w=600&h=600&fit=crop&auto=format",
+    price: "780 000",
+    img: "https://images.unsplash.com/photo-1656232976683-7b688560e427?w=600&h=600&fit=crop&auto=format",
     category: "Tires", sku: "CNT-205-55R16-91V", stock: 8, brand: "Continental",
     description: "All-season radial tire with optimised tread pattern for wet and dry grip. EcoPlus technology reduces rolling resistance for better fuel economy. Speed rating V (up to 240 km/h). Sold individually.",
   },
   {
+    id: 401, name: "Continental Tire 205/55R16", shop: "SuspensionKing",
+    price: "760 000", originalPrice: "780 000", discount: 3,
+    img: "https://images.unsplash.com/photo-1656232976683-7b688560e427?w=600&h=600&fit=crop&auto=format",
+    category: "Tires", sku: "CNT-205-55R16-91V", stock: 4, brand: "Continental",
+    description: "All-season radial tire with optimised tread pattern for wet and dry grip. EcoPlus technology reduces rolling resistance for better fuel economy. Speed rating V (up to 240 km/h). Sold individually.",
+  },
+  // ── Denso Air Filter — 2 shops ──
+  {
     id: 5, name: "Denso Air Filter", shop: "AutoZone Tashkent",
-    price: "62 000", img: "https://images.unsplash.com/photo-1527383418406-f85a3b146499?w=600&h=600&fit=crop&auto=format",
+    price: "62 000",
+    img: "https://images.unsplash.com/photo-1527383418406-f85a3b146499?w=600&h=600&fit=crop&auto=format",
     category: "Filters", sku: "DNS-AF-268", stock: 51, brand: "Denso",
     description: "OEM-grade paper air filter designed for maximum airflow and dust retention. Precision-moulded frame ensures a perfect seal. Direct replacement for Denso OE parts. Change every 15,000–20,000 km or annually.",
   },
   {
+    id: 501, name: "Denso Air Filter", shop: "CarParts Express",
+    price: "65 000",
+    img: "https://images.unsplash.com/photo-1527383418406-f85a3b146499?w=600&h=600&fit=crop&auto=format",
+    category: "Filters", sku: "DNS-AF-268", stock: 22, brand: "Denso",
+    description: "OEM-grade paper air filter designed for maximum airflow and dust retention. Precision-moulded frame ensures a perfect seal. Direct replacement for Denso OE parts. Change every 15,000–20,000 km or annually.",
+  },
+  // ── Monroe Shock Absorber — 2 shops ──
+  {
     id: 6, name: "Monroe Shock Absorber", shop: "SuspensionKing",
-    price: "215 000", img: "https://images.unsplash.com/photo-1429772011165-0c2e054367b8?w=600&h=600&fit=crop&auto=format",
+    price: "215 000", originalPrice: "258 000", discount: 17,
+    img: "https://images.unsplash.com/photo-1429772011165-0c2e054367b8?w=600&h=600&fit=crop&auto=format",
     category: "Suspension", sku: "MNR-E1156", stock: 19, brand: "Monroe",
+    description: "Gas-charged monotube shock absorber for responsive handling and a comfortable ride. All-weather fluid maintains consistent damping from -40°C to +120°C. Direct OE replacement. Sold individually — order 2 for an axle.",
+  },
+  {
+    id: 601, name: "Monroe Shock Absorber", shop: "AutoZone Tashkent",
+    price: "225 000",
+    img: "https://images.unsplash.com/photo-1429772011165-0c2e054367b8?w=600&h=600&fit=crop&auto=format",
+    category: "Suspension", sku: "MNR-E1156", stock: 7, brand: "Monroe",
     description: "Gas-charged monotube shock absorber for responsive handling and a comfortable ride. All-weather fluid maintains consistent damping from -40°C to +120°C. Direct OE replacement. Sold individually — order 2 for an axle.",
   },
 ];
 
-function MechanicMainPage({ onSelect, cartIds, setCartIds, cartQty, setCartQty }: {
+// Unique product names for search suggestions
+const UNIQUE_PRODUCTS = PRODUCTS.filter((p, _, arr) => arr.findIndex(x => x.name === p.name) === arr.indexOf(p));
+
+// ─── SEARCH PAGE ──────────────────────────────────────────────────────────────
+function SearchPage({ onSelect, onClose, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
+  onSelect: (p: Product) => void; onClose: () => void; onGoToCart?: () => void;
+  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
+  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+}) {
+  const [query, setQuery] = useState("");
+  const [selectedName, setSelectedName] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const q = query.toLowerCase().trim();
+
+  const suggestions = q
+    ? UNIQUE_PRODUCTS.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+      )
+    : [];
+
+  const listings = selectedName ? PRODUCTS.filter(p => p.name === selectedName) : [];
+
+  const getQ = (id: number) => cartQty[id] ?? 1;
+  const changeQ = (id: number, delta: number) => {
+    const next = getQ(id) + delta;
+    if (next < 1) {
+      setCartIds(ids => ids.filter(i => i !== id));
+      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
+    } else {
+      setCartQty(q => ({ ...q, [id]: next }));
+    }
+  };
+
+  // ── Shared top bar ──
+  const TopBar = ({ onBack, title, subtitle }: { onBack: () => void; title?: string; subtitle?: string }) => (
+    <div className="flex items-center gap-2 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+      <button onClick={onBack} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+        <ChevronLeft size={22} />
+      </button>
+      {title ? (
+        <div className="flex-1 min-w-0">
+          <p className="text-[15px] font-bold text-foreground leading-tight truncate">{title}</p>
+          {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
+        </div>
+      ) : (
+        <div className="flex-1 relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <input ref={inputRef} type="text" placeholder="Search parts, brands, categories..."
+            value={query} onChange={e => { setQuery(e.target.value); setSelectedName(null); }}
+            className="w-full bg-[#F4F5F7] rounded-xl pl-9 pr-9 py-2.5 text-[13px] text-foreground placeholder-muted-foreground border border-transparent focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+          {query && (
+            <button onClick={() => { setQuery(""); setSelectedName(null); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <X size={15} />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Step 2: product grid for selected name ──
+  const [showFilter, setShowFilter] = useState(false);
+  const [sortBy, setSortBy] = useState<"default"|"low"|"high"|"discount">("default");
+  const [onlyDiscount, setOnlyDiscount] = useState(false);
+  const [onlyInStock, setOnlyInStock] = useState(false);
+
+  const allPrices = listings.map(p => priceToNum(p.price));
+  const absMin = allPrices.length ? Math.min(...allPrices) : 0;
+  const absMax = allPrices.length ? Math.max(...allPrices) : 1000000;
+  const [sliderMax, setSliderMax] = useState(absMax);
+
+  const priceFiltered = sliderMax < absMax;
+
+  const activeFilterCount = [
+    sortBy !== "default",
+    onlyDiscount,
+    onlyInStock,
+    priceFiltered,
+  ].filter(Boolean).length;
+
+  const filteredListings = listings
+    .filter(p => !onlyDiscount || !!p.discount)
+    .filter(p => !onlyInStock || p.stock > 0)
+    .filter(p => priceToNum(p.price) <= sliderMax)
+    .sort((a, b) => {
+      if (sortBy === "low")  return priceToNum(a.price) - priceToNum(b.price);
+      if (sortBy === "high") return priceToNum(b.price) - priceToNum(a.price);
+      if (sortBy === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
+      return 0;
+    });
+
+  // Product card used in both the grid and filter-applied view
+  const ListingCard = ({ p }: { p: Product }) => {
+    const inCart = cartIds.includes(p.id);
+    return (
+      <div className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+        <button className="relative bg-muted h-32 overflow-hidden shrink-0" onClick={() => { onSelect(p); onClose(); }}>
+          <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
+          {p.discount && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">-{p.discount}%</span>}
+        </button>
+        <div className="p-2.5 flex flex-col flex-1">
+          <button onClick={() => { onSelect(p); onClose(); }} className="text-left mb-0.5">
+            <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-1">{p.shop}</p>
+          </button>
+          <p className="text-[10px] text-muted-foreground font-medium">{p.stock} in stock</p>
+          <div className="mt-0.5 mb-2">
+            {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
+            <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
+          </div>
+          <div className="mt-auto">
+            {inCart ? (
+              <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
+                <button onClick={() => changeQ(p.id, -1)} className="w-7 h-7 rounded-lg bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all"><Minus size={12} /></button>
+                <span className="text-[13px] font-bold text-primary">{getQ(p.id)}</span>
+                <button onClick={() => changeQ(p.id, 1)} className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all"><Plus size={12} /></button>
+              </div>
+            ) : (
+              <button onClick={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
+                className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
+                + Add to Cart
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (selectedName) {
+    // ── Filter page ──
+    if (showFilter) {
+      const SORT_OPTS: { key: typeof sortBy; label: string }[] = [
+        { key: "default",  label: "Default" },
+        { key: "low",      label: "Price: Low → High" },
+        { key: "high",     label: "Price: High → Low" },
+        { key: "discount", label: "Biggest Discount" },
+      ];
+      return (
+        <div className="flex flex-col h-full bg-background">
+          <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+            <button onClick={() => setShowFilter(false)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+              <ChevronLeft size={22} />
+            </button>
+            <p className="flex-1 text-[16px] font-bold text-foreground">Filters</p>
+            <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+              className="text-[12px] font-semibold text-primary hover:text-blue-700 transition-colors">
+              Reset all
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+            {/* Sort by */}
+            <div>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sort by</p>
+              <div className="flex flex-col gap-2">
+                {SORT_OPTS.map(o => (
+                  <button key={o.key} onClick={() => setSortBy(o.key)}
+                    className={`flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all ${sortBy === o.key ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
+                    <span className={`text-[13px] font-semibold ${sortBy === o.key ? "text-primary" : "text-foreground"}`}>{o.label}</span>
+                    {sortBy === o.key && <Check size={16} className="text-primary" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Max price slider */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Max price</p>
+                <span className={`text-[13px] font-bold ${priceFiltered ? "text-primary" : "text-muted-foreground"}`}>
+                  {priceFiltered ? `${sliderMax.toLocaleString()} UZS` : "Any"}
+                </span>
+              </div>
+              <div className="px-1">
+                <input
+                  type="range"
+                  min={absMin}
+                  max={absMax}
+                  step={Math.max(1000, Math.round((absMax - absMin) / 100))}
+                  value={sliderMax}
+                  onChange={e => setSliderMax(Number(e.target.value))}
+                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #2563EB ${((sliderMax - absMin) / (absMax - absMin)) * 100}%, #E5E7EB ${((sliderMax - absMin) / (absMax - absMin)) * 100}%)`,
+                    accentColor: "#2563EB",
+                  }}
+                />
+                <div className="flex justify-between mt-2">
+                  <span className="text-[10px] text-muted-foreground">{absMin.toLocaleString()} UZS</span>
+                  <span className="text-[10px] text-muted-foreground">{absMax.toLocaleString()} UZS</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Toggles */}
+            <div>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Show only</p>
+              <div className="flex flex-col gap-2">
+                {[
+                  { label: "Has discount", sub: "Products with active price cuts", val: onlyDiscount, set: setOnlyDiscount },
+                  { label: "In stock", sub: "Available for immediate purchase", val: onlyInStock, set: setOnlyInStock },
+                ].map(t => (
+                  <button key={t.label} onClick={() => t.set(!t.val)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all ${t.val ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
+                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${t.val ? "bg-primary border-primary" : "border-border"}`}>
+                      {t.val && <Check size={12} className="text-white" />}
+                    </div>
+                    <div className="text-left">
+                      <p className={`text-[13px] font-semibold leading-tight ${t.val ? "text-primary" : "text-foreground"}`}>{t.label}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{t.sub}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="shrink-0 px-4 py-3 bg-card border-t border-border">
+            <button onClick={() => setShowFilter(false)}
+              className="w-full bg-primary text-white rounded-xl py-3.5 text-[14px] font-semibold shadow-md hover:bg-blue-700 active:scale-[0.98] transition-all">
+              Show {filteredListings.length} result{filteredListings.length !== 1 ? "s" : ""}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Listings grid ──
+    return (
+      <div className="flex flex-col h-full bg-background">
+        {/* Search bar + filter button */}
+        <div className="flex items-center gap-2 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={() => setSelectedName(null)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft size={22} />
+          </button>
+          <button className="flex-1 relative" onClick={() => setSelectedName(null)}>
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+              <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <div className="w-full bg-[#F4F5F7] rounded-xl pl-9 pr-4 py-2.5 text-[13px] text-foreground text-left border border-primary ring-2 ring-primary/20 truncate">
+              {selectedName}
+            </div>
+          </button>
+          {/* Filter icon button */}
+          <button onClick={() => setShowFilter(true)}
+            className="relative shrink-0 w-10 h-10 rounded-xl bg-[#F4F5F7] border border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-all">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Results count */}
+        <div className="px-4 pt-3 pb-1 shrink-0">
+          <p className="text-[12px] text-muted-foreground">{filteredListings.length} shop{filteredListings.length !== 1 ? "s" : ""} selling this</p>
+        </div>
+
+        {/* Grid — extra bottom padding so FAB doesn't cover last row */}
+        <div className="flex-1 overflow-y-auto px-4 pt-2 pb-24">
+          {filteredListings.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {filteredListings.map(p => <ListingCard key={p.id} p={p} />)}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center py-16 gap-3">
+              <p className="text-[14px] font-semibold text-foreground">No results match your filters</p>
+              <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+                className="text-[13px] font-semibold text-primary hover:underline">Clear filters</button>
+            </div>
+          )}
+        </div>
+
+        {/* Fixed cart FAB */}
+        {cartIds.length > 0 && onGoToCart && (
+          <div className="absolute bottom-5 left-0 right-0 flex justify-center pointer-events-none">
+            <button
+              onClick={onGoToCart}
+              className="pointer-events-auto flex items-center gap-3 bg-primary text-white pl-5 pr-4 py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all"
+              style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.45)" }}
+            >
+              <ShoppingCart size={18} />
+              <span className="text-[14px] font-semibold">View Cart</span>
+              <span className="bg-white text-primary text-[12px] font-bold rounded-xl px-2 py-0.5 min-w-[24px] text-center">
+                {cartIds.length}
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Step 1: search input + text suggestions ──
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <TopBar onBack={onClose} />
+      <div className="flex-1 overflow-y-auto">
+        {/* Typing: plain text autocomplete list */}
+        {q && (
+          <div className="px-4 pt-2 pb-4">
+            {suggestions.length > 0 ? suggestions.map(p => (
+              <button key={p.id} onClick={() => setSelectedName(p.name)}
+                className="w-full flex items-center gap-3 px-3 py-3 border-b border-border last:border-0 text-left hover:bg-primary/5 transition-all">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-muted-foreground shrink-0">
+                  <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                <span className="flex-1 text-[14px] text-foreground font-medium truncate">{p.name}</span>
+                <span className="text-[11px] text-muted-foreground shrink-0">{p.category}</span>
+              </button>
+            )) : (
+              <div className="flex flex-col items-center py-16 gap-3">
+                <p className="text-[14px] font-semibold text-foreground">No results found</p>
+                <p className="text-[12px] text-muted-foreground">Try a different name or brand.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Empty: popular chips */}
+        {!q && (
+          <div className="px-4 pt-4">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Popular searches</p>
+            <div className="flex flex-wrap gap-2">
+              {["Bosch", "Filters", "Brakes", "Engine", "NGK", "Tires"].map(tag => (
+                <button key={tag} onClick={() => setQuery(tag)}
+                  className="px-3 py-1.5 rounded-xl bg-[#F4F5F7] text-[12px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-all">
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
   onSelect: (p: Product) => void;
+  onGoToCart: () => void;
   cartIds: number[];
   setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
   cartQty: Record<number, number>;
   setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
 }) {
-  const [search, setSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const getQ = (id: number) => cartQty[id] ?? 1;
   const changeQ = (id: number, delta: number) => {
@@ -598,31 +1023,37 @@ function MechanicMainPage({ onSelect, cartIds, setCartIds, cartQty, setCartQty }
     }
   };
 
-  const filtered = PRODUCTS.filter(p =>
-    (!activeCat || p.name.toLowerCase().includes(activeCat.toLowerCase())) &&
-    (p.name.toLowerCase().includes(search.toLowerCase()) || p.shop.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = PRODUCTS.filter(p => !activeCat || p.category === activeCat);
 
   const row1 = CATEGORIES.slice(0, Math.ceil(CATEGORIES.length / 2));
   const row2 = CATEGORIES.slice(Math.ceil(CATEGORIES.length / 2));
 
   return (
     <div className="flex flex-col h-full overflow-y-auto" style={{ minHeight: 0 }}>
-      {/* Search + Notification */}
+      {/* Search page overlay */}
+      {showSearch && (
+        <div className="absolute inset-0 z-30 bg-background">
+          <SearchPage
+            onSelect={p => { onSelect(p); setShowSearch(false); }}
+            onClose={() => setShowSearch(false)}
+            onGoToCart={() => { setShowSearch(false); onGoToCart(); }}
+            cartIds={cartIds} setCartIds={setCartIds}
+            cartQty={cartQty} setCartQty={setCartQty}
+          />
+        </div>
+      )}
+
+      {/* Search bar (tap to open search page) + Notification */}
       <div className="px-4 pt-4 pb-3 flex items-center gap-2 shrink-0">
-        <div className="flex-1 relative">
+        <button className="flex-1 relative" onClick={() => setShowSearch(true)}>
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
             <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
-          <input
-            type="text"
-            placeholder="Search parts, brands..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full bg-[#F4F5F7] rounded-xl pl-9 pr-4 py-2.5 text-[13px] text-foreground placeholder-muted-foreground border border-transparent focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-          />
-        </div>
+          <div className="w-full bg-[#F4F5F7] rounded-xl pl-9 pr-4 py-2.5 text-[13px] text-muted-foreground text-left border border-transparent">
+            Search parts, brands...
+          </div>
+        </button>
         <button className="relative w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -665,20 +1096,35 @@ function MechanicMainPage({ onSelect, cartIds, setCartIds, cartQty, setCartQty }
 
       {/* Products */}
       <div className="px-4 pb-4">
+        <p className="text-[13px] font-bold text-foreground mb-3">
+          {activeCat ? activeCat : "All Products"}
+        </p>
         <div className="grid grid-cols-2 gap-3">
           {filtered.map(p => {
             const inCart = cartIds.includes(p.id);
             return (
               <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                <button className="bg-muted h-32 overflow-hidden shrink-0" onClick={() => onSelect(p)}>
+                {/* Image + discount badge */}
+                <button className="relative bg-muted h-32 overflow-hidden shrink-0" onClick={() => onSelect(p)}>
                   <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
+                  {p.discount && (
+                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">
+                      -{p.discount}%
+                    </span>
+                  )}
                 </button>
                 <div className="p-2.5 flex flex-col flex-1">
                   <button onClick={() => onSelect(p)} className="text-left mb-0.5">
                     <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
                   </button>
                   <p className="text-[10px] text-muted-foreground font-medium">{p.shop}</p>
-                  <p className="text-[13px] font-bold text-primary mt-0.5 mb-2">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
+                  {/* Price block */}
+                  <div className="mt-0.5 mb-2">
+                    {p.originalPrice && (
+                      <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>
+                    )}
+                    <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
+                  </div>
                   {/* Always-bottom CTA */}
                   <div className="mt-auto">
                     {inCart ? (
@@ -1649,7 +2095,7 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
         {selectedProduct
           ? <ProductDetailPage product={selectedProduct} onBack={() => setSelectedProduct(null)} cartIds={cartIds} setCartIds={setCartIds} />
           : tab === "main"
-            ? <MechanicMainPage onSelect={setSelectedProduct} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
+            ? <MechanicMainPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
             : tab === "shops"
               ? <ShopsPage />
               : tab === "cart"
