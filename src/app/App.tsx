@@ -358,7 +358,7 @@ function MechanicProfileScreen({ onLogin, lang, setLang }: { onLogin: () => void
             <div className="overflow-y-auto" style={{ maxHeight: "calc(70vh - 64px)" }}>
               {UZ_REGIONS.map(r => (
                 <button key={r} onClick={() => { setRegion(r); setShowRegionSheet(false); }}
-                  className="w-full flex items-center justify-between px-5 py-4 border-b border-border last:border-0 hover:bg-[#F4F5F7] transition-all text-left">
+                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#F4F5F7] transition-all text-left">
                   <span className="text-[14px] font-medium text-foreground">{r}</span>
                   {region === r && <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
                     <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
