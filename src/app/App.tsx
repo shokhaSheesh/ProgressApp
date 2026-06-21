@@ -1382,7 +1382,7 @@ function ShopPin({ shop, selected, onClick }: { shop: Shop; selected: boolean; o
           ? "w-12 h-12 bg-primary ring-4 ring-primary/30"
           : shop.status === "open"
             ? "w-9 h-9 bg-primary/90 hover:bg-primary"
-            : "w-9 h-9 bg-gray-500/90"
+            : "w-9 h-9 bg-red-500/90 hover:bg-red-600"
       }`}>
         <Store size={selected ? 22 : 16} className="text-white" />
       </div>
@@ -1392,7 +1392,7 @@ function ShopPin({ shop, selected, onClick }: { shop: Shop; selected: boolean; o
         </div>
       )}
       {!selected && (
-        <div className="w-1.5 h-1.5 rounded-full bg-primary mt-0.5 shadow" />
+        <div className={`w-1.5 h-1.5 rounded-full mt-0.5 shadow ${shop.status === "open" ? "bg-primary" : "bg-red-500"}`} />
       )}
     </button>
   );
@@ -1510,14 +1510,14 @@ function ShopsPage() {
 
           {/* Selected shop card — slides up from bottom */}
           {selectedShop && (
-            <div className="absolute bottom-0 left-0 right-0 z-30">
-              <div className="bg-card rounded-t-3xl shadow-2xl px-5 pt-4 pb-5"
-                style={{ boxShadow: "0 -8px 40px rgba(0,0,0,0.18)" }}>
+            <div className="absolute bottom-16 left-0 right-0 z-30 px-3">
+              <div className="bg-card rounded-3xl shadow-2xl px-5 pt-4 pb-5"
+                style={{ boxShadow: "0 -4px 32px rgba(0,0,0,0.15)" }}>
                 {/* Drag handle */}
                 <div className="w-10 h-1 bg-border rounded-full mx-auto mb-3" />
 
                 {/* Header */}
-                <div className="flex items-start justify-between mb-1">
+                <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 pr-2">
                     <h3 className="text-[16px] font-bold text-foreground leading-tight">{selectedShop.name}</h3>
                     <p className="text-[12px] text-muted-foreground mt-0.5 leading-tight">{selectedShop.address}</p>
@@ -1530,17 +1530,10 @@ function ShopsPage() {
                   </div>
                 </div>
 
-                {/* Rating + phone */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex items-center gap-1">
-                    <Star size={12} className="text-amber-400 fill-amber-400" />
-                    <span className="text-[12px] font-semibold text-foreground">{selectedShop.rating}</span>
-                  </div>
-                  <div className="w-1 h-1 rounded-full bg-border" />
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Phone size={11} />
-                    <span className="text-[11px]">{selectedShop.phone}</span>
-                  </div>
+                {/* Phone row */}
+                <div className="flex items-center gap-1 text-muted-foreground mb-3">
+                  <Phone size={11} />
+                  <span className="text-[11px]">{selectedShop.phone}</span>
                 </div>
 
                 {/* Stats row */}
@@ -1569,7 +1562,7 @@ function ShopsPage() {
                   </button>
                   <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary hover:bg-blue-700 text-white text-[13px] font-semibold transition-all shadow-sm">
                     <Store size={15} />
-                    Visit Shop
+                    View Catalog
                   </button>
                 </div>
               </div>
