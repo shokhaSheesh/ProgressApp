@@ -1221,18 +1221,9 @@ function CategoryPage({ category, emoji, onBack, onSelect, onGoToCart, cartIds, 
 
   return (
     <div className="flex flex-col h-full bg-background relative">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
-        <button onClick={onBack} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"><ChevronLeft size={22} /></button>
-        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-xl shrink-0">{emoji}</div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[16px] font-bold text-foreground leading-tight">{category}</p>
-          <p className="text-[11px] text-muted-foreground">{catProducts.length} product{catProducts.length !== 1 ? "s" : ""}</p>
-        </div>
-      </div>
-
       {/* Search + filter */}
       <div className="flex items-center gap-2 px-4 py-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"><ChevronLeft size={22} /></button>
         <div className="flex-1 relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" width="14" height="14" viewBox="0 0 24 24" fill="none">
             <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
