@@ -1059,6 +1059,7 @@ function ProductCardImage({ images, discount, height = "h-32", onClick }: {
   images: string[]; discount?: number; height?: string; onClick: () => void;
 }) {
   const [idx, setIdx] = useState(0);
+  const [liked, setLiked] = useState(false);
   const gesture = useRef<{ x: number; moved: boolean }>({ x: 0, moved: false });
 
   return (
@@ -1075,6 +1076,15 @@ function ProductCardImage({ images, discount, height = "h-32", onClick }: {
     >
       <img src={images[idx]} alt="" className="w-full h-full object-cover" />
       {discount && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">-{discount}%</span>}
+      {/* Like button */}
+      <button
+        onClick={e => { e.stopPropagation(); setLiked(l => !l); }}
+        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center shadow-sm transition-all hover:scale-110"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill={liked ? "#ef4444" : "none"}>
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke={liked ? "#ef4444" : "#6b7280"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
       {images.length > 1 && (
         <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1 pointer-events-none">
           {images.map((_, i) => (
@@ -1316,6 +1326,7 @@ function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, c
     }
   };
   const lowStock = product.stock <= 15;
+  const [liked, setLiked] = useState(false);
   const variations = PRODUCT_VARIATIONS[product.sku] ?? [];
   const [selVars, setSelVars] = useState<Record<string, string>>(() =>
     Object.fromEntries(variations.map(v => [v.name, v.options[0]]))
@@ -1342,15 +1353,22 @@ function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, c
           className="absolute top-4 left-4 z-20 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-md hover:bg-white transition-all">
           <ArrowLeft size={17} />
         </button>
-        {/* Share button */}
-        <button className="absolute top-4 right-4 z-20 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-md hover:bg-white transition-all">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-            <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.8"/>
-            <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
-            <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="1.8"/>
-            <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-          </svg>
-        </button>
+        {/* Like + Share buttons */}
+        <div className="absolute top-4 right-4 z-20 flex gap-2">
+          <button onClick={() => setLiked(l => !l)} className="w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:bg-white transition-all">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill={liked ? "#ef4444" : "none"}>
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke={liked ? "#ef4444" : "currentColor"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button className="w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-md hover:bg-white transition-all">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.8"/>
+              <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
+              <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
         {/* Category badge + dots row */}
         <div className="absolute bottom-3 left-4 right-4 z-20 flex items-center justify-between">
           <span className="px-2.5 py-1 rounded-lg bg-primary text-white text-[11px] font-bold tracking-wide">{product.category}</span>
@@ -1505,14 +1523,9 @@ function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, c
 
       {/* Bottom CTA */}
       <div className="shrink-0 bg-card border-t border-border px-5 py-3 flex gap-3">
-        <button className="w-11 h-11 rounded-xl border border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-all shrink-0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
         {inCart ? (
           <>
-            <div className="flex-1 flex items-center justify-between bg-primary/8 rounded-xl px-3">
+            <div className="flex items-center justify-between bg-primary/8 rounded-xl px-3 gap-2" style={{ minWidth: 120 }}>
               <button onClick={() => changeQ(product.id, -1)} className="w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all">
                 <Minus size={15} />
               </button>
@@ -1521,8 +1534,9 @@ function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, c
                 <Plus size={15} />
               </button>
             </div>
-            <button onClick={onGoToCart} className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-white shadow-md hover:bg-blue-700 transition-all shrink-0">
-              <ShoppingCart size={18} />
+            <button onClick={onGoToCart} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-[14px] font-semibold shadow-md hover:bg-blue-700 transition-all">
+              <ShoppingCart size={17} />
+              Go to Cart
             </button>
           </>
         ) : (
