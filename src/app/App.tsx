@@ -1925,6 +1925,17 @@ function CartPage({ cartIds, setCartIds, cartQty, setCartQty }: {
 
 interface WalletTxn { id: number; label: string; date: string; amount: number; kind: "earn" | "withdraw"; }
 
+type WithdrawStatus = "pending" | "processing" | "out_for_delivery" | "delivered" | "failed";
+interface WithdrawRequest {
+  id: number; method: "card" | "cash"; amount: number; requestedAt: string;
+  status: WithdrawStatus; destination: string;
+}
+
+const MOCK_WITHDRAW_REQUESTS: WithdrawRequest[] = [
+  { id: 1, method: "cash",  amount: 120000, requestedAt: "Jun 21, 2026 · 09:14", status: "out_for_delivery", destination: "Tashkent, Yunusabad, Bog'ishamol St. 12" },
+  { id: 2, method: "card",  amount: 85000,  requestedAt: "Jun 20, 2026 · 17:42", status: "processing",      destination: "•••• 4471" },
+];
+
 type WithdrawFlow = "card" | "cash" | null;
 
 // Sub-page: Wallet balance + withdraw
@@ -2225,17 +2236,85 @@ function WithdrawCashPage({ isSeller, balance, defaultName, defaultPhone, accent
 }
 
 // Sub-page: Transaction history grouped by month
-function TransactionHistoryPage({ role, transactions, onBack }: { role: Role; transactions: WalletTxn[]; onBack: () => void }) {
+const WHEEL_ITEM_H = 40;
+const WHEEL_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function WheelCol({ items, selected, onSelect, fmt = (x: string) => x }: {
+  items: (string|number)[]; selected: number|string; onSelect: (v: any) => void; fmt?: (x: string) => string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const idx = items.indexOf(selected as any);
+    if (ref.current && idx >= 0) ref.current.scrollTop = idx * WHEEL_ITEM_H;
+  }, [selected]);
+  return (
+    <div ref={ref} className="flex-1 overflow-y-auto snap-y snap-mandatory" style={{ height: 200, scrollbarWidth: "none" }}
+      onScroll={e => {
+        const idx = Math.round(e.currentTarget.scrollTop / WHEEL_ITEM_H);
+        if (items[idx] !== undefined) onSelect(items[idx]);
+      }}>
+      <div style={{ paddingTop: 80, paddingBottom: 80 }}>
+        {items.map((item, i) => {
+          const isActive = item === selected;
+          return (
+            <div key={i} className="snap-center flex items-center justify-center cursor-pointer" style={{ height: WHEEL_ITEM_H }}
+              onClick={() => onSelect(item)}>
+              <span className={`transition-all ${isActive ? "font-bold text-foreground text-[17px]" : "text-[15px] text-muted-foreground font-medium"}`}>
+                {fmt(String(item))}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DatePickerWheel({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const now = new Date();
+  const selYear  = value ? parseInt(value.split("-")[0]) : now.getFullYear();
+  const selMonth = value ? parseInt(value.split("-")[1]) : now.getMonth() + 1;
+  const selDay   = value ? parseInt(value.split("-")[2]) : now.getDate();
+
+  const years = Array.from({ length: 6 }, (_, i) => now.getFullYear() - 2 + i);
+  const days  = Array.from({ length: 31 }, (_, i) => i + 1);
+
+  const commit = (y: number, m: number, d: number) => {
+    const clamped = Math.min(d, new Date(y, m, 0).getDate());
+    onChange(`${y}-${String(m).padStart(2,"0")}-${String(clamped).padStart(2,"0")}`);
+  };
+
+  return (
+    <div className="relative">
+      <div className="absolute left-0 right-0 pointer-events-none rounded-xl bg-[#F4F5F7]"
+        style={{ top: "calc(50% - 20px)", height: 40 }} />
+      <div className="absolute inset-x-0 top-0 h-16 pointer-events-none z-10"
+        style={{ background: "linear-gradient(to bottom, var(--card), transparent)" }} />
+      <div className="absolute inset-x-0 bottom-0 h-16 pointer-events-none z-10"
+        style={{ background: "linear-gradient(to top, var(--card), transparent)" }} />
+      <div className="flex gap-1" style={{ height: 200 }}>
+        <WheelCol items={WHEEL_MONTHS} selected={WHEEL_MONTHS[selMonth - 1]} onSelect={(m: string) => commit(selYear, WHEEL_MONTHS.indexOf(m) + 1, selDay)} />
+        <WheelCol items={days} selected={selDay} onSelect={(d: number) => commit(selYear, selMonth, d)} fmt={v => String(v).padStart(2,"0")} />
+        <WheelCol items={years} selected={selYear} onSelect={(y: number) => commit(y, selMonth, selDay)} />
+      </div>
+    </div>
+  );
+}
+
+function TransactionHistoryPage({ role, transactions, requests, onBack }: {
+  role: Role; transactions: WalletTxn[]; requests: WithdrawRequest[]; onBack: () => void;
+}) {
   const isSeller = role === "seller";
+  const [activeTab, setActiveTab] = useState<"history"|"requests">("history");
   const [showFilter, setShowFilter] = useState(false);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate]     = useState("");
   const [appliedFrom, setAppliedFrom] = useState("");
   const [appliedTo, setAppliedTo]     = useState("");
+  const [activeWheel, setActiveWheel] = useState<"from"|"to"|null>(null);
 
   const isFiltered = appliedFrom || appliedTo;
-
-  const parseDate = (s: string) => s ? new Date(s).getTime() : null;
+  const parseDate  = (s: string) => s ? new Date(s).getTime() : null;
 
   const filtered = transactions.filter(t => {
     const ts = new Date(t.date).getTime();
@@ -2246,7 +2325,6 @@ function TransactionHistoryPage({ role, transactions, onBack }: { role: Role; tr
     return true;
   });
 
-  // Group by month label
   const groups: { month: string; items: WalletTxn[]; total: number }[] = [];
   filtered.forEach(t => {
     const parts = t.date.split(" ");
@@ -2257,8 +2335,29 @@ function TransactionHistoryPage({ role, transactions, onBack }: { role: Role; tr
     g.total += t.kind === "earn" ? t.amount : -t.amount;
   });
 
+  const fmtLabel = (iso: string) => {
+    if (!iso) return "Select date";
+    const [y, m, d] = iso.split("-");
+    return `${WHEEL_MONTHS[parseInt(m)-1]} ${parseInt(d)}, ${y}`;
+  };
+
   const applyFilter = () => { setAppliedFrom(fromDate); setAppliedTo(toDate); setShowFilter(false); };
   const clearFilter = () => { setFromDate(""); setToDate(""); setAppliedFrom(""); setAppliedTo(""); setShowFilter(false); };
+
+  // Status config for withdrawal requests
+  const statusConfig: Record<WithdrawStatus, { label: string; color: string; bg: string }> = {
+    pending:           { label: "Pending",          color: "text-amber-600",   bg: "bg-amber-50" },
+    processing:        { label: "Processing",        color: "text-blue-600",    bg: "bg-blue-50" },
+    out_for_delivery:  { label: "Out for Delivery",  color: "text-violet-600",  bg: "bg-violet-50" },
+    delivered:         { label: "Delivered",         color: "text-emerald-600", bg: "bg-emerald-50" },
+    failed:            { label: "Failed",            color: "text-red-500",     bg: "bg-red-50" },
+  };
+
+  const cardSteps:  WithdrawStatus[] = ["pending", "processing", "delivered"];
+  const cashSteps:  WithdrawStatus[] = ["pending", "processing", "out_for_delivery", "delivered"];
+
+  const pendingRequests = requests.filter(r => r.status !== "delivered" && r.status !== "failed");
+  const hasRequests = pendingRequests.length > 0;
 
   return (
     <div className="flex flex-col h-full bg-background relative">
@@ -2268,88 +2367,171 @@ function TransactionHistoryPage({ role, transactions, onBack }: { role: Role; tr
           <ChevronLeft size={20} />
         </button>
         <p className="flex-1 text-[17px] font-bold text-foreground">Bonus History</p>
-        <button onClick={() => setShowFilter(true)}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors relative ${isFiltered ? "bg-primary text-white" : "bg-[#F4F5F7] text-muted-foreground hover:text-foreground"}`}>
-          <List size={18} />
-          {isFiltered && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-card" />}
-        </button>
+        {activeTab === "history" && (
+          <button onClick={() => { setShowFilter(true); setActiveWheel(null); }}
+            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors relative ${isFiltered ? "bg-primary text-white" : "bg-[#F4F5F7] text-muted-foreground hover:text-foreground"}`}>
+            <List size={18} />
+            {isFiltered && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-card" />}
+          </button>
+        )}
       </div>
 
-      {/* Applied filter chip */}
-      {isFiltered && (
-        <div className="px-4 pt-3 shrink-0 flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-primary/10 text-primary text-[11px] font-semibold rounded-full px-3 py-1">
-            <Clock size={11} />
-            {appliedFrom && appliedTo ? `${appliedFrom} → ${appliedTo}` : appliedFrom ? `From ${appliedFrom}` : `Until ${appliedTo}`}
-          </div>
-          <button onClick={clearFilter} className="text-[11px] text-muted-foreground font-medium underline">Clear</button>
-        </div>
-      )}
-
-      {/* List */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        {groups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 gap-2">
-            <Receipt size={32} className="text-muted-foreground opacity-40" />
-            <p className="text-[13px] text-muted-foreground">No transactions in this range</p>
-          </div>
-        ) : groups.map(g => (
-          <div key={g.month} className="mb-5">
-            <div className="flex items-center justify-between mb-2.5">
-              <p className="text-[12px] font-semibold text-muted-foreground">{g.month}</p>
-              <p className={`text-[12px] font-bold ${g.total >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                {g.total >= 0 ? "+" : ""}{fmtUZS(g.total)} UZS
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              {g.items.map(t => (
-                <div key={t.id} className="flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
-                    {t.kind === "earn" ? <Gift size={17} /> : <ArrowDownToLine size={17} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-foreground leading-tight">{t.label}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{t.date}</p>
-                  </div>
-                  <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-red-500"}`}>
-                    {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Tabs */}
+      <div className="flex gap-1 px-4 pt-3 pb-0 shrink-0">
+        {([["history", "History"], ["requests", "Requests"]] as const).map(([key, label]) => (
+          <button key={key} onClick={() => setActiveTab(key)}
+            className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all relative ${activeTab === key ? "bg-primary text-white" : "bg-[#F4F5F7] text-muted-foreground"}`}>
+            {label}
+            {key === "requests" && hasRequests && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                {pendingRequests.length}
+              </span>
+            )}
+          </button>
         ))}
       </div>
+
+      {activeTab === "history" ? (
+        <>
+          {/* Applied filter chip */}
+          {isFiltered && (
+            <div className="px-4 pt-3 shrink-0 flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-primary/10 text-primary text-[11px] font-semibold rounded-full px-3 py-1">
+                <Clock size={11} />
+                {appliedFrom && appliedTo ? `${fmtLabel(appliedFrom)} → ${fmtLabel(appliedTo)}` : appliedFrom ? `From ${fmtLabel(appliedFrom)}` : `Until ${fmtLabel(appliedTo)}`}
+              </div>
+              <button onClick={clearFilter} className="text-[11px] text-muted-foreground font-medium underline">Clear</button>
+            </div>
+          )}
+
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            {groups.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 gap-2">
+                <Receipt size={32} className="text-muted-foreground opacity-40" />
+                <p className="text-[13px] text-muted-foreground">No transactions in this range</p>
+              </div>
+            ) : groups.map(g => (
+              <div key={g.month} className="mb-5">
+                <div className="flex items-center justify-between mb-2.5">
+                  <p className="text-[12px] font-semibold text-muted-foreground">{g.month}</p>
+                  <p className={`text-[12px] font-bold ${g.total >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    {g.total >= 0 ? "+" : ""}{fmtUZS(g.total)} UZS
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {g.items.map(t => (
+                    <div key={t.id} className="flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
+                        {t.kind === "earn" ? <Gift size={17} /> : <ArrowDownToLine size={17} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-foreground leading-tight">{t.label}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{t.date}</p>
+                      </div>
+                      <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-red-500"}`}>
+                        {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          {requests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 gap-2">
+              <ArrowDownToLine size={32} className="text-muted-foreground opacity-40" />
+              <p className="text-[13px] text-muted-foreground">No withdrawal requests yet</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {requests.map(req => {
+                const steps = req.method === "card" ? cardSteps : cashSteps;
+                const curIdx = steps.indexOf(req.status);
+                const cfg = statusConfig[req.status];
+                return (
+                  <div key={req.id} className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                    {/* Top row */}
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${req.method === "card" ? "bg-blue-50 text-primary" : "bg-emerald-50 text-emerald-600"}`}>
+                        {req.method === "card" ? <CreditCard size={18} /> : <Banknote size={18} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-bold text-foreground">{req.method === "card" ? "Card Transfer" : "Cash Delivery"}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{req.destination}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{req.requestedAt}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className="text-[14px] font-bold text-foreground">−{fmtUZS(req.amount)}</span>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${cfg.color} ${cfg.bg}`}>{cfg.label}</span>
+                      </div>
+                    </div>
+
+                    {/* Status stepper */}
+                    <div className="flex items-center">
+                      {steps.map((step, i) => {
+                        const done = i <= curIdx;
+                        const isLast = i === steps.length - 1;
+                        const sCfg = statusConfig[step];
+                        return (
+                          <div key={step} className="contents">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all ${done ? "border-primary bg-primary" : "border-border bg-background"}`}>
+                                {done && <Check size={12} className="text-white" strokeWidth={3} />}
+                              </div>
+                              <p className={`text-[9px] font-semibold text-center leading-tight max-w-[48px] ${done ? "text-primary" : "text-muted-foreground"}`}>
+                                {sCfg.label}
+                              </p>
+                            </div>
+                            {!isLast && (
+                              <div className={`flex-1 h-0.5 mb-4 mx-1 ${i < curIdx ? "bg-primary" : "bg-border"}`} />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Filter bottom sheet */}
       {showFilter && (
         <div className="absolute inset-0 z-40 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.45)" }}
           onClick={() => setShowFilter(false)}>
           <div className="bg-card rounded-t-3xl px-4 pt-3 pb-8" onClick={e => e.stopPropagation()}>
-            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-5" />
-            <p className="text-[16px] font-bold text-foreground mb-1">Filter by Date</p>
-            <p className="text-[12px] text-muted-foreground mb-5">Select a date range to narrow your history</p>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-4" />
+            <p className="text-[16px] font-bold text-foreground mb-4">Filter by Date</p>
 
-            <div className="flex flex-col gap-4 mb-6">
-              <div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">From</p>
-                <div className="flex items-center gap-3 bg-background border border-border rounded-2xl px-4 py-3.5">
-                  <Clock size={16} className="text-primary shrink-0" />
-                  <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
-                    className="flex-1 bg-transparent text-[14px] text-foreground outline-none" />
-                </div>
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">To</p>
-                <div className="flex items-center gap-3 bg-background border border-border rounded-2xl px-4 py-3.5">
-                  <Clock size={16} className="text-primary shrink-0" />
-                  <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
-                    className="flex-1 bg-transparent text-[14px] text-foreground outline-none" />
-                </div>
-              </div>
+            <div className="flex gap-3 mb-4">
+              {(["from","to"] as const).map(side => (
+                <button key={side} onClick={() => setActiveWheel(activeWheel === side ? null : side)}
+                  className={`flex-1 rounded-2xl px-3 py-3 text-left border-2 transition-all ${activeWheel === side ? "border-primary bg-primary/5" : "border-border bg-background"}`}>
+                  <p className={`text-[10px] font-semibold uppercase tracking-wider mb-0.5 ${activeWheel === side ? "text-primary" : "text-muted-foreground"}`}>
+                    {side === "from" ? "From" : "To"}
+                  </p>
+                  <p className={`text-[13px] font-semibold ${(side === "from" ? fromDate : toDate) ? "text-foreground" : "text-muted-foreground"}`}>
+                    {fmtLabel(side === "from" ? fromDate : toDate)}
+                  </p>
+                </button>
+              ))}
             </div>
 
-            <div className="flex gap-3">
+            {activeWheel && (
+              <div className="mb-2">
+                <DatePickerWheel
+                  value={activeWheel === "from" ? fromDate : toDate}
+                  onChange={v => activeWheel === "from" ? setFromDate(v) : setToDate(v)}
+                />
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-4">
               <button onClick={clearFilter}
                 className="flex-1 rounded-2xl py-3.5 text-[14px] font-semibold text-muted-foreground bg-[#F4F5F7] active:scale-[0.98] transition-all">
                 Clear
@@ -2673,7 +2855,7 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
   const goBack = () => { setSub(null); onSubPageChange?.(false); };
 
   if (sub === "wallet")  return <WalletPage role={role} balance={balance} name={name} phone={phone} onBack={goBack} />;
-  if (sub === "history") return <TransactionHistoryPage role={role} transactions={transactions} onBack={goBack} />;
+  if (sub === "history") return <TransactionHistoryPage role={role} transactions={transactions} requests={MOCK_WITHDRAW_REQUESTS} onBack={goBack} />;
   if (sub === "info")    return <MyInfoPage role={role} name={name} phone={phone} onBack={goBack} />;
   if (sub === "orders")  return <OrderHistoryPage onBack={goBack} />;
 
