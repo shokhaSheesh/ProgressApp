@@ -1153,8 +1153,12 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          {/* Badge */}
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-white" />
+        </button>
+        <button className="w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-all shrink-0">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </button>
       </div>
 
@@ -1389,7 +1393,7 @@ function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, c
         <div className="bg-card rounded-t-[32px] -mt-7 relative px-5 pt-6 pb-4">
 
           {/* Name + Brand row */}
-          <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-start justify-between gap-2 mb-1 pt-2">
             <h2 className="text-[17px] font-bold text-foreground leading-snug flex-1">{product.name}</h2>
           </div>
           <p className="text-[12px] text-muted-foreground font-medium mb-3">by <span className="text-foreground font-semibold">{product.brand}</span> · SKU: {product.sku}</p>
@@ -1534,8 +1538,8 @@ function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, c
                 <Plus size={15} />
               </button>
             </div>
-            <button onClick={onGoToCart} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-[14px] font-semibold shadow-md hover:bg-blue-700 transition-all">
-              <ShoppingCart size={17} />
+            <button onClick={onGoToCart} className="shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl bg-primary text-white text-[13px] font-semibold shadow-md hover:bg-blue-700 transition-all">
+              <ShoppingCart size={15} />
               Go to Cart
             </button>
           </>
