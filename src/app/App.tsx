@@ -1648,26 +1648,33 @@ interface FeedbackModalProps {
   type: "success" | "error";
   title: string;
   body: string;
-  primaryLabel: string;
-  secondaryLabel?: string;
-  onPrimary: () => void;
-  onSecondary?: () => void;
   onClose: () => void;
+  // kept for call-site compat but unused in render
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  onPrimary?: () => void;
+  onSecondary?: () => void;
 }
 
-function FeedbackModal({ type, title, body, primaryLabel, secondaryLabel, onPrimary, onSecondary, onClose }: FeedbackModalProps) {
+function FeedbackModal({ type, title, body, onClose }: FeedbackModalProps) {
   const isSuccess = type === "success";
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center px-4 pb-8"
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-6"
       style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
       onClick={onClose}>
-      <div className="w-full max-w-sm bg-card rounded-3xl overflow-hidden"
+      <div className="w-full max-w-sm bg-card rounded-3xl relative"
         style={{ boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}
         onClick={e => e.stopPropagation()}>
 
-        {/* Icon area */}
-        <div className={`flex flex-col items-center pt-9 pb-6 ${isSuccess ? "bg-green-50" : "bg-red-50"}`}>
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-1 ${isSuccess ? "bg-green-100" : "bg-red-100"}`}>
+        {/* X button */}
+        <button onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:bg-[#E8E9EC] transition-all">
+          <X size={16} />
+        </button>
+
+        {/* Content */}
+        <div className="flex flex-col items-center px-6 pt-10 pb-8 gap-4 text-center">
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center ${isSuccess ? "bg-green-100" : "bg-red-100"}`}>
             {isSuccess ? (
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
                 <path d="M20 6L9 17l-5-5" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1678,25 +1685,9 @@ function FeedbackModal({ type, title, body, primaryLabel, secondaryLabel, onPrim
               </svg>
             )}
           </div>
-        </div>
-
-        {/* Text + actions */}
-        <div className="px-6 pt-5 pb-7 flex flex-col gap-5">
-          <div className="flex flex-col items-center gap-1.5 text-center">
+          <div className="flex flex-col gap-1.5">
             <p className="text-[18px] font-bold text-foreground">{title}</p>
             <p className="text-[13px] text-muted-foreground leading-snug">{body}</p>
-          </div>
-          <div className="flex flex-col gap-2.5">
-            <button onClick={onPrimary}
-              className={`w-full py-3.5 rounded-2xl text-[14px] font-bold text-white transition-all ${isSuccess ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"}`}>
-              {primaryLabel}
-            </button>
-            {secondaryLabel && (
-              <button onClick={onSecondary ?? onClose}
-                className="w-full py-3.5 rounded-2xl text-[14px] font-semibold text-muted-foreground bg-[#F4F5F7] hover:bg-[#E8E9EC] transition-all">
-                {secondaryLabel}
-              </button>
-            )}
           </div>
         </div>
       </div>
