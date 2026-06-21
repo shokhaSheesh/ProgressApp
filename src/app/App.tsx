@@ -652,6 +652,33 @@ const PRODUCTS: Product[] = [
 // Unique product names for search suggestions
 const UNIQUE_PRODUCTS = PRODUCTS.filter((p, _, arr) => arr.findIndex(x => x.name === p.name) === arr.indexOf(p));
 
+const PRODUCT_EXTRA_IMGS: Record<string, string[]> = {
+  "BSH-OF-4722": [
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=600&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&h=600&fit=crop&auto=format",
+  ],
+  "BRM-BD-09A778": [
+    "https://images.unsplash.com/photo-1609152168127-b89b33eb6af5?w=600&h=600&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&h=600&fit=crop&auto=format",
+  ],
+  "NGK-BKR6E-4PK": [
+    "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&h=600&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1582639510494-c80b5de9f148?w=600&h=600&fit=crop&auto=format",
+  ],
+  "CNT-205-55R16-91V": [
+    "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&h=600&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600&h=600&fit=crop&auto=format",
+  ],
+  "DNS-AF-268": [
+    "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=600&h=600&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?w=600&h=600&fit=crop&auto=format",
+  ],
+  "MNR-E1156": [
+    "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=600&h=600&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=600&h=600&fit=crop&auto=format",
+  ],
+};
+
 // ─── SEARCH PAGE ──────────────────────────────────────────────────────────────
 function SearchPage({ onSelect, onClose, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
   onSelect: (p: Product) => void; onClose: () => void; onGoToCart?: () => void;
@@ -1166,6 +1193,57 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
 }
 
 // ─── PRODUCT DETAIL PAGE ──────────────────────────────────────────────────────
+function ImageViewer({ images, startIndex, onClose }: {
+  images: string[]; startIndex: number; onClose: () => void;
+}) {
+  const [current, setCurrent] = useState(startIndex);
+  const prev = () => setCurrent(i => (i - 1 + images.length) % images.length);
+  const next = () => setCurrent(i => (i + 1) % images.length);
+
+  return (
+    <div className="absolute inset-0 z-50 bg-black flex flex-col">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+        <div className="flex gap-1.5 items-center">
+          {images.map((_, i) => (
+            <button key={i} onClick={() => setCurrent(i)}
+              className={`rounded-full transition-all duration-200 ${i === current ? "w-5 h-[7px] bg-white" : "w-[7px] h-[7px] bg-white/35"}`}
+            />
+          ))}
+        </div>
+        <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all">
+          <X size={17} />
+        </button>
+      </div>
+
+      {/* Main image */}
+      <div className="flex-1 relative flex items-center justify-center">
+        <img src={images[current]} alt="" className="w-full h-full object-contain" />
+        {images.length > 1 && (
+          <>
+            <button onClick={prev} className="absolute left-0 top-0 w-1/2 h-full" />
+            <button onClick={next} className="absolute right-0 top-0 w-1/2 h-full" />
+          </>
+        )}
+      </div>
+
+      {/* Thumbnails */}
+      {images.length > 1 && (
+        <div className="shrink-0 pb-8 pt-4 px-4">
+          <div className="flex gap-2 justify-center">
+            {images.map((img, i) => (
+              <button key={i} onClick={() => setCurrent(i)}
+                className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200 ${i === current ? "border-white scale-105" : "border-transparent opacity-45"}`}>
+                <img src={img} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setCartQty }: {
   product: Product;
   onBack: () => void;
@@ -1176,6 +1254,9 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setC
 }) {
   const inCart = cartIds.includes(product.id);
   const similar = PRODUCTS.filter(p => p.id !== product.id && p.category === product.category).slice(0, 6);
+  const images = [product.img, ...(PRODUCT_EXTRA_IMGS[product.sku] ?? [])];
+  const [imgIdx, setImgIdx] = useState(0);
+  const [showViewer, setShowViewer] = useState(false);
   const getQ = (id: number) => cartQty[id] ?? 1;
   const changeQ = (id: number, delta: number) => {
     const next = getQ(id) + delta;
@@ -1189,19 +1270,28 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setC
   const lowStock = product.stock <= 15;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Hero image with back button overlay */}
+    <div className="flex flex-col h-full relative">
+      {showViewer && <ImageViewer images={images} startIndex={imgIdx} onClose={() => setShowViewer(false)} />}
+
+      {/* Hero carousel */}
       <div className="relative shrink-0" style={{ height: 220 }}>
-        <img src={product.img} alt={product.name} className="w-full h-full object-cover" />
+        <img src={images[imgIdx]} alt={product.name} className="w-full h-full object-cover cursor-pointer" onClick={() => setShowViewer(true)} />
         {/* Gradient overlay */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 60%)" }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 60%)" }} />
+        {/* Left/right tap zones (prev/next) */}
+        {images.length > 1 && (
+          <>
+            <button onClick={() => setImgIdx(i => (i - 1 + images.length) % images.length)} className="absolute left-0 top-10 bottom-10 w-1/4 z-10" />
+            <button onClick={() => setImgIdx(i => (i + 1) % images.length)} className="absolute right-0 top-10 bottom-10 w-1/4 z-10" />
+          </>
+        )}
         {/* Back button */}
         <button onClick={onBack}
-          className="absolute top-4 left-4 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-md hover:bg-white transition-all">
+          className="absolute top-4 left-4 z-20 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-md hover:bg-white transition-all">
           <ArrowLeft size={17} />
         </button>
         {/* Share button */}
-        <button className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-md hover:bg-white transition-all">
+        <button className="absolute top-4 right-4 z-20 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-md hover:bg-white transition-all">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
             <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.8"/>
             <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
@@ -1209,9 +1299,18 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setC
             <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
           </svg>
         </button>
-        {/* Category badge */}
-        <div className="absolute bottom-3 left-4">
+        {/* Category badge + dots row */}
+        <div className="absolute bottom-3 left-4 right-4 z-20 flex items-center justify-between">
           <span className="px-2.5 py-1 rounded-lg bg-primary text-white text-[11px] font-bold tracking-wide">{product.category}</span>
+          {images.length > 1 && (
+            <div className="flex gap-1.5 items-center pr-1">
+              {images.map((_, i) => (
+                <button key={i} onClick={() => setImgIdx(i)}
+                  className={`rounded-full transition-all duration-200 ${i === imgIdx ? "w-4 h-[6px] bg-white" : "w-[6px] h-[6px] bg-white/55"}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1334,12 +1433,24 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setC
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <button
-          onClick={() => setCartIds(ids => inCart ? ids.filter(i => i !== product.id) : [...ids, product.id])}
-          className={`flex-1 py-3 rounded-xl text-[14px] font-semibold transition-all flex items-center justify-center gap-2 ${inCart ? "bg-primary/10 text-primary" : "bg-primary text-white hover:bg-blue-700 shadow-md"}`}>
-          <ShoppingCart size={16} />
-          {inCart ? "Added to Cart" : "Add to Cart"}
-        </button>
+        {inCart ? (
+          <div className="flex-1 flex items-center justify-between bg-primary/8 rounded-xl px-4">
+            <button onClick={() => changeQ(product.id, -1)} className="w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all">
+              <Minus size={15} />
+            </button>
+            <span className="text-[16px] font-bold text-primary">{getQ(product.id)}</span>
+            <button onClick={() => changeQ(product.id, 1)} className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all">
+              <Plus size={15} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setCartIds(ids => [...ids, product.id]); setCartQty(q => ({ ...q, [product.id]: 1 })); }}
+            className="flex-1 py-3 rounded-xl text-[14px] font-semibold bg-primary text-white hover:bg-blue-700 shadow-md transition-all flex items-center justify-center gap-2">
+            <ShoppingCart size={16} />
+            Add to Cart
+          </button>
+        )}
       </div>
     </div>
   );
