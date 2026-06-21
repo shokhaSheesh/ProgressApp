@@ -2992,10 +2992,10 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
                 return (
                   <button key={lang.code}
                     onClick={() => { setActiveLang(lang.code); setShowLangSheet(false); }}
-                    className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all active:scale-[0.98] ${isActive ? "border-primary bg-primary/5" : "border-border bg-background"}`}
+                    className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl border-2 transition-all active:scale-[0.98] ${isActive ? "border-primary bg-primary/5" : "border-border bg-background"}`}
                     style={{ boxShadow: isActive ? "0 4px 16px rgba(37,99,235,0.12)" : "0 2px 8px rgba(0,0,0,0.04)" }}>
                     {/* Flag */}
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-[32px] shrink-0 ${isActive ? "bg-primary/10" : "bg-[#F4F5F7]"}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[24px] shrink-0 ${isActive ? "bg-primary/10" : "bg-[#F4F5F7]"}`}>
                       {lang.flag}
                     </div>
                     {/* Label */}
