@@ -828,7 +828,7 @@ function SearchPage({ onSelect, onClose, onGoToCart, cartIds, setCartIds, cartQt
             ) : (
               <button onClick={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
                 className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
-                + Add to Cart
+                Add to Cart
               </button>
             )}
           </div>
@@ -1233,7 +1233,7 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
                       <button
                         onClick={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
                         className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
-                        + Add to Cart
+                        Add to Cart
                       </button>
                     )}
                   </div>
@@ -1393,7 +1393,7 @@ function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, c
         <div className="bg-card rounded-t-[32px] -mt-7 relative px-5 pt-6 pb-4">
 
           {/* Name + Brand row */}
-          <div className="flex items-start justify-between gap-2 mb-1 pt-2">
+          <div className="flex items-start justify-between gap-2 mb-1 pt-5">
             <h2 className="text-[17px] font-bold text-foreground leading-snug flex-1">{product.name}</h2>
           </div>
           <p className="text-[12px] text-muted-foreground font-medium mb-3">by <span className="text-foreground font-semibold">{product.brand}</span> · SKU: {product.sku}</p>
@@ -1511,7 +1511,7 @@ function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, c
                             <button
                               onClick={() => { setCartIds(ids => [...ids, sp.id]); setCartQty(q => ({ ...q, [sp.id]: 1 })); }}
                               className="w-full py-1.5 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
-                              + Add to Cart
+                              Add to Cart
                             </button>
                           )}
                         </div>
@@ -1701,7 +1701,7 @@ function ShopProductCard({ p, inCart, qty, onAdd, onChangeQty, onSelect }: {
             </div>
           ) : (
             <button onClick={onAdd} className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
-              + Add to Cart
+              Add to Cart
             </button>
           )}
         </div>
