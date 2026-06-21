@@ -1055,11 +1055,11 @@ function SearchPage({ onSelect, onClose, onGoToCart, onSelectCategory, cartIds, 
   );
 }
 
-function ProductCardImage({ images, discount, height = "h-32", onClick }: {
-  images: string[]; discount?: number; height?: string; onClick: () => void;
+function ProductCardImage({ images, discount, height = "h-32", onClick, initialLiked = false }: {
+  images: string[]; discount?: number; height?: string; onClick: () => void; initialLiked?: boolean;
 }) {
   const [idx, setIdx] = useState(0);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(initialLiked);
   const gesture = useRef<{ x: number; moved: boolean }>({ x: 0, moved: false });
 
   return (
@@ -1307,25 +1307,8 @@ const NOTIF_DATA = [
   { id: 7, type: "promo",  title: "Tire Season",       body: "Get ready for summer — 15% off all tires",      time: "1 week ago", read: true  },
 ];
 
-function NotifIcon({ type }: { type: string }) {
-  const cfg: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {
-    order: { bg: "bg-blue-50",   color: "text-blue-500",  icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2L19 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-    price: { bg: "bg-green-50",  color: "text-green-500", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-    promo: { bg: "bg-orange-50", color: "text-orange-500",icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-    new:   { bg: "bg-purple-50", color: "text-purple-500",icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg> },
-  };
-  const c = cfg[type] ?? cfg.new;
-  return (
-    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${c.bg} ${c.color}`}>
-      {c.icon}
-    </div>
-  );
-}
-
 function NotificationsPage({ onBack }: { onBack: () => void }) {
-  const [tab, setTab] = useState<"all" | "unread">("all");
   const [items, setItems] = useState(NOTIF_DATA);
-  const displayed = tab === "unread" ? items.filter(n => !n.read) : items;
   const unreadCount = items.filter(n => !n.read).length;
 
   return (
@@ -1338,36 +1321,29 @@ function NotificationsPage({ onBack }: { onBack: () => void }) {
         <span className="flex-1 text-[17px] font-bold text-foreground">Notifications</span>
         {unreadCount > 0 && (
           <button onClick={() => setItems(its => its.map(n => ({ ...n, read: true })))}
-            className="text-[12px] font-semibold text-primary">
-            Mark all read
+            className="text-muted-foreground hover:text-primary transition-colors p-1">
+            {/* Double tick */}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M2 12l5 5L17 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M7 12l5 5L22 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 px-4 pt-3 pb-2 shrink-0">
-        {(["all", "unread"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-xl text-[13px] font-semibold transition-all capitalize ${tab === t ? "bg-primary text-white" : "bg-[#F4F5F7] text-muted-foreground"}`}>
-            {t === "unread" ? `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}` : "All"}
-          </button>
-        ))}
-      </div>
-
       {/* List */}
       <div className="flex-1 overflow-y-auto">
-        {displayed.length === 0 ? (
+        {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 pb-16">
             <div className="w-16 h-16 rounded-full bg-[#F4F5F7] flex items-center justify-center text-3xl">🔔</div>
-            <p className="text-[14px] font-semibold text-foreground">No unread notifications</p>
+            <p className="text-[14px] font-semibold text-foreground">No notifications</p>
             <p className="text-[12px] text-muted-foreground">You're all caught up!</p>
           </div>
         ) : (
-          <div className="px-4 py-2 flex flex-col gap-1">
-            {displayed.map(n => (
+          <div className="px-4 py-2 flex flex-col gap-0.5">
+            {items.map(n => (
               <button key={n.id} onClick={() => setItems(its => its.map(i => i.id === n.id ? { ...i, read: true } : i))}
                 className={`flex items-start gap-3 px-3 py-3.5 rounded-2xl text-left transition-all ${n.read ? "bg-transparent" : "bg-primary/5"}`}>
-                <NotifIcon type={n.type} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-[13px] font-bold text-foreground leading-tight">{n.title}</p>
@@ -1430,7 +1406,7 @@ function LikedItemsPage({ likedIds, onSelect, onGoToCart, onBack, cartIds, setCa
               const inCart = cartIds.includes(p.id);
               return (
                 <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                  <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={() => onSelect(p)} />
+                  <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} initialLiked={true} onClick={() => onSelect(p)} />
                   <div className="p-2.5 flex flex-col flex-1">
                     <button onClick={() => onSelect(p)} className="text-left mb-0.5">
                       <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
@@ -1465,9 +1441,10 @@ function LikedItemsPage({ likedIds, onSelect, onGoToCart, onBack, cartIds, setCa
   );
 }
 
-function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
+function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setCartIds, cartQty, setCartQty }: {
   onSelect: (p: Product) => void;
   onGoToCart: () => void;
+  onSubPageChange: (active: boolean) => void;
   cartIds: number[];
   setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
   cartQty: Record<number, number>;
@@ -1502,13 +1479,13 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
   const row1 = CATEGORIES.slice(0, Math.ceil(CATEGORIES.length / 2));
   const row2 = CATEGORIES.slice(Math.ceil(CATEGORIES.length / 2));
 
-  if (showNotifications) return <NotificationsPage onBack={() => setShowNotifications(false)} />;
-  if (showLiked) return <LikedItemsPage likedIds={likedIds} onBack={() => setShowLiked(false)}
-    onSelect={p => { setShowLiked(false); onSelect(p); }} onGoToCart={onGoToCart}
+  if (showNotifications) return <NotificationsPage onBack={() => { setShowNotifications(false); onSubPageChange(false); }} />;
+  if (showLiked) return <LikedItemsPage likedIds={likedIds} onBack={() => { setShowLiked(false); onSubPageChange(false); }}
+    onSelect={p => { setShowLiked(false); onSubPageChange(false); onSelect(p); }} onGoToCart={onGoToCart}
     cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />;
   if (activeCatPage) {
     return <CategoryPage category={activeCatPage.label} emoji={activeCatPage.emoji}
-      onBack={() => setActiveCatPage(null)} onSelect={onSelect} onGoToCart={onGoToCart}
+      onBack={() => { setActiveCatPage(null); onSubPageChange(false); }} onSelect={onSelect} onGoToCart={onGoToCart}
       cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />;
   }
 
@@ -1539,14 +1516,14 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
             Search parts, brands...
           </div>
         </button>
-        <button onClick={() => setShowNotifications(true)} className="relative w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shrink-0">
+        <button onClick={() => { setShowNotifications(true); onSubPageChange(true); }} className="relative w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-white" />
         </button>
-        <button onClick={() => setShowLiked(true)} className="w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-all shrink-0">
+        <button onClick={() => { setShowLiked(true); onSubPageChange(true); }} className="w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-all shrink-0">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
@@ -1565,7 +1542,7 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
             {[row1, row2].map((row, ri) => (
               <div key={ri} className="flex gap-2.5">
                 {row.map((cat) => (
-                  <button key={cat.label} onClick={() => setActiveCatPage({ label: cat.label, emoji: cat.emoji })}
+                  <button key={cat.label} onClick={() => { setActiveCatPage({ label: cat.label, emoji: cat.emoji }); onSubPageChange(true); }}
                     className="flex flex-col items-center gap-1.5" style={{ width: 58 }}>
                     <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all border-2 border-transparent bg-[#F4F5F7] hover:border-primary hover:bg-primary/10">
                       {cat.emoji}
@@ -4174,6 +4151,7 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
   const [cartIds, setCartIds] = useState<number[]>([]);
   const [cartQty, setCartQty] = useState<Record<number, number>>({});
   const [profileSubActive, setProfileSubActive] = useState(false);
+  const [mainSubActive, setMainSubActive] = useState(false);
 
   const tabs: { key: MechanicTab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
     { key: "main",    label: "Main",    icon: (a) => <Home    size={22} strokeWidth={a ? 2.5 : 1.8} /> },
@@ -4198,15 +4176,15 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
     <div className="flex flex-col flex-1 min-h-0 relative">
       {scanning && <ScanOverlay onClose={() => setScanning(false)} />}
 
-      {/* Header — hide when viewing product detail (it has its own back btn) */}
-      {!selectedProduct && <AppHeader role="mechanic" onLogout={onLogout} />}
+      {/* Header — hide when viewing product detail or main sub-pages (they have their own headers) */}
+      {!selectedProduct && !mainSubActive && <AppHeader role="mechanic" onLogout={onLogout} />}
 
       {/* Page content */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {selectedProduct
           ? <ProductDetailPage product={selectedProduct} onBack={() => setSelectedProduct(null)} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
           : tab === "main"
-            ? <MechanicMainPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
+            ? <MechanicMainPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} onSubPageChange={setMainSubActive} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
             : tab === "shops"
               ? <ShopsPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
               : tab === "cart"
@@ -4223,8 +4201,8 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
                   : <PlaceholderPage label={pageLabel[tab]} icon={pageIcon[tab]} />}
       </div>
 
-      {/* Bottom nav — hide on detail page or profile sub-page */}
-      {!selectedProduct && !profileSubActive && (
+      {/* Bottom nav — hide on detail page, profile sub-page, or main sub-page */}
+      {!selectedProduct && !profileSubActive && !mainSubActive && (
         <div className="shrink-0 bg-card border-t border-border relative" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
           <div className="flex items-end justify-around px-2 pt-2 pb-2">
             {tabs.map((t) => {
