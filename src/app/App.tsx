@@ -2909,13 +2909,11 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
       title: "Settings",
       items: [
         { label: "Language", icon: <Globe size={18} />,   color: "bg-sky-500",   action: () => setShowLangSheet(true) },
-        { label: "Theme",    icon: <SunMoon size={18} />, color: "bg-amber-500", action: () => {} },
       ],
     },
     {
       title: "Support",
       items: [
-        { label: "Help",      icon: <Headphones size={18} />, color: "bg-teal-500",  action: () => {} },
         { label: "FAQ",       icon: <HelpCircle size={18} />, color: "bg-indigo-500",action: () => {} },
         { label: "About app", icon: <Info size={18} />,       color: "bg-slate-500", action: () => {} },
       ],
