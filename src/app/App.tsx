@@ -1291,9 +1291,10 @@ function ImageViewer({ images, startIndex, onClose }: {
   );
 }
 
-function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setCartQty }: {
+function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
   product: Product;
   onBack: () => void;
+  onGoToCart: () => void;
   cartIds: number[];
   setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
   cartQty: Record<number, number>;
@@ -1325,10 +1326,10 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setC
       {showViewer && <ImageViewer images={images} startIndex={imgIdx} onClose={() => setShowViewer(false)} />}
 
       {/* Hero carousel */}
-      <div className="relative shrink-0" style={{ height: 220 }}>
+      <div className="relative shrink-0" style={{ height: 250 }}>
         <img src={images[imgIdx]} alt={product.name} className="w-full h-full object-cover cursor-pointer" onClick={() => setShowViewer(true)} />
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 60%)" }} />
+        {/* Gradient overlay — top shadow for buttons + bottom fade into card */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.32) 0%, transparent 45%, rgba(255,255,255,0.18) 80%, rgba(255,255,255,0.55) 100%)" }} />
         {/* Left/right tap zones (prev/next) */}
         {images.length > 1 && (
           <>
@@ -1367,7 +1368,7 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setC
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto bg-background">
-        <div className="bg-card rounded-t-3xl -mt-4 relative px-5 pt-5 pb-4">
+        <div className="bg-card rounded-t-[32px] -mt-7 relative px-5 pt-6 pb-4">
 
           {/* Name + Brand row */}
           <div className="flex items-start justify-between gap-2 mb-1">
@@ -1510,15 +1511,20 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setC
           </svg>
         </button>
         {inCart ? (
-          <div className="flex-1 flex items-center justify-between bg-primary/8 rounded-xl px-4">
-            <button onClick={() => changeQ(product.id, -1)} className="w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all">
-              <Minus size={15} />
+          <>
+            <div className="flex-1 flex items-center justify-between bg-primary/8 rounded-xl px-3">
+              <button onClick={() => changeQ(product.id, -1)} className="w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all">
+                <Minus size={15} />
+              </button>
+              <span className="text-[16px] font-bold text-primary">{getQ(product.id)}</span>
+              <button onClick={() => changeQ(product.id, 1)} className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all">
+                <Plus size={15} />
+              </button>
+            </div>
+            <button onClick={onGoToCart} className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-white shadow-md hover:bg-blue-700 transition-all shrink-0">
+              <ShoppingCart size={18} />
             </button>
-            <span className="text-[16px] font-bold text-primary">{getQ(product.id)}</span>
-            <button onClick={() => changeQ(product.id, 1)} className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all">
-              <Plus size={15} />
-            </button>
-          </div>
+          </>
         ) : (
           <button
             onClick={() => { setCartIds(ids => [...ids, product.id]); setCartQty(q => ({ ...q, [product.id]: 1 })); }}
@@ -3792,7 +3798,7 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
       {/* Page content */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {selectedProduct
-          ? <ProductDetailPage product={selectedProduct} onBack={() => setSelectedProduct(null)} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
+          ? <ProductDetailPage product={selectedProduct} onBack={() => setSelectedProduct(null)} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
           : tab === "main"
             ? <MechanicMainPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
             : tab === "shops"
