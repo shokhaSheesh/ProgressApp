@@ -1378,16 +1378,14 @@ function ShopPin({ shop, selected, onClick }: { shop: Shop; selected: boolean; o
       style={{ left: `${shop.x}%`, top: `${shop.y}%`, transform: "translate(-50%, -100%)", zIndex: selected ? 20 : 10 }}
     >
       <div className={`flex items-center justify-center rounded-full shadow-lg transition-all duration-200 ${
-        selected
-          ? "w-12 h-12 bg-primary ring-4 ring-primary/30"
-          : shop.status === "open"
-            ? "w-9 h-9 bg-primary/90 hover:bg-primary"
-            : "w-9 h-9 bg-red-500/90 hover:bg-red-600"
+        shop.status === "open"
+          ? selected ? "w-12 h-12 bg-primary ring-4 ring-primary/30" : "w-9 h-9 bg-primary/90 hover:bg-primary"
+          : selected ? "w-12 h-12 bg-red-500 ring-4 ring-red-400/30" : "w-9 h-9 bg-red-500/90 hover:bg-red-600"
       }`}>
         <Store size={selected ? 22 : 16} className="text-white" />
       </div>
       {selected && (
-        <div className="mt-1 px-2 py-0.5 bg-primary text-white text-[10px] font-bold rounded-full shadow-md whitespace-nowrap">
+        <div className={`mt-1 px-2 py-0.5 text-white text-[10px] font-bold rounded-full shadow-md whitespace-nowrap ${shop.status === "open" ? "bg-primary" : "bg-red-500"}`}>
           {shop.name.split(" ")[0]}
         </div>
       )}
@@ -1510,7 +1508,7 @@ function ShopsPage() {
 
           {/* Selected shop card — slides up from bottom */}
           {selectedShop && (
-            <div className="absolute bottom-[5px] left-0 right-0 z-30 px-3">
+            <div className="absolute bottom-[25px] left-0 right-0 z-30 px-3">
               <div className="bg-card rounded-3xl shadow-2xl px-5 pt-4 pb-5"
                 style={{ boxShadow: "0 -4px 32px rgba(0,0,0,0.15)" }}>
                 {/* Drag handle */}
