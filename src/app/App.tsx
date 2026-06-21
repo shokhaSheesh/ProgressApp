@@ -1510,7 +1510,7 @@ function ShopsPage() {
 
           {/* Selected shop card — slides up from bottom */}
           {selectedShop && (
-            <div className="absolute bottom-16 left-0 right-0 z-30 px-3">
+            <div className="absolute bottom-[5px] left-0 right-0 z-30 px-3">
               <div className="bg-card rounded-3xl shadow-2xl px-5 pt-4 pb-5"
                 style={{ boxShadow: "0 -4px 32px rgba(0,0,0,0.15)" }}>
                 {/* Drag handle */}
