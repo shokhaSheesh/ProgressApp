@@ -707,8 +707,9 @@ const PRODUCT_VARIATIONS: Record<string, ProductVariation[]> = {
 };
 
 // ─── SEARCH PAGE ──────────────────────────────────────────────────────────────
-function SearchPage({ onSelect, onClose, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
+function SearchPage({ onSelect, onClose, onGoToCart, onSelectCategory, cartIds, setCartIds, cartQty, setCartQty }: {
   onSelect: (p: Product) => void; onClose: () => void; onGoToCart?: () => void;
+  onSelectCategory?: (cat: { label: string; emoji: string }) => void;
   cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
   cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
 }) {
@@ -1036,18 +1037,17 @@ function SearchPage({ onSelect, onClose, onGoToCart, cartIds, setCartIds, cartQt
           </div>
         )}
 
-        {/* Empty: popular chips */}
+        {/* Empty state: category list */}
         {!q && (
-          <div className="px-4 pt-4">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Popular searches</p>
-            <div className="flex flex-wrap gap-2">
-              {["Bosch", "Filters", "Brakes", "Engine", "NGK", "Tires"].map(tag => (
-                <button key={tag} onClick={() => setQuery(tag)}
-                  className="px-3 py-1.5 rounded-xl bg-[#F4F5F7] text-[12px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-all">
-                  {tag}
-                </button>
-              ))}
-            </div>
+          <div className="px-4 pt-3 flex flex-col gap-1">
+            {CATEGORIES.map(cat => (
+              <button key={cat.label} onClick={() => onSelectCategory?.({ label: cat.label, emoji: cat.emoji })}
+                className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#F4F5F7] transition-all text-left">
+                <div className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-lg shrink-0">{cat.emoji}</div>
+                <span className="text-[14px] font-semibold text-foreground">{cat.label}</span>
+                <ChevronRight size={16} className="ml-auto text-muted-foreground shrink-0" />
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -1306,6 +1306,16 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
 }) {
   const [showSearch, setShowSearch] = useState(false);
   const [activeCatPage, setActiveCatPage] = useState<{ label: string; emoji: string } | null>(null);
+  const catScrollRef = useRef<HTMLDivElement>(null);
+  const [catDotIdx, setCatDotIdx] = useState(0);
+  const CAT_NUM_DOTS = 3;
+  const handleCatScroll = () => {
+    const el = catScrollRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    const idx = max > 0 ? Math.round((el.scrollLeft / max) * (CAT_NUM_DOTS - 1)) : 0;
+    setCatDotIdx(idx);
+  };
   const getQ = (id: number) => cartQty[id] ?? 1;
   const changeQ = (id: number, delta: number) => {
     const next = getQ(id) + delta;
@@ -1335,6 +1345,7 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
             onSelect={p => { onSelect(p); setShowSearch(false); }}
             onClose={() => setShowSearch(false)}
             onGoToCart={() => { setShowSearch(false); onGoToCart(); }}
+            onSelectCategory={cat => { setShowSearch(false); setActiveCatPage(cat); }}
             cartIds={cartIds} setCartIds={setCartIds}
             cartQty={cartQty} setCartQty={setCartQty}
           />
@@ -1370,9 +1381,10 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
       <div className="shrink-0 px-4 mb-1">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[13px] font-bold text-foreground">Categories</span>
-          <button className="text-[11px] font-semibold text-primary">See all</button>
+          <button onClick={() => setShowSearch(true)} className="text-[11px] font-semibold text-primary">See all</button>
         </div>
-        <div className="overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+        <div ref={catScrollRef} onScroll={handleCatScroll}
+          className="overflow-x-auto" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
           <div className="flex flex-col gap-2.5" style={{ width: "max-content" }}>
             {[row1, row2].map((row, ri) => (
               <div key={ri} className="flex gap-2.5">
@@ -1390,6 +1402,13 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
               </div>
             ))}
           </div>
+        </div>
+        {/* Scroll dots */}
+        <div className="flex items-center justify-center gap-1.5 mt-2.5">
+          {Array.from({ length: CAT_NUM_DOTS }).map((_, i) => (
+            <div key={i} className="transition-all duration-200 rounded-full bg-primary"
+              style={{ width: i === catDotIdx ? 16 : 6, height: 6, opacity: i === catDotIdx ? 1 : 0.2 }} />
+          ))}
         </div>
       </div>
 
