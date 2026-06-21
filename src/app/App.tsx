@@ -2227,11 +2227,28 @@ function WithdrawCashPage({ isSeller, balance, defaultName, defaultPhone, accent
 // Sub-page: Transaction history grouped by month
 function TransactionHistoryPage({ role, transactions, onBack }: { role: Role; transactions: WalletTxn[]; onBack: () => void }) {
   const isSeller = role === "seller";
+  const [showFilter, setShowFilter] = useState(false);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate]     = useState("");
+  const [appliedFrom, setAppliedFrom] = useState("");
+  const [appliedTo, setAppliedTo]     = useState("");
+
+  const isFiltered = appliedFrom || appliedTo;
+
+  const parseDate = (s: string) => s ? new Date(s).getTime() : null;
+
+  const filtered = transactions.filter(t => {
+    const ts = new Date(t.date).getTime();
+    const from = parseDate(appliedFrom);
+    const to   = parseDate(appliedTo);
+    if (from && ts < from) return false;
+    if (to   && ts > to + 86399999) return false;
+    return true;
+  });
 
   // Group by month label
   const groups: { month: string; items: WalletTxn[]; total: number }[] = [];
-  transactions.forEach(t => {
-    const month = t.date.split(",")[0].replace(/\d+$/, "").trim(); // "Jun 2026" style
+  filtered.forEach(t => {
     const parts = t.date.split(" ");
     const monthKey = parts.length >= 3 ? `${parts[0]} ${parts[2]}` : t.date;
     let g = groups.find(g => g.month === monthKey);
@@ -2240,35 +2257,61 @@ function TransactionHistoryPage({ role, transactions, onBack }: { role: Role; tr
     g.total += t.kind === "earn" ? t.amount : -t.amount;
   });
 
+  const applyFilter = () => { setAppliedFrom(fromDate); setAppliedTo(toDate); setShowFilter(false); };
+  const clearFilter = () => { setFromDate(""); setToDate(""); setAppliedFrom(""); setAppliedTo(""); setShowFilter(false); };
+
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background relative">
+      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
         <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
           <ChevronLeft size={20} />
         </button>
         <p className="flex-1 text-[17px] font-bold text-foreground">Bonus History</p>
+        <button onClick={() => setShowFilter(true)}
+          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors relative ${isFiltered ? "bg-primary text-white" : "bg-[#F4F5F7] text-muted-foreground hover:text-foreground"}`}>
+          <List size={18} />
+          {isFiltered && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-card" />}
+        </button>
       </div>
 
+      {/* Applied filter chip */}
+      {isFiltered && (
+        <div className="px-4 pt-3 shrink-0 flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-primary/10 text-primary text-[11px] font-semibold rounded-full px-3 py-1">
+            <Clock size={11} />
+            {appliedFrom && appliedTo ? `${appliedFrom} → ${appliedTo}` : appliedFrom ? `From ${appliedFrom}` : `Until ${appliedTo}`}
+          </div>
+          <button onClick={clearFilter} className="text-[11px] text-muted-foreground font-medium underline">Clear</button>
+        </div>
+      )}
+
+      {/* List */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        {groups.map(g => (
+        {groups.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-40 gap-2">
+            <Receipt size={32} className="text-muted-foreground opacity-40" />
+            <p className="text-[13px] text-muted-foreground">No transactions in this range</p>
+          </div>
+        ) : groups.map(g => (
           <div key={g.month} className="mb-5">
             <div className="flex items-center justify-between mb-2.5">
               <p className="text-[12px] font-semibold text-muted-foreground">{g.month}</p>
-              <p className={`text-[12px] font-bold ${g.total >= 0 ? "text-emerald-600" : "text-foreground"}`}>
+              <p className={`text-[12px] font-bold ${g.total >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                 {g.total >= 0 ? "+" : ""}{fmtUZS(g.total)} UZS
               </p>
             </div>
             <div className="flex flex-col gap-2">
               {g.items.map(t => (
                 <div key={t.id} className="flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-[#F4F5F7] text-muted-foreground"}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
                     {t.kind === "earn" ? <Gift size={17} /> : <ArrowDownToLine size={17} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-foreground leading-tight">{t.label}</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">{t.date}</p>
                   </div>
-                  <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-foreground"}`}>
+                  <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-red-500"}`}>
                     {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)}
                   </span>
                 </div>
@@ -2277,6 +2320,49 @@ function TransactionHistoryPage({ role, transactions, onBack }: { role: Role; tr
           </div>
         ))}
       </div>
+
+      {/* Filter bottom sheet */}
+      {showFilter && (
+        <div className="absolute inset-0 z-40 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.45)" }}
+          onClick={() => setShowFilter(false)}>
+          <div className="bg-card rounded-t-3xl px-4 pt-3 pb-8" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-5" />
+            <p className="text-[16px] font-bold text-foreground mb-1">Filter by Date</p>
+            <p className="text-[12px] text-muted-foreground mb-5">Select a date range to narrow your history</p>
+
+            <div className="flex flex-col gap-4 mb-6">
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">From</p>
+                <div className="flex items-center gap-3 bg-background border border-border rounded-2xl px-4 py-3.5">
+                  <Clock size={16} className="text-primary shrink-0" />
+                  <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
+                    className="flex-1 bg-transparent text-[14px] text-foreground outline-none" />
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">To</p>
+                <div className="flex items-center gap-3 bg-background border border-border rounded-2xl px-4 py-3.5">
+                  <Clock size={16} className="text-primary shrink-0" />
+                  <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
+                    className="flex-1 bg-transparent text-[14px] text-foreground outline-none" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={clearFilter}
+                className="flex-1 rounded-2xl py-3.5 text-[14px] font-semibold text-muted-foreground bg-[#F4F5F7] active:scale-[0.98] transition-all">
+                Clear
+              </button>
+              <button onClick={applyFilter}
+                className="flex-1 rounded-2xl py-3.5 text-[14px] font-semibold text-white bg-primary active:scale-[0.98] transition-all"
+                style={{ boxShadow: "0 4px 16px rgba(37,99,235,0.35)" }}>
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
