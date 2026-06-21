@@ -1096,16 +1096,39 @@ function ProductCardImage({ images, discount, height = "h-32", onClick }: {
   );
 }
 
-function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
-  onSelect: (p: Product) => void;
-  onGoToCart: () => void;
-  cartIds: number[];
-  setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
-  cartQty: Record<number, number>;
-  setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+function CategoryPage({ category, emoji, onBack, onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
+  category: string; emoji: string; onBack: () => void;
+  onSelect: (p: Product) => void; onGoToCart: () => void;
+  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
+  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
 }) {
-  const [showSearch, setShowSearch] = useState(false);
-  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [showFilter, setShowFilter] = useState(false);
+  const [sortBy, setSortBy] = useState<"default"|"low"|"high"|"discount">("default");
+  const [onlyDiscount, setOnlyDiscount] = useState(false);
+  const [onlyInStock, setOnlyInStock] = useState(false);
+
+  const catProducts = PRODUCTS.filter(p => p.category === category);
+  const allPrices = catProducts.map(p => priceToNum(p.price));
+  const absMin = allPrices.length ? Math.min(...allPrices) : 0;
+  const absMax = allPrices.length ? Math.max(...allPrices) : 1000000;
+  const [sliderMax, setSliderMax] = useState(absMax);
+
+  const priceFiltered = sliderMax < absMax;
+  const activeFilterCount = [sortBy !== "default", onlyDiscount, onlyInStock, priceFiltered].filter(Boolean).length;
+
+  const filtered = catProducts
+    .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase()))
+    .filter(p => !onlyDiscount || !!p.discount)
+    .filter(p => !onlyInStock || p.stock > 0)
+    .filter(p => priceToNum(p.price) <= sliderMax)
+    .sort((a, b) => {
+      if (sortBy === "low") return priceToNum(a.price) - priceToNum(b.price);
+      if (sortBy === "high") return priceToNum(b.price) - priceToNum(a.price);
+      if (sortBy === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
+      return 0;
+    });
+
   const getQ = (id: number) => cartQty[id] ?? 1;
   const changeQ = (id: number, delta: number) => {
     const next = getQ(id) + delta;
@@ -1117,10 +1140,201 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
     }
   };
 
-  const filtered = PRODUCTS.filter(p => !activeCat || p.category === activeCat);
+  const SORT_OPTS: { key: typeof sortBy; label: string }[] = [
+    { key: "default",  label: "Default" },
+    { key: "low",      label: "Price: Low → High" },
+    { key: "high",     label: "Price: High → Low" },
+    { key: "discount", label: "Biggest Discount" },
+  ];
+
+  if (showFilter) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={() => setShowFilter(false)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"><ChevronLeft size={22} /></button>
+          <p className="flex-1 text-[16px] font-bold text-foreground">Filters</p>
+          <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+            className="text-[12px] font-semibold text-primary hover:text-blue-700 transition-colors">Reset all</button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sort by</p>
+            <div className="flex flex-col gap-2">
+              {SORT_OPTS.map(o => (
+                <button key={o.key} onClick={() => setSortBy(o.key)}
+                  className={`flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all ${sortBy === o.key ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
+                  <span className={`text-[13px] font-semibold ${sortBy === o.key ? "text-primary" : "text-foreground"}`}>{o.label}</span>
+                  {sortBy === o.key && <Check size={16} className="text-primary" />}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Max price</p>
+              <span className={`text-[13px] font-bold ${priceFiltered ? "text-primary" : "text-muted-foreground"}`}>
+                {priceFiltered ? `${sliderMax.toLocaleString()} UZS` : "Any"}
+              </span>
+            </div>
+            <div className="px-1">
+              <input type="range" min={absMin} max={absMax} step={Math.max(1000, Math.round((absMax - absMin) / 100))}
+                value={sliderMax} onChange={e => setSliderMax(Number(e.target.value))}
+                className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                style={{ background: `linear-gradient(to right, #2563EB ${((sliderMax-absMin)/(absMax-absMin))*100}%, #E5E7EB ${((sliderMax-absMin)/(absMax-absMin))*100}%)`, accentColor: "#2563EB" }}
+              />
+              <div className="flex justify-between mt-2">
+                <span className="text-[10px] text-muted-foreground">{absMin.toLocaleString()} UZS</span>
+                <span className="text-[10px] text-muted-foreground">{absMax.toLocaleString()} UZS</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Show only</p>
+            <div className="flex flex-col gap-2">
+              {[
+                { label: "Has discount", sub: "Products with active price cuts", val: onlyDiscount, set: setOnlyDiscount },
+                { label: "In stock", sub: "Available for immediate purchase", val: onlyInStock, set: setOnlyInStock },
+              ].map(t => (
+                <button key={t.label} onClick={() => t.set(!t.val)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all ${t.val ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${t.val ? "bg-primary border-primary" : "border-border"}`}>
+                    {t.val && <Check size={12} className="text-white" />}
+                  </div>
+                  <div className="text-left">
+                    <p className={`text-[13px] font-semibold leading-tight ${t.val ? "text-primary" : "text-foreground"}`}>{t.label}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{t.sub}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="shrink-0 px-4 py-3 bg-card border-t border-border">
+          <button onClick={() => setShowFilter(false)}
+            className="w-full bg-primary text-white rounded-xl py-3.5 text-[14px] font-semibold shadow-md hover:bg-blue-700 active:scale-[0.98] transition-all">
+            Show {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-background relative">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"><ChevronLeft size={22} /></button>
+        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-xl shrink-0">{emoji}</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[16px] font-bold text-foreground leading-tight">{category}</p>
+          <p className="text-[11px] text-muted-foreground">{catProducts.length} product{catProducts.length !== 1 ? "s" : ""}</p>
+        </div>
+      </div>
+
+      {/* Search + filter */}
+      <div className="flex items-center gap-2 px-4 py-3 bg-card border-b border-border shrink-0">
+        <div className="flex-1 relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <input type="text" placeholder={`Search in ${category}...`}
+            value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full bg-[#F4F5F7] rounded-xl pl-9 pr-9 py-2.5 text-[13px] text-foreground placeholder-muted-foreground border border-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"><X size={14} /></button>
+          )}
+        </div>
+        <button onClick={() => setShowFilter(true)}
+          className="relative shrink-0 w-10 h-10 rounded-xl bg-[#F4F5F7] border border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-all">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center">{activeFilterCount}</span>
+          )}
+        </button>
+      </div>
+
+      {/* Count */}
+      <div className="px-4 pt-3 pb-1 shrink-0">
+        <p className="text-[12px] text-muted-foreground">{filtered.length} product{filtered.length !== 1 ? "s" : ""}</p>
+      </div>
+
+      {/* Grid */}
+      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-24">
+        {filtered.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3">
+            {filtered.map(p => (
+              <ShopProductCard key={p.id} p={p}
+                inCart={cartIds.includes(p.id)} qty={getQ(p.id)}
+                onAdd={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
+                onChangeQty={delta => changeQ(p.id, delta)}
+                onSelect={() => onSelect(p)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center py-16 gap-3">
+            <span className="text-4xl">{emoji}</span>
+            <p className="text-[14px] font-semibold text-foreground">No products found</p>
+            {(search || activeFilterCount > 0) && (
+              <button onClick={() => { setSearch(""); setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+                className="text-[13px] font-semibold text-primary hover:underline">Clear filters</button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Cart FAB */}
+      {cartIds.length > 0 && (
+        <div className="absolute bottom-5 left-0 right-0 flex justify-center pointer-events-none">
+          <button onClick={onGoToCart}
+            className="pointer-events-auto flex items-center gap-3 bg-primary text-white pl-5 pr-4 py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all"
+            style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.45)" }}>
+            <ShoppingCart size={18} />
+            <span className="text-[14px] font-semibold">View Cart</span>
+            <span className="bg-white text-primary text-[12px] font-bold rounded-xl px-2 py-0.5 min-w-[24px] text-center">{cartIds.length}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
+  onSelect: (p: Product) => void;
+  onGoToCart: () => void;
+  cartIds: number[];
+  setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
+  cartQty: Record<number, number>;
+  setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+}) {
+  const [showSearch, setShowSearch] = useState(false);
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [activeCatPage, setActiveCatPage] = useState<{ label: string; emoji: string } | null>(null);
+  const getQ = (id: number) => cartQty[id] ?? 1;
+  const changeQ = (id: number, delta: number) => {
+    const next = getQ(id) + delta;
+    if (next < 1) {
+      setCartIds(ids => ids.filter(i => i !== id));
+      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
+    } else {
+      setCartQty(q => ({ ...q, [id]: next }));
+    }
+  };
 
   const row1 = CATEGORIES.slice(0, Math.ceil(CATEGORIES.length / 2));
   const row2 = CATEGORIES.slice(Math.ceil(CATEGORIES.length / 2));
+
+  if (activeCatPage) {
+    return <CategoryPage category={activeCatPage.label} emoji={activeCatPage.emoji}
+      onBack={() => setActiveCatPage(null)} onSelect={onSelect} onGoToCart={onGoToCart}
+      cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />;
+  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto" style={{ minHeight: 0 }}>
@@ -1172,20 +1386,17 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
           <div className="flex flex-col gap-2.5" style={{ width: "max-content" }}>
             {[row1, row2].map((row, ri) => (
               <div key={ri} className="flex gap-2.5">
-                {row.map((cat) => {
-                  const active = activeCat === cat.label;
-                  return (
-                    <button key={cat.label} onClick={() => setActiveCat(active ? null : cat.label)}
-                      className="flex flex-col items-center gap-1.5" style={{ width: 58 }}>
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all border-2 ${active ? "border-primary bg-primary/10" : "border-transparent bg-[#F4F5F7]"}`}>
-                        {cat.emoji}
-                      </div>
-                      <span className={`text-[10px] font-semibold text-center leading-tight ${active ? "text-primary" : "text-muted-foreground"}`} style={{ width: 58 }}>
-                        {cat.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                {row.map((cat) => (
+                  <button key={cat.label} onClick={() => setActiveCatPage({ label: cat.label, emoji: cat.emoji })}
+                    className="flex flex-col items-center gap-1.5" style={{ width: 58 }}>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all border-2 border-transparent bg-[#F4F5F7] hover:border-primary hover:bg-primary/10">
+                      {cat.emoji}
+                    </div>
+                    <span className="text-[10px] font-semibold text-center leading-tight text-muted-foreground" style={{ width: 58 }}>
+                      {cat.label}
+                    </span>
+                  </button>
+                ))}
               </div>
             ))}
           </div>
@@ -1194,11 +1405,9 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
 
       {/* Products */}
       <div className="px-4 pb-4">
-        <p className="text-[13px] font-bold text-foreground mb-3">
-          {activeCat ? activeCat : "All Products"}
-        </p>
+        <p className="text-[13px] font-bold text-foreground mb-3">All Products</p>
         <div className="grid grid-cols-2 gap-3">
-          {filtered.map(p => {
+          {PRODUCTS.map(p => {
             const inCart = cartIds.includes(p.id);
             return (
               <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
