@@ -2582,7 +2582,6 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
 }) {
   const [sub, setSub] = useState<ProfileSubPage>(null);
   const isSeller = role === "seller";
-  const earnedTotal = transactions.filter(t => t.kind === "earn").reduce((s, t) => s + t.amount, 0);
 
   const goSub = (s: ProfileSubPage) => { setSub(s); onSubPageChange?.(s !== null); };
   const goBack = () => { setSub(null); onSubPageChange?.(false); };
@@ -2633,21 +2632,14 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
           <p className="text-[13px] text-muted-foreground mt-0.5">{phone}</p>
         </div>
 
-        {/* Two quick-access cards */}
-        <div className="flex gap-3 px-4 pt-4 pb-2">
+        {/* Bonus wallet quick-access card */}
+        <div className="px-4 pt-4 pb-2">
           <button onClick={() => goSub("wallet")}
-            className={`flex-1 rounded-2xl p-4 text-left active:scale-[0.97] transition-all ${isSeller ? "bg-emerald-500" : "bg-primary"}`}
+            className={`w-full rounded-2xl p-4 text-left active:scale-[0.97] transition-all ${isSeller ? "bg-emerald-500" : "bg-primary"}`}
             style={{ boxShadow: isSeller ? "0 4px 16px rgba(16,185,129,0.3)" : "0 4px 16px rgba(37,99,235,0.3)" }}>
             <p className="text-white/70 text-[11px] font-medium">{isSeller ? "Seller bonus" : "Bonus wallet"}</p>
-            <p className="text-white text-[18px] font-bold mt-1 leading-tight">{fmtUZS(balance)}</p>
-            <p className="text-white/60 text-[10px] mt-0.5">UZS available</p>
-          </button>
-          <button onClick={() => goSub("history")}
-            className="flex-1 rounded-2xl p-4 text-left bg-[#F59E0B] active:scale-[0.97] transition-all"
-            style={{ boxShadow: "0 4px 16px rgba(245,158,11,0.3)" }}>
-            <p className="text-white/80 text-[11px] font-medium">Total earned</p>
-            <p className="text-white text-[18px] font-bold mt-1 leading-tight">{fmtUZS(earnedTotal)}</p>
-            <p className="text-white/60 text-[10px] mt-0.5">UZS lifetime</p>
+            <p className="text-white text-[22px] font-bold mt-1 leading-tight">{fmtUZS(balance)} <span className="text-[13px] font-normal opacity-70">UZS</span></p>
+            <p className="text-white/60 text-[10px] mt-0.5">Tap to manage</p>
           </button>
         </div>
 
