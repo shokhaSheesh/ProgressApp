@@ -2998,10 +2998,9 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-[32px] shrink-0 ${isActive ? "bg-primary/10" : "bg-[#F4F5F7]"}`}>
                       {lang.flag}
                     </div>
-                    {/* Labels */}
+                    {/* Label */}
                     <div className="flex-1 text-left">
-                      <p className={`text-[15px] font-bold ${isActive ? "text-primary" : "text-foreground"}`}>{lang.label}</p>
-                      <p className={`text-[12px] mt-0.5 ${isActive ? "text-primary/70" : "text-muted-foreground"}`}>{lang.native}</p>
+                      <p className={`text-[15px] font-bold ${isActive ? "text-primary" : "text-foreground"}`}>{lang.native}</p>
                     </div>
                     {/* Active check */}
                     {isActive && (
