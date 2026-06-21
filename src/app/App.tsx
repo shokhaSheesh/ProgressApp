@@ -1166,14 +1166,26 @@ function MechanicMainPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, 
 }
 
 // ─── PRODUCT DETAIL PAGE ──────────────────────────────────────────────────────
-function ProductDetailPage({ product, onBack, cartIds, setCartIds }: {
+function ProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setCartQty }: {
   product: Product;
   onBack: () => void;
   cartIds: number[];
   setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
+  cartQty: Record<number, number>;
+  setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
 }) {
   const inCart = cartIds.includes(product.id);
-  const similar = PRODUCTS.filter(p => p.id !== product.id && p.category === product.category).slice(0, 4);
+  const similar = PRODUCTS.filter(p => p.id !== product.id && p.category === product.category).slice(0, 6);
+  const getQ = (id: number) => cartQty[id] ?? 1;
+  const changeQ = (id: number, delta: number) => {
+    const next = getQ(id) + delta;
+    if (next < 1) {
+      setCartIds(ids => ids.filter(i => i !== id));
+      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
+    } else {
+      setCartQty(q => ({ ...q, [id]: next }));
+    }
+  };
   const lowStock = product.stock <= 15;
 
   return (
@@ -1274,18 +1286,41 @@ function ProductDetailPage({ product, onBack, cartIds, setCartIds }: {
           {similar.length > 0 && (
             <div className="mb-2">
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Similar Products</p>
-              <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-                {similar.map(sp => (
-                  <div key={sp.id} className="shrink-0 w-32 bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                    <div className="h-24 bg-muted overflow-hidden">
-                      <img src={sp.img} alt={sp.name} className="w-full h-full object-cover" />
+              <div className="grid grid-cols-2 gap-3">
+                {similar.map(sp => {
+                  const spInCart = cartIds.includes(sp.id);
+                  return (
+                    <div key={sp.id} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                      <div className="relative h-28 bg-muted overflow-hidden shrink-0">
+                        <img src={sp.img} alt={sp.name} className="w-full h-full object-cover" />
+                        {sp.discount && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">-{sp.discount}%</span>}
+                      </div>
+                      <div className="p-2.5 flex flex-col flex-1">
+                        <p className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2 mb-0.5">{sp.name}</p>
+                        <p className="text-[10px] text-muted-foreground mb-1">{sp.shop}</p>
+                        <div className="mb-2">
+                          {sp.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{sp.originalPrice} UZS</p>}
+                          <p className="text-[12px] font-bold text-primary leading-tight">{sp.price} <span className="text-[9px] font-normal text-muted-foreground">UZS</span></p>
+                        </div>
+                        <div className="mt-auto">
+                          {spInCart ? (
+                            <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
+                              <button onClick={() => changeQ(sp.id, -1)} className="w-6 h-6 rounded-lg bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all"><Minus size={11} /></button>
+                              <span className="text-[12px] font-bold text-primary">{getQ(sp.id)}</span>
+                              <button onClick={() => changeQ(sp.id, 1)} className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all"><Plus size={11} /></button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => { setCartIds(ids => [...ids, sp.id]); setCartQty(q => ({ ...q, [sp.id]: 1 })); }}
+                              className="w-full py-1.5 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
+                              + Add to Cart
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-2">
-                      <p className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2">{sp.name}</p>
-                      <p className="text-[12px] font-bold text-primary mt-1">{sp.price} <span className="text-[9px] font-normal text-muted-foreground">UZS</span></p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -3573,7 +3608,7 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
       {/* Page content */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {selectedProduct
-          ? <ProductDetailPage product={selectedProduct} onBack={() => setSelectedProduct(null)} cartIds={cartIds} setCartIds={setCartIds} />
+          ? <ProductDetailPage product={selectedProduct} onBack={() => setSelectedProduct(null)} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
           : tab === "main"
             ? <MechanicMainPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
             : tab === "shops"
