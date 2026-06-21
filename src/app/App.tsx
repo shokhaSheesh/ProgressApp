@@ -306,14 +306,14 @@ function LoginScreen({ onLogin, onNavigate, lang, setLang }: {
   );
 }
 
-function MechanicProfileScreen({ onLogin, lang, setLang }: { onLogin: () => void; lang: Lang; setLang: (l: Lang) => void }) {
+function MechanicProfileScreen({ onLogin, onBack, lang, setLang }: { onLogin: () => void; onBack: () => void; lang: Lang; setLang: (l: Lang) => void }) {
   const [name, setName] = useState("");
   const UZ_REGIONS = ["Tashkent", "Samarkand", "Bukhara", "Namangan", "Andijan", "Fergana", "Nukus", "Termez", "Jizzakh", "Guliston", "Navoi", "Urgench"];
   const [region, setRegion] = useState("");
   const [showRegionSheet, setShowRegionSheet] = useState(false);
   return (
     <div className="flex flex-col h-full relative">
-      <TopBar lang={lang} setLang={setLang} />
+      <TopBar showBack onBack={onBack} lang={lang} setLang={setLang} />
       <div className="flex-1 overflow-y-auto px-6 pt-5">
         <div className="mb-6">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
@@ -4488,7 +4488,7 @@ function AuthFlow({ onLogin }: { onLogin: (role: Role) => void }) {
           <div key={s} style={{ width: `${100 / AUTH_SCREENS.length}%` }} className="h-full overflow-hidden shrink-0">
             {s === "login"              && <LoginScreen onLogin={onLogin} onNavigate={setScreen} lang={lang} setLang={setLang} />}
             {s === "mechanic-login-otp" && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("login")} nextScreen="mechanic-profile" title="Verify your number" subtitle="Enter the 6-digit code sent to your phone" lang={lang} setLang={setLang} />}
-            {s === "mechanic-profile"   && <MechanicProfileScreen onLogin={() => onLogin("mechanic")} lang={lang} setLang={setLang} />}
+            {s === "mechanic-profile"   && <MechanicProfileScreen onLogin={() => onLogin("mechanic")} onBack={() => setScreen("mechanic-login-otp")} lang={lang} setLang={setLang} />}
             {s === "forgot-phone"       && <ForgotPhoneScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
             {s === "forgot-otp"         && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("forgot-phone")} nextScreen="forgot-newpass" title="Verify it's you" subtitle="Enter the 6-digit code sent to your registered number" lang={lang} setLang={setLang} />}
             {s === "forgot-newpass"     && <ForgotNewPassScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
