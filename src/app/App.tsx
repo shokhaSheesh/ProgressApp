@@ -7,6 +7,8 @@ import {
   Plus, Minus, Trash2, QrCode, Wallet, CreditCard, Banknote,
   Smartphone, Building2, ArrowDownToLine, CheckCircle2, XCircle,
   Gift, TrendingUp, ShieldCheck, Receipt, ChevronLeft,
+  Globe, SunMoon, Headphones, HelpCircle, Info, ShoppingBag,
+  BarChart2, UserCircle, Settings, LogOut,
 } from "lucide-react";
 
 type AuthScreen = "login" | "signup-phone" | "signup-otp" | "signup-details" | "forgot-otp" | "forgot-newpass";
@@ -1919,99 +1921,763 @@ function CartPage({ cartIds, setCartIds, cartQty, setCartQty }: {
   );
 }
 
-// ─── WALLET / WITHDRAW (shared by both roles) ─────────────────────────────────
-const WITHDRAW_METHODS = [
-  { key: "card", label: "Bank Card", sub: "UzCard · Humo", icon: <CreditCard size={18} /> },
-  { key: "click", label: "Click / Payme", sub: "Instant transfer", icon: <Smartphone size={18} /> },
-  { key: "bank", label: "Bank Account", sub: "1–2 business days", icon: <Building2 size={18} /> },
-  { key: "cash", label: "Cash Pickup", sub: "At partner shops", icon: <Banknote size={18} /> },
-];
+// ─── PROFILE / WALLET (multi-page, shared by both roles) ─────────────────────
 
 interface WalletTxn { id: number; label: string; date: string; amount: number; kind: "earn" | "withdraw"; }
 
-function WalletScreen({ role, name, phone, balance, transactions }: {
-  role: Role; name: string; phone: string; balance: number; transactions: WalletTxn[];
-}) {
+type WithdrawFlow = "card" | "cash" | null;
+
+// Sub-page: Wallet balance + withdraw
+function WalletPage({ role, balance, name, phone, onBack }: { role: Role; balance: number; name: string; phone: string; onBack: () => void }) {
   const isSeller = role === "seller";
-  const accent: "primary" | "success" = isSeller ? "success" : "primary";
-  const earnedTotal = transactions.filter(t => t.kind === "earn").reduce((s, t) => s + t.amount, 0);
+  const [showSheet, setShowSheet] = useState(false);
+  const [flow, setFlow] = useState<WithdrawFlow>(null);
+
+  const accent = isSeller ? "bg-emerald-500" : "bg-primary";
+  const accentShadow = isSeller ? "0 4px 20px rgba(16,185,129,0.35)" : "0 4px 20px rgba(37,99,235,0.35)";
+  const accentBtnShadow = isSeller ? "0 4px 16px rgba(16,185,129,0.35)" : "0 4px 16px rgba(37,99,235,0.35)";
+  const accentText = isSeller ? "text-emerald-600" : "text-primary";
+  const accentBg = isSeller ? "bg-emerald-500 hover:bg-emerald-600" : "bg-primary hover:bg-blue-700";
+
+  if (flow === "card") {
+    return <WithdrawCardPage isSeller={isSeller} balance={balance} accent={accentBg} accentShadow={accentBtnShadow} accentText={accentText} onBack={() => setFlow(null)} />;
+  }
+  if (flow === "cash") {
+    return <WithdrawCashPage isSeller={isSeller} balance={balance} defaultName={name} defaultPhone={phone} accent={accentBg} accentShadow={accentBtnShadow} accentText={accentText} onBack={() => setFlow(null)} />;
+  }
 
   return (
-    <div className="flex flex-col h-full">
-      <PageHeader title="Wallet & Profile" subtitle={isSeller ? "Seller bonuses" : "Loyalty bonuses"} />
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        {/* Profile row */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shrink-0 ${isSeller ? "bg-emerald-500" : "bg-primary"}`}>
-            <span className="text-[20px] font-bold">{name.charAt(0)}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[16px] font-bold text-foreground leading-tight">{name}</p>
-            <p className="text-[12px] text-muted-foreground">{phone}</p>
-          </div>
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${isSeller ? "bg-emerald-50" : "bg-blue-50"}`}>
-            {isSeller ? <Store size={13} className="text-emerald-600" /> : <Wrench size={13} className="text-primary" />}
-            <span className={`text-[11px] font-bold ${isSeller ? "text-emerald-600" : "text-primary"}`}>{isSeller ? "Seller" : "Mechanic"}</span>
-          </div>
-        </div>
-
-        {/* Balance card */}
-        <WalletBalanceCard
-          label={isSeller ? "Available seller bonus" : "Available bonus balance"}
-          amount={balance}
-          sublabel={isSeller ? "Earn 2% on every confirmed sale" : "Earn 3% bonus on every purchase"}
-          accent={accent}
-        />
-
-        {/* Quick stats */}
-        <div className="flex gap-2 mt-3">
-          <div className="flex-1 bg-card rounded-2xl border border-border px-3 py-3" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-            <div className="flex items-center gap-1.5 text-muted-foreground"><TrendingUp size={13} /><span className="text-[10px] font-medium">Total earned</span></div>
-            <p className="text-[16px] font-bold text-foreground mt-1">{fmtUZS(earnedTotal)} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
-          </div>
-          <div className="flex-1 bg-card rounded-2xl border border-border px-3 py-3" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-            <div className="flex items-center gap-1.5 text-muted-foreground"><Receipt size={13} /><span className="text-[10px] font-medium">Transactions</span></div>
-            <p className="text-[16px] font-bold text-foreground mt-1">{transactions.length}</p>
-          </div>
-        </div>
-
-        {/* Withdraw */}
-        <button className={`w-full mt-3 rounded-xl py-3.5 text-[14px] font-semibold text-white shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${isSeller ? "bg-emerald-500 hover:bg-emerald-600" : "bg-primary hover:bg-blue-700"}`}>
-          <ArrowDownToLine size={16} /> Withdraw bonus
+    <div className="flex flex-col h-full bg-background relative">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={20} />
         </button>
+        <p className="flex-1 text-[17px] font-bold text-foreground">{isSeller ? "Seller Wallet" : "Bonus Wallet"}</p>
+      </div>
 
-        {/* Withdrawal methods */}
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mt-5 mb-2.5">Withdrawal methods</p>
-        <div className="grid grid-cols-2 gap-2.5">
-          {WITHDRAW_METHODS.map(m => (
-            <button key={m.key}
-              className="flex items-center gap-2.5 p-3 rounded-2xl border border-border bg-card text-left hover:border-primary/40 transition-all" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isSeller ? "bg-emerald-50 text-emerald-600" : "bg-primary/10 text-primary"}`}>{m.icon}</div>
-              <div className="min-w-0">
-                <p className="text-[12px] font-semibold text-foreground leading-tight truncate">{m.label}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{m.sub}</p>
-              </div>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className={`rounded-2xl p-5 ${accent}`} style={{ boxShadow: accentShadow }}>
+          <p className="text-white/70 text-[12px] font-medium mb-1">{isSeller ? "Available seller bonus" : "Available bonus balance"}</p>
+          <p className="text-white text-[32px] font-bold leading-tight">{fmtUZS(balance)} <span className="text-[16px] font-normal opacity-80">UZS</span></p>
+          <p className="text-white/60 text-[11px] mt-2">{isSeller ? "Earn 2% on every confirmed sale" : "Earn 3% on every purchase"}</p>
+        </div>
+      </div>
+
+      {/* Primary button pinned to bottom */}
+      <div className="shrink-0 px-4 pb-6 pt-3 bg-background border-t border-border">
+        <button
+          onClick={() => setShowSheet(true)}
+          className={`w-full rounded-2xl py-3.5 text-[14px] font-semibold text-white flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${accentBg}`}
+          style={{ boxShadow: accentBtnShadow }}>
+          <ArrowDownToLine size={16} /> Withdraw Bonus
+        </button>
+      </div>
+
+      {/* Bottom sheet */}
+      {showSheet && (
+        <div className="absolute inset-0 z-40 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.45)" }}
+          onClick={() => setShowSheet(false)}>
+          <div className="bg-card rounded-t-3xl px-4 pt-3 pb-8" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-5" />
+            <p className="text-[16px] font-bold text-foreground mb-1">Withdraw Bonus</p>
+            <p className="text-[12px] text-muted-foreground mb-5">Choose how you'd like to receive your funds</p>
+            <div className="flex flex-col gap-3">
+              <button onClick={() => { setShowSheet(false); setFlow("card"); }}
+                className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-background active:scale-[0.98] transition-all"
+                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
+                  <CreditCard size={22} className="text-primary" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-[14px] font-semibold text-foreground">Card Transfer</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">Instant · UzCard or Humo</p>
+                </div>
+                <ChevronRight size={18} className="text-muted-foreground shrink-0" />
+              </button>
+              <button onClick={() => { setShowSheet(false); setFlow("cash"); }}
+                className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-background active:scale-[0.98] transition-all"
+                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0">
+                  <Banknote size={22} className="text-emerald-600" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-[14px] font-semibold text-foreground">Cash Delivery</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">1–2 days · Delivered to your address</p>
+                </div>
+                <ChevronRight size={18} className="text-muted-foreground shrink-0" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WithdrawCardPage({ isSeller, balance, accent, accentShadow, accentText, onBack }: {
+  isSeller: boolean; balance: number; accent: string; accentShadow: string; accentText: string; onBack: () => void;
+}) {
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardHolder, setCardHolder] = useState("");
+  const [amount, setAmount] = useState(String(balance));
+  const [submitted, setSubmitted] = useState(false);
+
+  const formatCard = (v: string) => v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
+
+  if (submitted) {
+    return (
+      <div className="flex flex-col h-full bg-background items-center justify-center px-8 gap-4">
+        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+          <CheckCircle2 size={32} className="text-emerald-500" />
+        </div>
+        <p className="text-[18px] font-bold text-foreground text-center">Request Submitted</p>
+        <p className="text-[13px] text-muted-foreground text-center">Your withdrawal to card will be processed within minutes.</p>
+        <button onClick={onBack} className={`mt-4 w-full rounded-2xl py-3.5 text-[14px] font-semibold text-white flex items-center justify-center gap-2 ${accent}`} style={{ boxShadow: accentShadow }}>
+          Back to Wallet
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={20} />
+        </button>
+        <p className="flex-1 text-[17px] font-bold text-foreground">Card Transfer</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Card number</p>
+            <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3.5">
+              <CreditCard size={18} className={accentText} />
+              <input
+                type="text" inputMode="numeric" placeholder="0000 0000 0000 0000"
+                value={cardNumber} onChange={e => setCardNumber(formatCard(e.target.value))}
+                className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground outline-none font-mono" />
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Card holder name</p>
+            <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3.5">
+              <User size={18} className={accentText} />
+              <input
+                type="text" placeholder="FULL NAME"
+                value={cardHolder} onChange={e => setCardHolder(e.target.value.toUpperCase())}
+                className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground outline-none uppercase" />
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Amount (UZS)</p>
+            <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3.5">
+              <Wallet size={18} className={accentText} />
+              <input
+                type="number" inputMode="numeric" placeholder="0"
+                value={amount} onChange={e => setAmount(e.target.value)}
+                className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground outline-none" />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1.5 px-1">Available: {fmtUZS(balance)} UZS</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="shrink-0 px-4 pb-6 pt-3 bg-background border-t border-border">
+        <button
+          disabled={!cardNumber || cardNumber.replace(/\s/g, "").length < 16 || !cardHolder || !amount}
+          onClick={() => setSubmitted(true)}
+          className={`w-full rounded-2xl py-3.5 text-[14px] font-semibold text-white flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-40 ${accent}`}
+          style={{ boxShadow: accentShadow }}>
+          Confirm Transfer
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function WithdrawCashPage({ isSeller, balance, defaultName, defaultPhone, accent, accentShadow, accentText, onBack }: {
+  isSeller: boolean; balance: number; defaultName: string; defaultPhone: string; accent: string; accentShadow: string; accentText: string; onBack: () => void;
+}) {
+  const [name, setName] = useState(defaultName);
+  const [phone, setPhone] = useState(defaultPhone);
+  const [address, setAddress] = useState("");
+  const [amount, setAmount] = useState(String(balance));
+  const [showMap, setShowMap] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  if (submitted) {
+    return (
+      <div className="flex flex-col h-full bg-background items-center justify-center px-8 gap-4">
+        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+          <CheckCircle2 size={32} className="text-emerald-500" />
+        </div>
+        <p className="text-[18px] font-bold text-foreground text-center">Request Submitted</p>
+        <p className="text-[13px] text-muted-foreground text-center">Cash will be delivered to your address within 1–2 business days.</p>
+        <button onClick={onBack} className={`mt-4 w-full rounded-2xl py-3.5 text-[14px] font-semibold text-white flex items-center justify-center gap-2 ${accent}`} style={{ boxShadow: accentShadow }}>
+          Back to Wallet
+        </button>
+      </div>
+    );
+  }
+
+  if (showMap) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={() => setShowMap(false)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft size={20} />
+          </button>
+          <p className="flex-1 text-[17px] font-bold text-foreground">Select on Map</p>
+        </div>
+        {/* Map placeholder */}
+        <div className="flex-1 relative bg-[#E8EEF4] flex flex-col items-center justify-center gap-3">
+          <div className="absolute inset-0" style={{
+            backgroundImage: "linear-gradient(rgba(148,163,184,0.25) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.25) 1px, transparent 1px)",
+            backgroundSize: "40px 40px"
+          }} />
+          <div className="relative z-10 flex flex-col items-center gap-2">
+            <MapPin size={40} className="text-primary drop-shadow-lg" />
+            <div className="bg-card rounded-2xl px-5 py-3 shadow-lg text-center">
+              <p className="text-[13px] font-semibold text-foreground">Tap to pin your location</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Map integration coming soon</p>
+            </div>
+          </div>
+          {/* Confirm button */}
+          <div className="absolute bottom-6 left-4 right-4">
+            <button
+              onClick={() => { setAddress("Tashkent, Yunusabad district, Bog'ishamol St. 12"); setShowMap(false); }}
+              className={`w-full rounded-2xl py-3.5 text-[14px] font-semibold text-white flex items-center justify-center gap-2 ${accent}`}
+              style={{ boxShadow: accentShadow }}>
+              <MapPin size={16} /> Use This Location
             </button>
-          ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={20} />
+        </button>
+        <p className="flex-1 text-[17px] font-bold text-foreground">Cash Delivery</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Full name</p>
+            <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3.5">
+              <User size={18} className={accentText} />
+              <input type="text" value={name} onChange={e => setName(e.target.value)}
+                className="flex-1 bg-transparent text-[14px] text-foreground outline-none" />
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Phone number</p>
+            <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3.5">
+              <Phone size={18} className={accentText} />
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                className="flex-1 bg-transparent text-[14px] text-foreground outline-none" />
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Delivery address</p>
+            <button onClick={() => setShowMap(true)}
+              className="w-full flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3.5 text-left active:scale-[0.98] transition-all">
+              <MapPin size={18} className={`${accentText} shrink-0`} />
+              <span className={`flex-1 text-[14px] ${address ? "text-foreground" : "text-muted-foreground"}`}>
+                {address || "Tap to select on map"}
+              </span>
+              <Navigation size={15} className={accentText} />
+            </button>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Amount (UZS)</p>
+            <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3.5">
+              <Wallet size={18} className={accentText} />
+              <input type="number" inputMode="numeric" placeholder="0"
+                value={amount} onChange={e => setAmount(e.target.value)}
+                className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground outline-none" />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1.5 px-1">Available: {fmtUZS(balance)} UZS</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="shrink-0 px-4 pb-6 pt-3 bg-background border-t border-border">
+        <button
+          disabled={!name || !phone || !address || !amount}
+          onClick={() => setSubmitted(true)}
+          className={`w-full rounded-2xl py-3.5 text-[14px] font-semibold text-white flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-40 ${accent}`}
+          style={{ boxShadow: accentShadow }}>
+          Request Cash Delivery
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Sub-page: Transaction history grouped by month
+function TransactionHistoryPage({ role, transactions, onBack }: { role: Role; transactions: WalletTxn[]; onBack: () => void }) {
+  const isSeller = role === "seller";
+
+  // Group by month label
+  const groups: { month: string; items: WalletTxn[]; total: number }[] = [];
+  transactions.forEach(t => {
+    const month = t.date.split(",")[0].replace(/\d+$/, "").trim(); // "Jun 2026" style
+    const parts = t.date.split(" ");
+    const monthKey = parts.length >= 3 ? `${parts[0]} ${parts[2]}` : t.date;
+    let g = groups.find(g => g.month === monthKey);
+    if (!g) { g = { month: monthKey, items: [], total: 0 }; groups.push(g); }
+    g.items.push(t);
+    g.total += t.kind === "earn" ? t.amount : -t.amount;
+  });
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={20} />
+        </button>
+        <p className="flex-1 text-[17px] font-bold text-foreground">Bonus History</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {groups.map(g => (
+          <div key={g.month} className="mb-5">
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[12px] font-semibold text-muted-foreground">{g.month}</p>
+              <p className={`text-[12px] font-bold ${g.total >= 0 ? "text-emerald-600" : "text-foreground"}`}>
+                {g.total >= 0 ? "+" : ""}{fmtUZS(g.total)} UZS
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              {g.items.map(t => (
+                <div key={t.id} className="flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-[#F4F5F7] text-muted-foreground"}`}>
+                    {t.kind === "earn" ? <Gift size={17} /> : <ArrowDownToLine size={17} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-foreground leading-tight">{t.label}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{t.date}</p>
+                  </div>
+                  <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-foreground"}`}>
+                    {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Sub-page: My Info
+function MyInfoPage({ role, name: initName, phone: initPhone, onBack }: { role: Role; name: string; phone: string; onBack: () => void }) {
+  const isSeller = role === "seller";
+  const [editName, setEditName] = useState(initName);
+  const [editPhone, setEditPhone] = useState(initPhone);
+  const [editRegion, setEditRegion] = useState("Tashkent");
+  const [saved, setSaved] = useState(false);
+
+  const REGIONS = ["Tashkent", "Samarkand", "Bukhara", "Namangan", "Andijan", "Fergana", "Nukus", "Termez", "Qarshi", "Jizzakh"];
+
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={20} />
+        </button>
+        <p className="flex-1 text-[17px] font-bold text-foreground">My Information</p>
+        <button onClick={handleSave}
+          className={`text-[13px] font-semibold px-3 py-1.5 rounded-xl transition-all ${saved ? "bg-emerald-50 text-emerald-600" : "bg-primary/8 text-primary hover:bg-primary/15"}`}>
+          {saved ? "Saved ✓" : "Save"}
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-5">
+        {/* Avatar */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="relative">
+            <div className={`w-24 h-24 rounded-3xl flex items-center justify-center text-white text-[36px] font-bold ${isSeller ? "bg-emerald-500" : "bg-primary"}`}
+              style={{ boxShadow: isSeller ? "0 4px 20px rgba(16,185,129,0.3)" : "0 4px 20px rgba(37,99,235,0.3)" }}>
+              {editName.charAt(0)}
+            </div>
+            <button className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-xl bg-foreground text-background flex items-center justify-center shadow-md hover:opacity-80 transition-opacity">
+              <UserCircle size={15} />
+            </button>
+          </div>
+          <p className="text-[12px] text-muted-foreground mt-3">Tap the icon to change photo</p>
         </div>
 
-        {/* History */}
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mt-5 mb-2.5">Recent activity</p>
-        <div className="flex flex-col gap-2 pb-2">
-          {transactions.map(t => (
-            <div key={t.id} className="flex items-center gap-3 bg-card rounded-2xl border border-border p-3" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-primary"}`}>
-                {t.kind === "earn" ? <Gift size={16} /> : <ArrowDownToLine size={16} />}
+        {/* Editable fields */}
+        <div className="flex flex-col gap-3">
+          {/* Full name */}
+          <div className="bg-card rounded-2xl border border-border px-4 py-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <p className="text-[11px] text-muted-foreground font-medium mb-1.5">Full name</p>
+            <input
+              type="text"
+              value={editName}
+              onChange={e => setEditName(e.target.value)}
+              className="w-full text-[15px] font-semibold text-foreground bg-transparent outline-none placeholder:text-muted-foreground"
+              placeholder="Enter your name"
+            />
+          </div>
+
+          {/* Phone */}
+          <div className="bg-card rounded-2xl border border-border px-4 py-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <p className="text-[11px] text-muted-foreground font-medium mb-1.5">Phone number</p>
+            <input
+              type="tel"
+              value={editPhone}
+              onChange={e => setEditPhone(e.target.value)}
+              className="w-full text-[15px] font-semibold text-foreground bg-transparent outline-none placeholder:text-muted-foreground"
+              placeholder="+998 XX XXX XX XX"
+            />
+          </div>
+
+          {/* Region */}
+          <div className="bg-card rounded-2xl border border-border px-4 py-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <p className="text-[11px] text-muted-foreground font-medium mb-1.5">Region</p>
+            <select
+              value={editRegion}
+              onChange={e => setEditRegion(e.target.value)}
+              className="w-full text-[15px] font-semibold text-foreground bg-transparent outline-none appearance-none cursor-pointer">
+              {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main profile hub
+// ─── ORDER HISTORY DATA ───────────────────────────────────────────────────────
+interface OrderItem  { id: number; name: string; img: string; price: string; qty: number; }
+interface PastOrder  {
+  ref: string;
+  date: string;
+  shopName: string;
+  sellerName: string;
+  items: OrderItem[];
+  bonus: number;
+}
+
+const PAST_ORDERS: PastOrder[] = [
+  {
+    ref: "ORD-2206-A47",
+    date: "Jun 18, 2026 · 14:32",
+    shopName: "AutoZone Tashkent",
+    sellerName: "Jasur Toshmatov",
+    items: [
+      { id: 1, name: "Bosch Oil Filter Premium", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "45 000", qty: 2 },
+      { id: 3, name: "NGK Spark Plug x4",        img: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", price: "88 000", qty: 1 },
+    ],
+    bonus: 5340,
+  },
+  {
+    ref: "ORD-2206-B91",
+    date: "Jun 09, 2026 · 10:15",
+    shopName: "TireHub Yunusabad",
+    sellerName: "Dilshod Razzaqov",
+    items: [
+      { id: 4, name: "Continental Tire 205/55R16", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "320 000", qty: 4 },
+    ],
+    bonus: 38400,
+  },
+  {
+    ref: "ORD-2206-C03",
+    date: "Jun 02, 2026 · 16:48",
+    shopName: "SparkMaster Pro",
+    sellerName: "Sardor Yusupov",
+    items: [
+      { id: 5, name: "Denso Air Filter",       img: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", price: "62 000", qty: 1 },
+      { id: 6, name: "Monroe Shock Absorber",  img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "145 000", qty: 2 },
+    ],
+    bonus: 10560,
+  },
+];
+
+// Sub-page: Order history list + detail
+function OrderHistoryPage({ onBack }: { onBack: () => void }) {
+  const [selected, setSelected] = useState<PastOrder | null>(null);
+
+  // ── Order detail ──
+  if (selected) {
+    const total = selected.items.reduce((s, i) => s + priceToNum(i.price) * i.qty, 0);
+    const totalUnits = selected.items.reduce((s, i) => s + i.qty, 0);
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={() => setSelected(null)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft size={20} />
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-[17px] font-bold text-foreground leading-tight">Order Details</p>
+            <p className="text-[11px] text-muted-foreground">{selected.ref}</p>
+          </div>
+          <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-xl">Completed</span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="flex flex-col gap-3">
+            {/* Seller info */}
+            <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Seller</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
+                  <Store size={18} className="text-primary" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-bold text-foreground">{selected.shopName}</p>
+                  <p className="text-[12px] text-muted-foreground">{selected.sellerName}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-foreground leading-tight truncate">{t.label}</p>
-                <p className="text-[11px] text-muted-foreground">{t.date}</p>
+              <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 text-muted-foreground">
+                <Clock size={12} />
+                <span className="text-[12px]">{selected.date}</span>
               </div>
-              <span className={`text-[13px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-foreground"}`}>
-                {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)}
-              </span>
+            </div>
+
+            {/* Items */}
+            <div className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-4 pt-4 pb-2">Items ({totalUnits} units)</p>
+              {selected.items.map((item, i) => (
+                <div key={item.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
+                  <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0">
+                    <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-foreground line-clamp-1">{item.name}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{item.price} UZS × {item.qty}</p>
+                  </div>
+                  <p className="text-[13px] font-bold text-foreground shrink-0">{fmtUZS(priceToNum(item.price) * item.qty)}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Summary */}
+            <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Summary</p>
+              <div className="flex items-center justify-between text-[13px] mb-2">
+                <span className="text-muted-foreground">Subtotal ({totalUnits} units)</span>
+                <span className="font-semibold text-foreground">{fmtUZS(total)} UZS</span>
+              </div>
+              <div className="flex items-center justify-between text-[13px] mb-3">
+                <span className="flex items-center gap-1.5 text-emerald-600"><Gift size={13} /> Bonus earned (3%)</span>
+                <span className="font-bold text-emerald-600">+{fmtUZS(selected.bonus)} UZS</span>
+              </div>
+              <div className="h-px bg-border mb-3" />
+              <div className="flex items-center justify-between">
+                <span className="text-[15px] font-bold text-foreground">Total paid</span>
+                <span className="text-[20px] font-bold text-primary">{fmtUZS(total)} <span className="text-[11px] font-normal text-muted-foreground">UZS</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Order list ──
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={20} />
+        </button>
+        <p className="flex-1 text-[17px] font-bold text-foreground">Order History</p>
+        <span className="text-[12px] text-muted-foreground">{PAST_ORDERS.length} orders</span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex flex-col gap-3">
+          {PAST_ORDERS.map(order => {
+            const total = order.items.reduce((s, i) => s + priceToNum(i.price) * i.qty, 0);
+            const totalUnits = order.items.reduce((s, i) => s + i.qty, 0);
+            return (
+              <button key={order.ref} onClick={() => setSelected(order)}
+                className="bg-card rounded-2xl border border-border p-4 text-left w-full hover:border-primary/30 active:scale-[0.98] transition-all"
+                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                {/* Header row */}
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-[12px] font-semibold text-foreground">{order.ref}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                      <Clock size={10} /> {order.date}
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Completed</span>
+                </div>
+
+                {/* Seller row */}
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
+                  <div className="w-7 h-7 rounded-lg bg-primary/8 flex items-center justify-center shrink-0">
+                    <Store size={13} className="text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-semibold text-foreground truncate">{order.shopName}</p>
+                    <p className="text-[10px] text-muted-foreground">{order.sellerName}</p>
+                  </div>
+                </div>
+
+                {/* Items preview */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex -space-x-2">
+                    {order.items.slice(0, 3).map(item => (
+                      <div key={item.id} className="w-9 h-9 rounded-lg bg-muted overflow-hidden border-2 border-card shrink-0">
+                        <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                    {order.items.length > 3 && (
+                      <div className="w-9 h-9 rounded-lg bg-[#F4F5F7] border-2 border-card flex items-center justify-center shrink-0">
+                        <span className="text-[10px] font-bold text-muted-foreground">+{order.items.length - 3}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground ml-1">{order.items.length} product{order.items.length > 1 ? "s" : ""} · {totalUnits} unit{totalUnits > 1 ? "s" : ""}</p>
+                </div>
+
+                {/* Footer: total + bonus */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-emerald-600">
+                    <Gift size={12} />
+                    <span className="text-[11px] font-semibold">+{fmtUZS(order.bonus)} UZS bonus</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <p className="text-[15px] font-bold text-foreground">{fmtUZS(total)}</p>
+                    <span className="text-[10px] text-muted-foreground">UZS</span>
+                    <ChevronRight size={14} className="text-muted-foreground ml-1" />
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type ProfileSubPage = "wallet" | "history" | "info" | "orders" | null;
+
+function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSubPageChange }: {
+  role: Role; name: string; phone: string; balance: number; transactions: WalletTxn[]; onLogout?: () => void; onSubPageChange?: (active: boolean) => void;
+}) {
+  const [sub, setSub] = useState<ProfileSubPage>(null);
+  const isSeller = role === "seller";
+  const earnedTotal = transactions.filter(t => t.kind === "earn").reduce((s, t) => s + t.amount, 0);
+
+  const goSub = (s: ProfileSubPage) => { setSub(s); onSubPageChange?.(s !== null); };
+  const goBack = () => { setSub(null); onSubPageChange?.(false); };
+
+  if (sub === "wallet")  return <WalletPage role={role} balance={balance} name={name} phone={phone} onBack={goBack} />;
+  if (sub === "history") return <TransactionHistoryPage role={role} transactions={transactions} onBack={goBack} />;
+  if (sub === "info")    return <MyInfoPage role={role} name={name} phone={phone} onBack={goBack} />;
+  if (sub === "orders")  return <OrderHistoryPage onBack={goBack} />;
+
+  // ── Profile hub ──
+  const menuSections = [
+    {
+      title: "General",
+      items: [
+        { label: "My information", icon: <UserCircle size={18} />,  color: "bg-blue-500",    action: () => goSub("info") },
+        { label: "Bonus wallet",   icon: <Wallet size={18} />,      color: "bg-emerald-500", action: () => goSub("wallet") },
+        { label: "Order history",  icon: <ShoppingBag size={18} />, color: "bg-orange-500",  action: () => goSub("orders") },
+        { label: "Bonus history",  icon: <BarChart2 size={18} />,   color: "bg-violet-500",  action: () => goSub("history") },
+      ],
+    },
+    {
+      title: "Settings",
+      items: [
+        { label: "Language", icon: <Globe size={18} />,   color: "bg-sky-500",   action: () => {} },
+        { label: "Theme",    icon: <SunMoon size={18} />, color: "bg-amber-500", action: () => {} },
+      ],
+    },
+    {
+      title: "Support",
+      items: [
+        { label: "Help",      icon: <Headphones size={18} />, color: "bg-teal-500",  action: () => {} },
+        { label: "FAQ",       icon: <HelpCircle size={18} />, color: "bg-indigo-500",action: () => {} },
+        { label: "About app", icon: <Info size={18} />,       color: "bg-slate-500", action: () => {} },
+      ],
+    },
+  ];
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex-1 overflow-y-auto">
+        {/* Hero: avatar + name + phone + verified */}
+        <div className="flex flex-col items-center pt-8 pb-5 px-4 bg-card border-b border-border">
+          <div className={`w-20 h-20 rounded-3xl flex items-center justify-center text-white mb-3 ${isSeller ? "bg-emerald-500" : "bg-primary"}`}
+            style={{ boxShadow: isSeller ? "0 4px 20px rgba(16,185,129,0.35)" : "0 4px 20px rgba(37,99,235,0.35)" }}>
+            <span className="text-[32px] font-bold">{name.charAt(0)}</span>
+          </div>
+          <p className="text-[20px] font-bold text-foreground">{name}</p>
+          <p className="text-[13px] text-muted-foreground mt-0.5">{phone}</p>
+        </div>
+
+        {/* Two quick-access cards */}
+        <div className="flex gap-3 px-4 pt-4 pb-2">
+          <button onClick={() => goSub("wallet")}
+            className={`flex-1 rounded-2xl p-4 text-left active:scale-[0.97] transition-all ${isSeller ? "bg-emerald-500" : "bg-primary"}`}
+            style={{ boxShadow: isSeller ? "0 4px 16px rgba(16,185,129,0.3)" : "0 4px 16px rgba(37,99,235,0.3)" }}>
+            <p className="text-white/70 text-[11px] font-medium">{isSeller ? "Seller bonus" : "Bonus wallet"}</p>
+            <p className="text-white text-[18px] font-bold mt-1 leading-tight">{fmtUZS(balance)}</p>
+            <p className="text-white/60 text-[10px] mt-0.5">UZS available</p>
+          </button>
+          <button onClick={() => goSub("history")}
+            className="flex-1 rounded-2xl p-4 text-left bg-[#F59E0B] active:scale-[0.97] transition-all"
+            style={{ boxShadow: "0 4px 16px rgba(245,158,11,0.3)" }}>
+            <p className="text-white/80 text-[11px] font-medium">Total earned</p>
+            <p className="text-white text-[18px] font-bold mt-1 leading-tight">{fmtUZS(earnedTotal)}</p>
+            <p className="text-white/60 text-[10px] mt-0.5">UZS lifetime</p>
+          </button>
+        </div>
+
+        {/* Menu sections */}
+        <div className="px-4 pt-2 pb-4 flex flex-col gap-4">
+          {menuSections.map(section => (
+            <div key={section.title}>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">{section.title}</p>
+              <div className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                {section.items.map((item, i) => (
+                  <button key={item.label} onClick={item.action}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3.5 text-left hover:bg-[#F9FAFB] transition-colors ${i > 0 ? "border-t border-border" : ""}`}>
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white ${item.color}`}>
+                      {item.icon}
+                    </div>
+                    <p className="flex-1 text-[14px] font-semibold text-foreground">{item.label}</p>
+                    <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+                  </button>
+                ))}
+              </div>
             </div>
           ))}
+
+          {/* Logout */}
+          {onLogout && (
+            <button onClick={onLogout}
+              className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl border-2 border-red-100 bg-red-50 text-red-500 font-semibold text-[14px] hover:bg-red-100 transition-colors active:scale-[0.98]">
+              <LogOut size={16} /> Log out
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -2168,6 +2834,7 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cartIds, setCartIds] = useState<number[]>([]);
   const [cartQty, setCartQty] = useState<Record<number, number>>({});
+  const [profileSubActive, setProfileSubActive] = useState(false);
 
   const tabs: { key: MechanicTab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
     { key: "main",    label: "Main",    icon: (a) => <Home    size={22} strokeWidth={a ? 2.5 : 1.8} /> },
@@ -2206,7 +2873,8 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
               : tab === "cart"
                 ? <CartPage cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
                 : tab === "profile"
-                  ? <WalletScreen role="mechanic" name="Akmal Karimov" phone="+998 90 123 45 67" balance={184000}
+                  ? <WalletScreen role="mechanic" name="Akmal Karimov" phone="+998 90 123 45 67" balance={184000} onLogout={onLogout}
+                      onSubPageChange={setProfileSubActive}
                       transactions={[
                         { id: 1, label: "Purchase bonus · AutoZone", date: "Jun 18, 2026", amount: 13500, kind: "earn" },
                         { id: 2, label: "Withdraw to UzCard", date: "Jun 12, 2026", amount: 100000, kind: "withdraw" },
@@ -2216,8 +2884,8 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
                   : <PlaceholderPage label={pageLabel[tab]} icon={pageIcon[tab]} />}
       </div>
 
-      {/* Bottom nav — hide on detail page */}
-      {!selectedProduct && (
+      {/* Bottom nav — hide on detail page or profile sub-page */}
+      {!selectedProduct && !profileSubActive && (
         <div className="shrink-0 bg-card border-t border-border relative" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
           <div className="flex items-end justify-around px-2 pt-2 pb-2">
             {tabs.map((t) => {
@@ -2271,6 +2939,7 @@ function SellerApp({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<SellerTab>("main");
   const [scanning, setScanning] = useState(false);
   const [showApproval, setShowApproval] = useState(false);
+  const [profileSubActive, setProfileSubActive] = useState(false);
 
   const tabs: { key: SellerTab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
     { key: "main",    label: "Main",    icon: (a) => <Home        size={22} strokeWidth={a ? 2.5 : 1.8} /> },
@@ -2311,7 +2980,8 @@ function SellerApp({ onLogout }: { onLogout: () => void }) {
           : tab === "orders"
             ? <SellerOrdersPage />
             : tab === "profile"
-              ? <WalletScreen role="seller" name="Bekzod Saidov" phone="+998 91 555 22 11" balance={326500}
+              ? <WalletScreen role="seller" name="Bekzod Saidov" phone="+998 91 555 22 11" balance={326500} onLogout={onLogout}
+                  onSubPageChange={setProfileSubActive}
                   transactions={[
                     { id: 1, label: "Sale bonus · Akmal K.", date: "Jun 18, 2026", amount: 4800, kind: "earn" },
                     { id: 2, label: "Withdraw to Click", date: "Jun 14, 2026", amount: 150000, kind: "withdraw" },
@@ -2321,8 +2991,8 @@ function SellerApp({ onLogout }: { onLogout: () => void }) {
               : <PlaceholderPage label={pageLabel[tab]} icon={pageIcon[tab]} />}
       </div>
 
-      {/* Bottom nav — hidden during the full-screen approval flow */}
-      {!showApproval && (
+      {/* Bottom nav — hidden during the full-screen approval flow or profile sub-page */}
+      {!showApproval && !profileSubActive && (
       <div className="shrink-0 bg-card border-t border-border relative">
         <div className="flex items-end justify-around px-2 pt-2 pb-2">
           {tabs.map((t) => {
