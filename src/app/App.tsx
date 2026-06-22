@@ -9,6 +9,7 @@ import {
   Gift, TrendingUp, ShieldCheck, Receipt, ChevronLeft,
   Globe, SunMoon, Headphones, HelpCircle, Info, ShoppingBag,
   BarChart2, UserCircle, Settings, LogOut,
+  Search, Bell, MoreHorizontal,
 } from "lucide-react";
 
 type AuthScreen = "login" | "mechanic-login-otp" | "mechanic-profile" | "forgot-phone" | "forgot-otp" | "forgot-newpass";
@@ -669,6 +670,9 @@ const PRODUCTS: Product[] = [
   },
 ];
 
+const SELLER_SHOP = "AutoZone Tashkent";
+const SELLER_PRODUCTS = PRODUCTS.filter(p => p.shop === SELLER_SHOP);
+
 // Unique product names for search suggestions
 const UNIQUE_PRODUCTS = PRODUCTS.filter((p, _, arr) => arr.findIndex(x => x.name === p.name) === arr.indexOf(p));
 
@@ -1077,8 +1081,8 @@ function SearchPage({ onSelect, onClose, onGoToCart, onSelectCategory, cartIds, 
   );
 }
 
-function ProductCardImage({ images, discount, height = "h-32", onClick, initialLiked = false }: {
-  images: string[]; discount?: number; height?: string; onClick: () => void; initialLiked?: boolean;
+function ProductCardImage({ images, discount, height = "h-32", onClick, initialLiked = false, showLike = true }: {
+  images: string[]; discount?: number; height?: string; onClick: () => void; initialLiked?: boolean; showLike?: boolean;
 }) {
   const [idx, setIdx] = useState(0);
   const [liked, setLiked] = useState(initialLiked);
@@ -1099,14 +1103,16 @@ function ProductCardImage({ images, discount, height = "h-32", onClick, initialL
       <img src={images[idx]} alt="" className="w-full h-full object-cover" />
       {discount && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">-{discount}%</span>}
       {/* Like button */}
-      <button
-        onClick={e => { e.stopPropagation(); setLiked(l => !l); }}
-        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center shadow-sm transition-all hover:scale-110"
-      >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill={liked ? "#ef4444" : "none"}>
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke={liked ? "#ef4444" : "#6b7280"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </button>
+      {showLike && (
+        <button
+          onClick={e => { e.stopPropagation(); setLiked(l => !l); }}
+          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center shadow-sm transition-all hover:scale-110"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill={liked ? "#ef4444" : "none"}>
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke={liked ? "#ef4444" : "#6b7280"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      )}
       {images.length > 1 && (
         <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1 pointer-events-none">
           {images.map((_, i) => (
@@ -2829,7 +2835,8 @@ function CartPage({ cartIds, setCartIds, cartQty, setCartQty }: {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2">{p.name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{p.shop}</p>
+                    <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{p.sku}</p>
+                    <p className="text-[11px] text-muted-foreground">{p.shop}</p>
                   </div>
                   <button onClick={() => setCartIds(ids => ids.filter(i => i !== p.id))}
                     className="shrink-0 w-7 h-7 rounded-lg bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors mt-0.5">
@@ -2920,7 +2927,7 @@ function CartPage({ cartIds, setCartIds, cartQty, setCartQty }: {
 
 // ─── PROFILE / WALLET (multi-page, shared by both roles) ─────────────────────
 
-interface WalletTxn { id: number; label: string; date: string; amount: number; kind: "earn" | "withdraw"; }
+interface WalletTxn { id: number; label: string; date: string; amount: number; kind: "earn" | "withdraw"; orderRef?: string; }
 
 type WithdrawStatus = "pending" | "processing" | "out_for_delivery" | "delivered" | "failed";
 interface WithdrawRequest {
@@ -2941,11 +2948,11 @@ function WalletPage({ role, balance, name, phone, onBack }: { role: Role; balanc
   const [showSheet, setShowSheet] = useState(false);
   const [flow, setFlow] = useState<WithdrawFlow>(null);
 
-  const accent = isSeller ? "bg-emerald-500" : "bg-primary";
-  const accentShadow = isSeller ? "0 4px 20px rgba(16,185,129,0.35)" : "0 4px 20px rgba(37,99,235,0.35)";
-  const accentBtnShadow = isSeller ? "0 4px 16px rgba(16,185,129,0.35)" : "0 4px 16px rgba(37,99,235,0.35)";
-  const accentText = isSeller ? "text-emerald-600" : "text-primary";
-  const accentBg = isSeller ? "bg-emerald-500 hover:bg-emerald-600" : "bg-primary hover:bg-blue-700";
+  const accent = "bg-primary";
+  const accentShadow = "0 4px 20px rgba(37,99,235,0.35)";
+  const accentBtnShadow = "0 4px 16px rgba(37,99,235,0.35)";
+  const accentText = "text-primary";
+  const accentBg = "bg-primary hover:bg-blue-700";
 
   if (flow === "card") {
     return <WithdrawCardPage isSeller={isSeller} balance={balance} accent={accentBg} accentShadow={accentBtnShadow} accentText={accentText} onBack={() => setFlow(null)} />;
@@ -3298,8 +3305,8 @@ function DatePickerWheel({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 
-function TransactionHistoryPage({ role, transactions, requests, onBack }: {
-  role: Role; transactions: WalletTxn[]; requests: WithdrawRequest[]; onBack: () => void;
+function TransactionHistoryPage({ role, transactions, requests, onBack, onOrderTap }: {
+  role: Role; transactions: WalletTxn[]; requests: WithdrawRequest[]; onBack: () => void; onOrderTap?: (ref: string) => void;
 }) {
   const isSeller = role === "seller";
   const [activeTab, setActiveTab] = useState<"history"|"requests">("history");
@@ -3421,20 +3428,28 @@ function TransactionHistoryPage({ role, transactions, requests, onBack }: {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {g.items.map(t => (
-                    <div key={t.id} className="flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
-                        {t.kind === "earn" ? <Gift size={17} /> : <ArrowDownToLine size={17} />}
+                  {g.items.map(t => {
+                    const tappable = t.kind === "earn" && !!t.orderRef && !!onOrderTap;
+                    return (
+                      <div key={t.id}
+                        onClick={tappable ? () => onOrderTap!(t.orderRef!) : undefined}
+                        className={`flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5 ${tappable ? "cursor-pointer active:scale-[0.98] transition-transform" : ""}`}
+                        style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
+                          {t.kind === "earn" ? <Gift size={17} /> : <ArrowDownToLine size={17} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-semibold text-foreground leading-tight">{t.label}</p>
+                          {t.orderRef && <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{t.orderRef}</p>}
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{t.date}</p>
+                        </div>
+                        <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-red-500"}`}>
+                          {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)}
+                        </span>
+                        {tappable && <ChevronRight size={15} className="text-muted-foreground shrink-0 ml-1" />}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-foreground leading-tight">{t.label}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{t.date}</p>
-                      </div>
-                      <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-red-500"}`}>
-                        {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -3641,16 +3656,29 @@ function MyInfoPage({ role, name: initName, phone: initPhone, onBack }: { role: 
             />
           </div>
 
-          {/* Region */}
-          <div className="bg-card rounded-2xl border border-border px-4 py-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-            <p className="text-[11px] text-muted-foreground font-medium mb-1.5">Region</p>
-            <select
-              value={editRegion}
-              onChange={e => setEditRegion(e.target.value)}
-              className="w-full text-[15px] font-semibold text-foreground bg-transparent outline-none appearance-none cursor-pointer">
-              {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
+          {/* Region — mechanic only */}
+          {!isSeller && (
+            <div className="bg-card rounded-2xl border border-border px-4 py-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <p className="text-[11px] text-muted-foreground font-medium mb-1.5">Region</p>
+              <select
+                value={editRegion}
+                onChange={e => setEditRegion(e.target.value)}
+                className="w-full text-[15px] font-semibold text-foreground bg-transparent outline-none appearance-none cursor-pointer">
+                {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          )}
+
+          {/* Shop name — seller only, read-only */}
+          {isSeller && (
+            <div className="bg-[#F4F5F7] rounded-2xl border border-border px-4 py-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <p className="text-[11px] text-muted-foreground font-medium mb-1.5">Shop name</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[15px] font-semibold text-foreground">{SELLER_SHOP}</p>
+                <span className="text-[10px] font-semibold text-muted-foreground bg-border px-2 py-0.5 rounded-md">Read only</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -3659,7 +3687,7 @@ function MyInfoPage({ role, name: initName, phone: initPhone, onBack }: { role: 
 
 // Main profile hub
 // ─── ORDER HISTORY DATA ───────────────────────────────────────────────────────
-interface OrderItem  { id: number; name: string; img: string; price: string; qty: number; }
+interface OrderItem  { id: number; name: string; img: string; price: string; qty: number; sku?: string; variation?: string; }
 interface PastOrder  {
   ref: string;
   date: string;
@@ -3676,8 +3704,8 @@ const PAST_ORDERS: PastOrder[] = [
     shopName: "AutoZone Tashkent",
     sellerName: "Jasur Toshmatov",
     items: [
-      { id: 1, name: "Bosch Oil Filter Premium", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "45 000", qty: 2 },
-      { id: 3, name: "NGK Spark Plug x4",        img: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", price: "88 000", qty: 1 },
+      { id: 1, name: "Bosch Oil Filter Premium", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "45 000", qty: 2, sku: "BSH-OF-4722", variation: "Diesel · 1 unit" },
+      { id: 3, name: "NGK Spark Plug x4",        img: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", price: "88 000", qty: 1, sku: "NGK-BKR6E-4PK", variation: "Heat 6 · 1.0 mm" },
     ],
     bonus: 5340,
   },
@@ -3687,7 +3715,7 @@ const PAST_ORDERS: PastOrder[] = [
     shopName: "TireHub Yunusabad",
     sellerName: "Dilshod Razzaqov",
     items: [
-      { id: 4, name: "Continental Tire 205/55R16", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "320 000", qty: 4 },
+      { id: 4, name: "Continental Tire 205/55R16", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "320 000", qty: 4, sku: "CNT-205-55R16-91V", variation: "205/55R16 · V · 240 km/h" },
     ],
     bonus: 38400,
   },
@@ -3697,16 +3725,18 @@ const PAST_ORDERS: PastOrder[] = [
     shopName: "SparkMaster Pro",
     sellerName: "Sardor Yusupov",
     items: [
-      { id: 5, name: "Denso Air Filter",       img: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", price: "62 000", qty: 1 },
-      { id: 6, name: "Monroe Shock Absorber",  img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "145 000", qty: 2 },
+      { id: 5, name: "Denso Air Filter",       img: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", price: "62 000", qty: 1, sku: "DNS-AF-268", variation: "Performance" },
+      { id: 6, name: "Monroe Shock Absorber",  img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "145 000", qty: 2, sku: "MNR-E1156", variation: "Front Left · Sport" },
     ],
     bonus: 10560,
   },
 ];
 
 // Sub-page: Order history list + detail
-function OrderHistoryPage({ onBack }: { onBack: () => void }) {
-  const [selected, setSelected] = useState<PastOrder | null>(null);
+function OrderHistoryPage({ onBack, initialRef }: { onBack: () => void; initialRef?: string }) {
+  const [selected, setSelected] = useState<PastOrder | null>(
+    initialRef ? (PAST_ORDERS.find(o => o.ref === initialRef) ?? null) : null
+  );
 
   // ── Order detail ──
   if (selected) {
@@ -3715,7 +3745,7 @@ function OrderHistoryPage({ onBack }: { onBack: () => void }) {
     return (
       <div className="flex flex-col h-full bg-background">
         <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
-          <button onClick={() => setSelected(null)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={initialRef ? onBack : () => setSelected(null)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
             <ChevronLeft size={20} />
           </button>
           <div className="flex-1 min-w-0">
@@ -3755,6 +3785,8 @@ function OrderHistoryPage({ onBack }: { onBack: () => void }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-foreground line-clamp-1">{item.name}</p>
+                    {item.sku && <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{item.sku}</p>}
+                    {item.variation && <p className="text-[10px] text-muted-foreground">{item.variation}</p>}
                     <p className="text-[11px] text-muted-foreground mt-0.5">{item.price} UZS × {item.qty}</p>
                   </div>
                   <p className="text-[13px] font-bold text-foreground shrink-0">{fmtUZS(priceToNum(item.price) * item.qty)}</p>
@@ -3967,14 +3999,18 @@ function WalletScreen({ role, name, phone, balance, transactions, onLogout, onSu
   const [showLangSheet, setShowLangSheet] = useState(false);
   const [showAboutSheet, setShowAboutSheet] = useState(false);
   const [activeLang, setActiveLang] = useState<LangCode>("en");
+  const [histOrderRef, setHistOrderRef] = useState<string | null>(null);
   const isSeller = role === "seller";
 
   const goSub = (s: ProfileSubPage) => { setSub(s); onSubPageChange?.(s !== null); };
-  const goBack = () => { setSub(null); onSubPageChange?.(false); };
+  const goBack = () => { setSub(null); setHistOrderRef(null); onSubPageChange?.(false); };
   const currentLang = LANGS.find(l => l.code === activeLang)!;
 
   if (sub === "wallet")  return <WalletPage role={role} balance={balance} name={name} phone={phone} onBack={goBack} />;
-  if (sub === "history") return <TransactionHistoryPage role={role} transactions={transactions} requests={MOCK_WITHDRAW_REQUESTS} onBack={goBack} />;
+  if (sub === "history") {
+    if (histOrderRef) return <OrderHistoryPage initialRef={histOrderRef} onBack={() => setHistOrderRef(null)} />;
+    return <TransactionHistoryPage role={role} transactions={transactions} requests={MOCK_WITHDRAW_REQUESTS} onBack={goBack} onOrderTap={ref => setHistOrderRef(ref)} />;
+  }
   if (sub === "info")    return <MyInfoPage role={role} name={name} phone={phone} onBack={goBack} />;
   if (sub === "orders")  return <OrderHistoryPage onBack={goBack} />;
   if (sub === "faq")     return <FAQPage onBack={goBack} />;
@@ -4229,36 +4265,199 @@ function TransactionApprovalPage({ onResolve }: { onResolve: () => void }) {
 }
 
 // ─── SELLER: ORDERS ───────────────────────────────────────────────────────────
-const SELLER_ORDERS = [
-  { id: 1, mechanic: "Akmal Karimov", ref: "TXN-2206-A47", units: 4, amount: 240000, status: "pending" as const },
-  { id: 2, mechanic: "Dilshod Rasulov", ref: "TXN-2205-B12", units: 2, amount: 410000, status: "approved" as const },
-  { id: 3, mechanic: "Sardor Yusupov", ref: "TXN-2205-A08", units: 1, amount: 88000, status: "approved" as const },
-  { id: 4, mechanic: "Jasur Toirov", ref: "TXN-2204-C33", units: 3, amount: 156000, status: "rejected" as const },
+interface SellerOrder {
+  id: number; ref: string; date: string;
+  mechanic: string; mechanicPhone: string;
+  items: { id: number; name: string; img: string; price: string; qty: number }[];
+  bonus: number;
+}
+
+const SELLER_ORDERS: SellerOrder[] = [
+  {
+    id: 1, ref: "TXN-2206-A47", date: "Jun 18, 2026 · 14:32",
+    mechanic: "Akmal Karimov", mechanicPhone: "+998 90 123 45 67",
+    items: [
+      { id: 1,   name: "Bosch Oil Filter Premium", img: "https://images.unsplash.com/photo-1523559094051-53bac879eb80?w=200&q=80", price: "45 000", qty: 2, sku: "BSH-OF-4722", variation: "Petrol · 1 unit" },
+      { id: 301, name: "NGK Spark Plug x4",        img: "https://images.unsplash.com/photo-1552656967-7a0991a13906?w=200&q=80", price: "92 000", qty: 1, sku: "NGK-BKR6E-4PK", variation: "Heat 6 · 0.8 mm" },
+    ],
+    bonus: 5460,
+  },
+  {
+    id: 2, ref: "TXN-2206-B12", date: "Jun 14, 2026 · 09:55",
+    mechanic: "Dilshod Rasulov", mechanicPhone: "+998 91 234 56 78",
+    items: [
+      { id: 601, name: "Monroe Shock Absorber", img: "https://images.unsplash.com/photo-1429772011165-0c2e054367b8?w=200&q=80", price: "225 000", qty: 2, sku: "MNR-E1156", variation: "Rear Left · Standard" },
+    ],
+    bonus: 13500,
+  },
+  {
+    id: 3, ref: "TXN-2206-C08", date: "Jun 10, 2026 · 16:20",
+    mechanic: "Sardor Yusupov", mechanicPhone: "+998 93 345 67 89",
+    items: [
+      { id: 5,   name: "Denso Air Filter",       img: "https://images.unsplash.com/photo-1527383418406-f85a3b146499?w=200&q=80", price: "62 000", qty: 1, sku: "DNS-AF-268", variation: "Standard" },
+      { id: 1,   name: "Bosch Oil Filter Premium", img: "https://images.unsplash.com/photo-1523559094051-53bac879eb80?w=200&q=80", price: "45 000", qty: 1, sku: "BSH-OF-4722", variation: "Diesel · 2 units" },
+    ],
+    bonus: 3210,
+  },
+  {
+    id: 4, ref: "TXN-2205-D33", date: "Jun 05, 2026 · 11:45",
+    mechanic: "Jasur Toirov", mechanicPhone: "+998 94 456 78 90",
+    items: [
+      { id: 301, name: "NGK Spark Plug x4", img: "https://images.unsplash.com/photo-1552656967-7a0991a13906?w=200&q=80", price: "92 000", qty: 3, sku: "NGK-BKR6E-4PK", variation: "Heat 7 · 1.1 mm" },
+    ],
+    bonus: 8280,
+  },
+  {
+    id: 5, ref: "TXN-2205-E19", date: "May 28, 2026 · 13:10",
+    mechanic: "Mirzo Ergashev", mechanicPhone: "+998 95 567 89 01",
+    items: [
+      { id: 5,   name: "Denso Air Filter",       img: "https://images.unsplash.com/photo-1527383418406-f85a3b146499?w=200&q=80", price: "62 000", qty: 2, sku: "DNS-AF-268", variation: "Carbon Fibre" },
+      { id: 601, name: "Monroe Shock Absorber",  img: "https://images.unsplash.com/photo-1429772011165-0c2e054367b8?w=200&q=80", price: "225 000", qty: 1, sku: "MNR-E1156", variation: "Front Right · Heavy Duty" },
+    ],
+    bonus: 10470,
+  },
 ];
 
-function SellerOrdersPage() {
-  const badge = {
-    pending: { cls: "bg-orange-50 text-orange-600", label: "Pending" },
-    approved: { cls: "bg-emerald-50 text-emerald-600", label: "Approved" },
-    rejected: { cls: "bg-red-50 text-red-500", label: "Rejected" },
-  };
-  return (
-    <div className="flex flex-col h-full">
-      <PageHeader title="Sales & Orders" subtitle={`${SELLER_ORDERS.length} recent`} />
-      <div className="flex-1 overflow-y-auto px-4 py-3">
-        <div className="flex flex-col gap-3">
-          {SELLER_ORDERS.map(o => (
-            <div key={o.id} className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[14px] font-bold text-foreground">{o.mechanic}</p>
-                <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${badge[o.status].cls}`}>{badge[o.status].label}</span>
+function SellerOrdersPage({ initialRef, onDetailBack }: { initialRef?: string; onDetailBack?: () => void } = {}) {
+  const [selected, setSelected] = useState<SellerOrder | null>(
+    initialRef ? (SELLER_ORDERS.find(o => o.ref === initialRef) ?? null) : null
+  );
+
+  // ── Detail page ──
+  if (selected) {
+    const total = selected.items.reduce((s, i) => s + priceToNum(i.price) * i.qty, 0);
+    const totalUnits = selected.items.reduce((s, i) => s + i.qty, 0);
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={initialRef && onDetailBack ? onDetailBack : () => setSelected(null)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft size={20} />
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-[17px] font-bold text-foreground leading-tight">Order Details</p>
+            <p className="text-[11px] text-muted-foreground">{selected.ref}</p>
+          </div>
+          <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-xl">Completed</span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="flex flex-col gap-3">
+            {/* Mechanic info */}
+            <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Mechanic</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
+                  <Wrench size={18} className="text-primary" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-bold text-foreground">{selected.mechanic}</p>
+                  <p className="text-[12px] text-muted-foreground">{selected.mechanicPhone}</p>
+                </div>
               </div>
-              <div className="flex items-center justify-between text-[12px] text-muted-foreground">
-                <span className="flex items-center gap-1.5"><Receipt size={12} /> {o.ref} · {o.units} units</span>
-                <span className="text-[14px] font-bold text-primary">{fmtUZS(o.amount)} UZS</span>
+              <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 text-muted-foreground">
+                <Clock size={12} />
+                <span className="text-[12px]">{selected.date}</span>
               </div>
             </div>
-          ))}
+
+            {/* Items */}
+            <div className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-4 pt-4 pb-2">Items ({totalUnits} units)</p>
+              {selected.items.map((item, i) => (
+                <div key={item.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
+                  <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0">
+                    <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-foreground line-clamp-1">{item.name}</p>
+                    {item.sku && <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{item.sku}</p>}
+                    {item.variation && <p className="text-[10px] text-muted-foreground">{item.variation}</p>}
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{item.price} UZS × {item.qty}</p>
+                  </div>
+                  <p className="text-[13px] font-bold text-foreground shrink-0">{fmtUZS(priceToNum(item.price) * item.qty)}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Summary */}
+            <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Summary</p>
+              <div className="flex items-center justify-between text-[13px] mb-2">
+                <span className="text-muted-foreground">Subtotal ({totalUnits} units)</span>
+                <span className="font-semibold text-foreground">{fmtUZS(total)} UZS</span>
+              </div>
+              <div className="flex items-center justify-between text-[13px] mb-3">
+                <span className="flex items-center gap-1.5 text-emerald-600"><Gift size={13} /> Sales bonus (3%)</span>
+                <span className="font-bold text-emerald-600">+{fmtUZS(selected.bonus)} UZS</span>
+              </div>
+              <div className="h-px bg-border mb-3" />
+              <div className="flex items-center justify-between">
+                <span className="text-[15px] font-bold text-foreground">Total received</span>
+                <span className="text-[20px] font-bold text-primary">{fmtUZS(total)} <span className="text-[11px] font-normal text-muted-foreground">UZS</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Order list ──
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="px-4 pt-5 pb-3 shrink-0">
+        <p className="text-[22px] font-bold text-foreground">Sales & Orders</p>
+        <p className="text-[13px] text-muted-foreground mt-0.5">{SELLER_ORDERS.length} completed orders</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div className="flex flex-col gap-3">
+          {SELLER_ORDERS.map(order => {
+            const total = order.items.reduce((s, i) => s + priceToNum(i.price) * i.qty, 0);
+            const totalUnits = order.items.reduce((s, i) => s + i.qty, 0);
+            return (
+              <button key={order.id} onClick={() => setSelected(order)}
+                className="bg-card rounded-2xl border border-border p-4 text-left w-full hover:border-primary/30 active:scale-[0.98] transition-all"
+                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                {/* Header row */}
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground">{order.ref}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                      <Clock size={10} /> {order.date}
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg shrink-0">Completed</span>
+                </div>
+
+                {/* Mechanic row */}
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
+                  <div className="w-7 h-7 rounded-lg bg-primary/8 flex items-center justify-center shrink-0">
+                    <Wrench size={13} className="text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-semibold text-foreground truncate">{order.mechanic}</p>
+                    <p className="text-[10px] text-muted-foreground">{order.mechanicPhone}</p>
+                  </div>
+                </div>
+
+                {/* Item thumbnails + total */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-2">
+                      {order.items.slice(0, 3).map(item => (
+                        <div key={item.id} className="w-9 h-9 rounded-lg bg-muted overflow-hidden border-2 border-card shrink-0">
+                          <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground">{totalUnits} unit{totalUnits > 1 ? "s" : ""}</span>
+                  </div>
+                  <p className="text-[15px] font-bold text-primary">{fmtUZS(total)} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -4315,10 +4514,10 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
                   ? <WalletScreen role="mechanic" name="Akmal Karimov" phone="+998 90 123 45 67" balance={184000} onLogout={onLogout}
                       onSubPageChange={setProfileSubActive}
                       transactions={[
-                        { id: 1, label: "Purchase bonus · AutoZone", date: "Jun 18, 2026", amount: 13500, kind: "earn" },
-                        { id: 2, label: "Withdraw to UzCard", date: "Jun 12, 2026", amount: 100000, kind: "withdraw" },
-                        { id: 3, label: "Purchase bonus · TireHub", date: "Jun 09, 2026", amount: 23400, kind: "earn" },
-                        { id: 4, label: "Purchase bonus · SparkMaster", date: "Jun 02, 2026", amount: 2640, kind: "earn" },
+                        { id: 1, label: "Purchase bonus · AutoZone",    date: "Jun 18, 2026", amount: 13500,  kind: "earn",     orderRef: "ORD-2206-A47" },
+                        { id: 2, label: "Withdraw to UzCard",            date: "Jun 12, 2026", amount: 100000, kind: "withdraw" },
+                        { id: 3, label: "Purchase bonus · TireHub",      date: "Jun 09, 2026", amount: 23400,  kind: "earn",     orderRef: "ORD-2206-B91" },
+                        { id: 4, label: "Purchase bonus · SparkMaster",  date: "Jun 02, 2026", amount: 2640,   kind: "earn",     orderRef: "ORD-2206-C03" },
                       ]} />
                   : <PlaceholderPage label={pageLabel[tab]} icon={pageIcon[tab]} />}
       </div>
@@ -4373,12 +4572,1131 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+// ─── SELLER CATALOG ───────────────────────────────────────────────────────────
+function SellerProductCard({ product, inCart, qty, onAdd, onChangeQty, onSelect }: {
+  product: Product; inCart: boolean; qty: number;
+  onAdd: () => void; onChangeQty: (delta: number) => void; onSelect: () => void;
+}) {
+  return (
+    <div className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+      <ProductCardImage images={[product.img, ...(PRODUCT_EXTRA_IMGS[product.sku] ?? [])]} discount={product.discount} showLike={false} onClick={onSelect} />
+      <div className="p-2.5 flex flex-col flex-1">
+        <button onClick={onSelect} className="text-left mb-0.5">
+          <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{product.name}</p>
+        </button>
+        <p className="text-[10px] text-muted-foreground font-medium">{product.stock} in stock</p>
+        <div className="mt-0.5 mb-2">
+          {product.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{product.originalPrice} UZS</p>}
+          <p className="text-[13px] font-bold text-primary leading-tight">{product.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
+        </div>
+        <div className="mt-auto">
+          {inCart ? (
+            <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
+              <button onClick={() => onChangeQty(-1)} className="w-7 h-7 rounded-lg bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all"><Minus size={12} /></button>
+              <span className="text-[13px] font-bold text-primary">{qty}</span>
+              <button onClick={() => onChangeQty(1)} className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all"><Plus size={12} /></button>
+            </div>
+          ) : (
+            <button onClick={onAdd} className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
+              Add to Cart
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const SELLER_UNIQUE_PRODUCTS = SELLER_PRODUCTS.filter(
+  (p, _, arr) => arr.findIndex(x => x.name === p.name) === arr.indexOf(p)
+);
+const SELLER_CATS = CATEGORIES.filter(c => SELLER_PRODUCTS.some(p => p.category === c.label));
+
+function SellerSearchPage({ onClose, onSelectCategory, onSelectProduct, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
+  onClose: () => void;
+  onSelectCategory: (label: string) => void;
+  onSelectProduct: (p: Product) => void;
+  onGoToCart: () => void;
+  cartIds: number[];
+  setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
+  cartQty: Record<number, number>;
+  setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+}) {
+  const [query, setQuery] = useState("");
+  const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [showFilter, setShowFilter] = useState(false);
+  const [sortBy, setSortBy] = useState<"default" | "low" | "high" | "discount">("default");
+  const [onlyDiscount, setOnlyDiscount] = useState(false);
+  const [onlyInStock, setOnlyInStock] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const q = query.toLowerCase().trim();
+
+  const suggestions = q
+    ? SELLER_UNIQUE_PRODUCTS.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+      )
+    : [];
+
+  const listings = selectedName ? SELLER_PRODUCTS.filter(p => p.name === selectedName) : [];
+
+  const allPrices = listings.map(p => priceToNum(p.price));
+  const absMin = allPrices.length ? Math.min(...allPrices) : 0;
+  const absMax = allPrices.length ? Math.max(...allPrices) : 1000000;
+  const [sliderMax, setSliderMax] = useState(absMax);
+  const priceFiltered = sliderMax < absMax;
+
+  const activeFilterCount = [sortBy !== "default", onlyDiscount, onlyInStock, priceFiltered].filter(Boolean).length;
+
+  const filteredListings = listings
+    .filter(p => !onlyDiscount || !!p.discount)
+    .filter(p => !onlyInStock || p.stock > 0)
+    .filter(p => priceToNum(p.price) <= sliderMax)
+    .sort((a, b) => {
+      if (sortBy === "low")      return priceToNum(a.price) - priceToNum(b.price);
+      if (sortBy === "high")     return priceToNum(b.price) - priceToNum(a.price);
+      if (sortBy === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
+      return 0;
+    });
+
+  const getQ = (id: number) => cartQty[id] ?? 1;
+  const changeQ = (id: number, delta: number) => {
+    const next = getQ(id) + delta;
+    if (next < 1) {
+      setCartIds(ids => ids.filter(i => i !== id));
+      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
+    } else {
+      setCartQty(q => ({ ...q, [id]: next }));
+    }
+  };
+
+  // ── Filter panel ──
+  if (selectedName && showFilter) {
+    const SORT_OPTS: { key: typeof sortBy; label: string }[] = [
+      { key: "default",  label: "Default" },
+      { key: "low",      label: "Price: Low → High" },
+      { key: "high",     label: "Price: High → Low" },
+      { key: "discount", label: "Biggest Discount" },
+    ];
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={() => setShowFilter(false)} className="shrink-0 text-muted-foreground">
+            <ChevronLeft size={22} />
+          </button>
+          <p className="flex-1 text-[16px] font-bold text-foreground">Filters</p>
+          <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+            className="text-[12px] font-semibold text-primary">Reset all</button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sort by</p>
+            <div className="flex flex-col gap-2">
+              {SORT_OPTS.map(o => (
+                <button key={o.key} onClick={() => setSortBy(o.key)}
+                  className={`flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all ${sortBy === o.key ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
+                  <span className={`text-[13px] font-semibold ${sortBy === o.key ? "text-primary" : "text-foreground"}`}>{o.label}</span>
+                  {sortBy === o.key && <Check size={16} className="text-primary" />}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Max price</p>
+              <span className={`text-[13px] font-bold ${priceFiltered ? "text-primary" : "text-muted-foreground"}`}>
+                {priceFiltered ? `${sliderMax.toLocaleString()} UZS` : "Any"}
+              </span>
+            </div>
+            <div className="px-1">
+              <input type="range" min={absMin} max={absMax}
+                step={Math.max(1000, Math.round((absMax - absMin) / 100))}
+                value={sliderMax} onChange={e => setSliderMax(Number(e.target.value))}
+                className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                style={{ background: `linear-gradient(to right, #2563EB ${((sliderMax - absMin) / (absMax - absMin)) * 100}%, #E5E7EB ${((sliderMax - absMin) / (absMax - absMin)) * 100}%)`, accentColor: "#2563EB" }}
+              />
+              <div className="flex justify-between mt-2">
+                <span className="text-[10px] text-muted-foreground">{absMin.toLocaleString()} UZS</span>
+                <span className="text-[10px] text-muted-foreground">{absMax.toLocaleString()} UZS</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Show only</p>
+            <div className="flex flex-col gap-2">
+              {[
+                { label: "Has discount", sub: "Products with active price cuts", val: onlyDiscount, set: setOnlyDiscount },
+                { label: "In stock",     sub: "Available for immediate purchase",  val: onlyInStock,  set: setOnlyInStock },
+              ].map(t => (
+                <button key={t.label} onClick={() => t.set(!t.val)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all ${t.val ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${t.val ? "bg-primary border-primary" : "border-border"}`}>
+                    {t.val && <Check size={12} className="text-white" />}
+                  </div>
+                  <div className="text-left">
+                    <p className={`text-[13px] font-semibold leading-tight ${t.val ? "text-primary" : "text-foreground"}`}>{t.label}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{t.sub}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="shrink-0 px-4 py-3 bg-card border-t border-border">
+          <button onClick={() => setShowFilter(false)}
+            className="w-full bg-primary text-white rounded-xl py-3.5 text-[14px] font-semibold shadow-md hover:bg-blue-700 active:scale-[0.98] transition-all">
+            Show {filteredListings.length} result{filteredListings.length !== 1 ? "s" : ""}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Listings grid ──
+  if (selectedName) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center gap-2 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={() => setSelectedName(null)} className="shrink-0 text-muted-foreground">
+            <ChevronLeft size={22} />
+          </button>
+          <button className="flex-1 relative" onClick={() => setSelectedName(null)}>
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+              <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <div className="w-full bg-[#F4F5F7] rounded-xl pl-9 pr-4 py-2.5 text-[13px] text-foreground text-left border border-primary ring-2 ring-primary/20 truncate">
+              {selectedName}
+            </div>
+          </button>
+          <button onClick={() => setShowFilter(true)}
+            className="relative shrink-0 w-10 h-10 rounded-xl bg-[#F4F5F7] border border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-all">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+        <div className="px-4 pt-3 pb-1 shrink-0">
+          <p className="text-[12px] text-muted-foreground">{filteredListings.length} result{filteredListings.length !== 1 ? "s" : ""} in your catalog</p>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 pt-2 pb-24 relative">
+          {filteredListings.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {filteredListings.map(p => {
+                const inCart = cartIds.includes(p.id);
+                return (
+                  <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                    <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} showLike={false} onClick={() => { onSelectProduct(p); onClose(); }} />
+                    <div className="p-2.5 flex flex-col flex-1">
+                      <button onClick={() => { onSelectProduct(p); onClose(); }} className="text-left mb-0.5">
+                        <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
+                      </button>
+                      <p className="text-[10px] text-muted-foreground font-medium">{p.stock} in stock</p>
+                      <div className="mt-0.5 mb-2">
+                        {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
+                        <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
+                      </div>
+                      <div className="mt-auto">
+                        {inCart ? (
+                          <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
+                            <button onClick={() => changeQ(p.id, -1)} className="w-7 h-7 rounded-lg bg-white border border-border flex items-center justify-center"><Minus size={12} /></button>
+                            <span className="text-[13px] font-bold text-primary">{getQ(p.id)}</span>
+                            <button onClick={() => changeQ(p.id, 1)} className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white"><Plus size={12} /></button>
+                          </div>
+                        ) : (
+                          <button onClick={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
+                            className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white">
+                            Add to Cart
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center py-10 gap-3">
+              <EmptyIllustration />
+              <p className="text-[14px] font-semibold">No results match your filters</p>
+              <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+                className="text-[13px] font-semibold text-primary">Clear filters</button>
+            </div>
+          )}
+        </div>
+        {cartIds.length > 0 && (
+          <div className="absolute bottom-5 left-0 right-0 flex justify-center pointer-events-none">
+            <button onClick={onGoToCart}
+              className="pointer-events-auto flex items-center gap-3 bg-primary text-white pl-5 pr-4 py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all"
+              style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.45)" }}>
+              <ShoppingCart size={18} />
+              <span className="text-[14px] font-semibold">View Cart</span>
+              <span className="bg-white text-primary text-[12px] font-bold rounded-xl px-2 py-0.5 min-w-[24px] text-center">{cartIds.length}</span>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Default: search input + categories list ──
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center gap-2 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onClose} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={22} />
+        </button>
+        <div className="flex-1 relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <input ref={inputRef} type="text" placeholder="Search products, brands..."
+            value={query} onChange={e => { setQuery(e.target.value); setSelectedName(null); }}
+            className="w-full bg-[#F4F5F7] rounded-xl pl-9 pr-9 py-2.5 text-[13px] text-foreground placeholder-muted-foreground border border-transparent focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+          {query && (
+            <button onClick={() => { setQuery(""); setSelectedName(null); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <X size={15} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {/* Typing: autocomplete suggestions */}
+        {q && (
+          <div className="px-4 pt-2 pb-4">
+            {suggestions.length > 0 ? suggestions.map(p => (
+              <button key={p.id} onClick={() => setSelectedName(p.name)}
+                className="w-full flex items-center gap-3 px-3 py-3 border-b border-border last:border-0 text-left hover:bg-primary/5 transition-all">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-muted-foreground shrink-0">
+                  <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                <span className="flex-1 text-[14px] text-foreground font-medium truncate">{p.name}</span>
+                <span className="text-[11px] text-muted-foreground shrink-0">{p.category}</span>
+              </button>
+            )) : (
+              <div className="flex flex-col items-center py-10 gap-3">
+                <EmptyIllustration />
+                <p className="text-[14px] font-semibold">No results found</p>
+                <p className="text-[12px] text-muted-foreground">Try a different name or brand.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Empty query: categories list (1 per row) */}
+        {!q && (
+          <div className="px-4 pt-3 flex flex-col gap-1">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-1">Categories</p>
+            {SELLER_CATS.map(cat => (
+              <button key={cat.label} onClick={() => { onSelectCategory(cat.label); onClose(); }}
+                className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#F4F5F7] transition-all text-left">
+                <div className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-lg shrink-0">{cat.emoji}</div>
+                <span className="text-[14px] font-semibold text-foreground">{cat.label}</span>
+                <ChevronRight size={16} className="ml-auto text-muted-foreground shrink-0" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SellerCartPage({ cartIds, setCartIds, cartQty, setCartQty, onBack }: {
+  cartIds: number[];
+  setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
+  cartQty: Record<number, number>;
+  setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+  onBack: () => void;
+}) {
+  const items = SELLER_PRODUCTS.filter(p => cartIds.includes(p.id));
+
+  const getQ = (id: number) => cartQty[id] ?? 1;
+  const setQ = (id: number, n: number) => {
+    if (n < 1) {
+      setCartIds(ids => ids.filter(i => i !== id));
+      setCartQty(q => { const next = { ...q }; delete next[id]; return next; });
+    } else {
+      setCartQty(q => ({ ...q, [id]: n }));
+    }
+  };
+
+  const total = items.reduce((sum, p) => sum + priceToNum(p.price) * getQ(p.id), 0);
+  const totalUnits = items.reduce((sum, p) => sum + getQ(p.id), 0);
+
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3 shrink-0">
+          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center">
+            <ChevronLeft size={20} />
+          </button>
+          <div>
+            <p className="text-[20px] font-bold text-foreground leading-tight">My Cart</p>
+            <p className="text-[12px] text-muted-foreground">0 items</p>
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8 pb-12">
+          <EmptyIllustration />
+          <div className="text-center">
+            <p className="text-[16px] font-bold text-foreground">Your cart is empty</p>
+            <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">Add products from your catalog to start an order.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center">
+          <ChevronLeft size={20} />
+        </button>
+        <div>
+          <p className="text-[20px] font-bold text-foreground leading-tight">My Cart</p>
+          <p className="text-[12px] text-muted-foreground">{items.length} item{items.length > 1 ? "s" : ""} · {totalUnits} unit{totalUnits > 1 ? "s" : ""}</p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div className="flex flex-col gap-3">
+          {items.map(p => (
+            <div key={p.id} className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div className="flex gap-3 p-3">
+                <div className="w-[72px] h-[72px] rounded-xl bg-muted overflow-hidden shrink-0">
+                  <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2">{p.name}</p>
+                      <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{p.sku}</p>
+                      <p className="text-[11px] text-muted-foreground">{p.category}</p>
+                    </div>
+                    <button onClick={() => setCartIds(ids => ids.filter(i => i !== p.id))}
+                      className="shrink-0 w-7 h-7 rounded-lg bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors mt-0.5">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between mt-2">
+                    <div>
+                      {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
+                      <p className="text-[15px] font-bold text-primary leading-tight">
+                        {fmtUZS(priceToNum(p.price) * getQ(p.id))} <span className="text-[10px] font-normal text-muted-foreground">UZS</span>
+                      </p>
+                    </div>
+                    <div className="flex items-center bg-[#F4F5F7] rounded-xl overflow-hidden border border-border">
+                      <button onClick={() => setQ(p.id, getQ(p.id) - 1)} className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors">
+                        <Minus size={13} />
+                      </button>
+                      <span className="text-[13px] font-bold text-foreground px-2">{getQ(p.id)}</span>
+                      <button onClick={() => setQ(p.id, getQ(p.id) + 1)} className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors">
+                        <Plus size={13} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-border px-3 py-1.5 bg-[#FAFAFA]">
+                <p className="text-[11px] text-muted-foreground">{p.price} UZS per unit</p>
+              </div>
+            </div>
+          ))}
+
+          <div className="bg-card rounded-2xl border border-border p-4 mt-1" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Order summary</p>
+            <div className="flex items-center justify-between text-[13px] mb-2">
+              <span className="text-muted-foreground">Products</span>
+              <span className="font-medium text-foreground">{items.length}</span>
+            </div>
+            <div className="flex items-center justify-between text-[13px] mb-2">
+              <span className="text-muted-foreground">Total units</span>
+              <span className="font-medium text-foreground">{totalUnits}</span>
+            </div>
+            <div className="flex items-center justify-between text-[13px] mb-2">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="font-semibold text-foreground">{fmtUZS(total)} UZS</span>
+            </div>
+            <div className="h-px bg-border my-3" />
+            <div className="flex items-center justify-between bg-primary/5 rounded-xl px-3 py-2.5">
+              <span className="text-[14px] font-bold text-foreground">Total</span>
+              <span className="text-[20px] font-bold text-primary">{fmtUZS(total)} <span className="text-[11px] font-normal text-muted-foreground">UZS</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="shrink-0 bg-card border-t border-border px-4 py-3">
+        <button className="w-full bg-primary text-white rounded-2xl py-4 text-[15px] font-bold flex items-center justify-center gap-2.5 hover:bg-blue-700 active:scale-[0.98] transition-all"
+          style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.35)" }}>
+          <Receipt size={20} />
+          Place Order
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SellerProductDetailPage({ product, onBack, cartIds, setCartIds, cartQty, setCartQty }: {
+  product: Product; onBack: () => void;
+  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
+  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+}) {
+  const inCart = cartIds.includes(product.id);
+  const images = [product.img, ...(PRODUCT_EXTRA_IMGS[product.sku] ?? [])];
+  const [imgIdx, setImgIdx] = useState(0);
+  const [showViewer, setShowViewer] = useState(false);
+  const variations = PRODUCT_VARIATIONS[product.sku] ?? [];
+  const [selVars, setSelVars] = useState<Record<string, string>>(() =>
+    Object.fromEntries(variations.map(v => [v.name, v.options[0]]))
+  );
+  const lowStock = product.stock <= 15;
+  const similar = SELLER_PRODUCTS.filter(p => p.id !== product.id && p.category === product.category).slice(0, 4);
+
+  const getQ = (id: number) => cartQty[id] ?? 1;
+  const changeQ = (id: number, delta: number) => {
+    const next = getQ(id) + delta;
+    if (next < 1) {
+      setCartIds(ids => ids.filter(i => i !== id));
+      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
+    } else {
+      setCartQty(q => ({ ...q, [id]: next }));
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full relative">
+      {showViewer && <ImageViewer images={images} startIndex={imgIdx} onClose={() => setShowViewer(false)} />}
+
+      {/* Hero */}
+      <div className="relative shrink-0" style={{ height: 250 }}>
+        <img src={images[imgIdx]} alt={product.name} className="w-full h-full object-cover cursor-pointer" onClick={() => setShowViewer(true)} />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.32) 0%, transparent 45%, rgba(255,255,255,0.18) 80%, rgba(255,255,255,0.55) 100%)" }} />
+        {images.length > 1 && (
+          <>
+            <button onClick={() => setImgIdx(i => (i - 1 + images.length) % images.length)} className="absolute left-0 top-10 bottom-10 w-1/4 z-10" />
+            <button onClick={() => setImgIdx(i => (i + 1) % images.length)} className="absolute right-0 top-10 bottom-10 w-1/4 z-10" />
+          </>
+        )}
+        <button onClick={onBack} className="absolute top-4 left-4 z-20 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-md">
+          <ArrowLeft size={17} />
+        </button>
+        <div className="absolute bottom-3 left-4 right-4 z-20 flex items-center justify-between">
+          <span className="px-2.5 py-1 rounded-lg bg-primary text-white text-[11px] font-bold tracking-wide">{product.category}</span>
+          {images.length > 1 && (
+            <div className="flex gap-1.5 items-center pr-1">
+              {images.map((_, i) => (
+                <button key={i} onClick={() => setImgIdx(i)}
+                  className={`rounded-full transition-all duration-200 ${i === imgIdx ? "w-4 h-[6px] bg-white" : "w-[6px] h-[6px] bg-white/55"}`} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto bg-background">
+        <div className="bg-card rounded-t-[32px] -mt-7 relative px-5 pt-6 pb-4">
+          <div className="flex items-start gap-2 mb-1 pt-5">
+            <h2 className="text-[17px] font-bold text-foreground leading-snug flex-1">{product.name}</h2>
+          </div>
+          <p className="text-[12px] text-muted-foreground font-medium mb-3">by <span className="text-foreground font-semibold">{product.brand}</span> · SKU: {product.sku}</p>
+
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-[22px] font-bold text-primary leading-none">{product.price}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">UZS / per unit</p>
+            </div>
+            <div className={`flex items-center gap-1.5 px-3 py-2 rounded-xl ${lowStock ? "bg-orange-50" : "bg-emerald-50"}`}>
+              <div className={`w-2 h-2 rounded-full ${lowStock ? "bg-orange-400" : "bg-emerald-500"}`} />
+              <div>
+                <p className={`text-[13px] font-bold leading-none ${lowStock ? "text-orange-600" : "text-emerald-600"}`}>{product.stock} units</p>
+                <p className={`text-[10px] mt-0.5 font-medium ${lowStock ? "text-orange-400" : "text-emerald-400"}`}>{lowStock ? "Low stock" : "In stock"}</p>
+              </div>
+            </div>
+          </div>
+
+          {variations.length > 0 && (
+            <div className="mb-4">
+              {variations.map(v => (
+                <div key={v.name} className="mb-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{v.name}</p>
+                    <span className="text-[11px] font-bold text-foreground">· {selVars[v.name]}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {v.options.map(opt => {
+                      const active = selVars[v.name] === opt;
+                      return (
+                        <button key={opt} onClick={() => setSelVars(s => ({ ...s, [v.name]: opt }))}
+                          className={`px-3 py-1.5 rounded-xl border-2 text-[12px] font-semibold transition-all ${active ? "border-primary bg-primary/8 text-primary" : "border-border bg-card text-foreground"}`}>
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="h-px bg-border mb-4" />
+
+          <div className="mb-5">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Description</p>
+            <p className="text-[13px] text-foreground leading-relaxed">{product.description}</p>
+          </div>
+
+          <div className="mb-5">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Specs</p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: "Brand",    value: product.brand },
+                { label: "SKU",      value: product.sku },
+                { label: "Category", value: product.category },
+                { label: "Stock",    value: `${product.stock} units` },
+              ].map(s => (
+                <div key={s.label} className="bg-[#F4F5F7] rounded-xl px-3 py-2.5">
+                  <p className="text-[10px] text-muted-foreground font-medium">{s.label}</p>
+                  <p className="text-[12px] font-semibold text-foreground mt-0.5 truncate">{s.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {similar.length > 0 && (
+            <div className="mb-2">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">More from your shop</p>
+              <div className="grid grid-cols-2 gap-3">
+                {similar.map(sp => {
+                  const spInCart = cartIds.includes(sp.id);
+                  return (
+                    <div key={sp.id} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                      <ProductCardImage images={[sp.img, ...(PRODUCT_EXTRA_IMGS[sp.sku] ?? [])]} discount={sp.discount} height="h-28" showLike={false} onClick={() => {}} />
+                      <div className="p-2.5 flex flex-col flex-1">
+                        <p className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2 mb-0.5">{sp.name}</p>
+                        <div className="mb-2">
+                          {sp.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{sp.originalPrice} UZS</p>}
+                          <p className="text-[12px] font-bold text-primary leading-tight">{sp.price} <span className="text-[9px] font-normal text-muted-foreground">UZS</span></p>
+                        </div>
+                        <div className="mt-auto">
+                          {spInCart ? (
+                            <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
+                              <button onClick={() => changeQ(sp.id, -1)} className="w-6 h-6 rounded-lg bg-white border border-border flex items-center justify-center"><Minus size={11} /></button>
+                              <span className="text-[12px] font-bold text-primary">{getQ(sp.id)}</span>
+                              <button onClick={() => changeQ(sp.id, 1)} className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center text-white"><Plus size={11} /></button>
+                            </div>
+                          ) : (
+                            <button onClick={() => { setCartIds(ids => [...ids, sp.id]); setCartQty(q => ({ ...q, [sp.id]: 1 })); }}
+                              className="w-full py-1.5 rounded-xl text-[11px] font-semibold bg-primary text-white">
+                              Add to Cart
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom CTA */}
+      <div className="shrink-0 bg-card border-t border-border px-5 py-3 flex gap-3">
+        {inCart ? (
+          <>
+            <div className="flex items-center justify-between bg-primary/8 rounded-xl px-3 gap-2" style={{ minWidth: 150 }}>
+              <button onClick={() => changeQ(product.id, -1)} className="w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all"><Minus size={15} /></button>
+              <span className="text-[16px] font-bold text-primary">{getQ(product.id)}</span>
+              <button onClick={() => changeQ(product.id, 1)} className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all"><Plus size={15} /></button>
+            </div>
+            <button className="flex-1 py-3 rounded-xl text-[13px] font-semibold bg-primary text-white flex items-center justify-center gap-2">
+              <ShoppingCart size={15} />
+              Go to Cart
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => { setCartIds(ids => [...ids, product.id]); setCartQty(q => ({ ...q, [product.id]: 1 })); }}
+            className="flex-1 py-3 rounded-xl text-[14px] font-semibold bg-primary text-white shadow-md flex items-center justify-center gap-2">
+            <ShoppingCart size={16} />
+            Add to Cart
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SellerCatalogPage({ onSubPageChange }: { onSubPageChange: (active: boolean) => void }) {
+  const [showSearch, setShowSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [cartIds, setCartIds] = useState<number[]>([]);
+  const [cartQty, setCartQty] = useState<Record<number, number>>({});
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const catScrollRef = useRef<HTMLDivElement>(null);
+  const [catDotIdx, setCatDotIdx] = useState(0);
+  const CAT_NUM_DOTS = 3;
+
+  const handleCatScroll = () => {
+    const el = catScrollRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    const idx = max > 0 ? Math.round((el.scrollLeft / max) * (CAT_NUM_DOTS - 1)) : 0;
+    setCatDotIdx(idx);
+  };
+
+  const cartTotal = cartIds.reduce((s, id) => s + (cartQty[id] ?? 1), 0);
+
+  const row1 = SELLER_CATS.slice(0, Math.ceil(SELLER_CATS.length / 2));
+  const row2 = SELLER_CATS.slice(Math.ceil(SELLER_CATS.length / 2));
+
+  const filtered = SELLER_PRODUCTS.filter(p => !activeCat || p.category === activeCat);
+
+  const addToCart = (id: number) => { setCartIds(ids => [...ids, id]); setCartQty(q => ({ ...q, [id]: 1 })); };
+  const changeQty = (id: number, delta: number) => {
+    const next = (cartQty[id] ?? 1) + delta;
+    if (next < 1) {
+      setCartIds(ids => ids.filter(i => i !== id));
+      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
+    } else {
+      setCartQty(q => ({ ...q, [id]: next }));
+    }
+  };
+
+  if (showNotifications) return <NotificationsPage onBack={() => { setShowNotifications(false); onSubPageChange(false); }} />;
+  if (showCart) return <SellerCartPage cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} onBack={() => { setShowCart(false); onSubPageChange(false); }} />;
+  if (selectedProduct) return (
+    <SellerProductDetailPage
+      product={selectedProduct}
+      onBack={() => { setSelectedProduct(null); onSubPageChange(false); }}
+      cartIds={cartIds} setCartIds={setCartIds}
+      cartQty={cartQty} setCartQty={setCartQty}
+    />
+  );
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 relative">
+      {/* Search overlay */}
+      {showSearch && (
+        <div className="absolute inset-0 z-30 bg-background">
+          <SellerSearchPage
+            onClose={() => { setShowSearch(false); onSubPageChange(false); }}
+            onSelectCategory={label => { setActiveCat(label); setShowSearch(false); onSubPageChange(false); }}
+            onSelectProduct={p => { setSelectedProduct(p); setShowSearch(false); onSubPageChange(true); }}
+            onGoToCart={() => { setShowSearch(false); setShowCart(true); onSubPageChange(true); }}
+            cartIds={cartIds} setCartIds={setCartIds}
+            cartQty={cartQty} setCartQty={setCartQty}
+          />
+        </div>
+      )}
+
+      {/* Top bar */}
+      <div className="shrink-0 px-4 pt-4 pb-3 flex items-center gap-2">
+        <button className="flex-1" onClick={() => { setShowSearch(true); onSubPageChange(true); }}>
+          <div className="w-full h-10 pl-9 pr-4 rounded-2xl text-[14px] text-muted-foreground text-left flex items-center relative" style={{ background: "#F4F5F7" }}>
+            <Search size={15} className="absolute left-3 text-muted-foreground" />
+            Search products, SKU...
+          </div>
+        </button>
+        <button onClick={() => { setShowCart(true); onSubPageChange(true); }}
+          className="relative w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "#F4F5F7" }}>
+          <ShoppingCart size={20} />
+          {cartTotal > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+              {cartTotal > 99 ? "99+" : cartTotal}
+            </span>
+          )}
+        </button>
+        <button onClick={() => { setShowNotifications(true); onSubPageChange(true); }}
+          className="relative w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "#F4F5F7" }}>
+          <Bell size={20} />
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">2</span>
+        </button>
+      </div>
+
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Categories */}
+        <div className="shrink-0 px-4 mb-1">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[13px] font-bold text-foreground">Categories</span>
+            {activeCat ? (
+              <button onClick={() => setActiveCat(null)} className="text-[11px] font-semibold text-primary flex items-center gap-1">
+                <X size={11} /> Clear
+              </button>
+            ) : (
+              <button onClick={() => setShowSearch(true)} className="text-[11px] font-semibold text-primary">See all</button>
+            )}
+          </div>
+          <div ref={catScrollRef} onScroll={handleCatScroll}
+            className="overflow-x-auto" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+            <div className="flex flex-col gap-2.5" style={{ width: "max-content" }}>
+              {[row1, row2].map((row, ri) => (
+                <div key={ri} className="flex gap-2.5">
+                  {row.map(cat => (
+                    <button key={cat.label} onClick={() => setActiveCat(a => a === cat.label ? null : cat.label)}
+                      className="flex flex-col items-center gap-1.5" style={{ width: 58 }}>
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all border-2 ${activeCat === cat.label ? "border-primary bg-primary/10" : "border-transparent bg-[#F4F5F7]"}`}>
+                        {cat.emoji}
+                      </div>
+                      <span className={`text-[10px] font-semibold text-center leading-tight ${activeCat === cat.label ? "text-primary" : "text-muted-foreground"}`} style={{ width: 58 }}>
+                        {cat.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-1.5 mt-2.5">
+            {Array.from({ length: CAT_NUM_DOTS }).map((_, i) => (
+              <div key={i} className="transition-all duration-200 rounded-full bg-primary"
+                style={{ width: i === catDotIdx ? 16 : 6, height: 6, opacity: i === catDotIdx ? 1 : 0.2 }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Section header */}
+        <div className="px-4 pt-2 pb-3">
+          <p className="text-[16px] font-bold leading-tight">{activeCat ?? SELLER_SHOP}</p>
+          <p className="text-[12px] text-muted-foreground mt-0.5">{filtered.length} {filtered.length === 1 ? "product" : "products"}</p>
+        </div>
+
+        {/* Product grid */}
+        <div className="px-4 pb-6">
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center pt-10 gap-3">
+              <EmptyIllustration />
+              <p className="text-[15px] font-semibold">No products in this category</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {filtered.map(p => (
+                <SellerProductCard
+                  key={p.id}
+                  product={p}
+                  inCart={cartIds.includes(p.id)}
+                  qty={cartQty[p.id] ?? 1}
+                  onAdd={() => addToCart(p.id)}
+                  onChangeQty={delta => changeQty(p.id, delta)}
+                  onSelect={() => { setSelectedProduct(p); onSubPageChange(true); }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SELLER PROFILE ───────────────────────────────────────────────────────────
+const SELLER_TRANSACTIONS: WalletTxn[] = [
+  { id: 1, label: "Sale bonus · Akmal K.",   date: "Jun 18, 2026", amount: 4800,   kind: "earn",     orderRef: "TXN-2206-A47" },
+  { id: 2, label: "Withdraw to Click",        date: "Jun 14, 2026", amount: 150000, kind: "withdraw" },
+  { id: 3, label: "Sale bonus · Dilshod R.", date: "Jun 10, 2026", amount: 8200,   kind: "earn",     orderRef: "TXN-2206-C08" },
+  { id: 4, label: "Sale bonus · Sardor Y.",  date: "Jun 05, 2026", amount: 1760,   kind: "earn",     orderRef: "TXN-2205-D33" },
+];
+
+type SellerProfileSub = "info" | "wallet" | "history" | "faq" | null;
+
+function SellerProfilePage({ onLogout, onSubPageChange }: { onLogout: () => void; onSubPageChange: (active: boolean) => void }) {
+  const [sub, setSub] = useState<SellerProfileSub>(null);
+  const [showLangSheet, setShowLangSheet] = useState(false);
+  const [showAboutSheet, setShowAboutSheet] = useState(false);
+  const [activeLang, setActiveLang] = useState<LangCode>("en");
+  const [histOrderRef, setHistOrderRef] = useState<string | null>(null);
+
+  const name = "Bekzod Saidov";
+  const phone = "+998 91 555 22 11";
+  const balance = 326500;
+  const goSub = (s: SellerProfileSub) => { setSub(s); onSubPageChange(true); };
+  const goBack = () => { setSub(null); setHistOrderRef(null); onSubPageChange(false); };
+
+  if (sub === "info")   return <MyInfoPage role="seller" name={name} phone={phone} onBack={goBack} />;
+  if (sub === "wallet") return <WalletPage role="seller" balance={balance} name={name} phone={phone} onBack={goBack} />;
+  if (sub === "history") {
+    if (histOrderRef) return <SellerOrdersPage initialRef={histOrderRef} onDetailBack={() => setHistOrderRef(null)} />;
+    return <TransactionHistoryPage role="seller" transactions={SELLER_TRANSACTIONS} requests={MOCK_WITHDRAW_REQUESTS} onBack={goBack} onOrderTap={ref => setHistOrderRef(ref)} />;
+  }
+  if (sub === "faq") return <FAQPage onBack={goBack} />;
+
+  const sections = [
+    {
+      title: "General",
+      items: [
+        { label: "My Information", icon: <UserCircle size={18} />, color: "bg-blue-500",    action: () => goSub("info") },
+        { label: "Bonus Wallet",   icon: <Wallet size={18} />,     color: "bg-emerald-500", action: () => goSub("wallet") },
+        { label: "Bonus History",  icon: <BarChart2 size={18} />,  color: "bg-violet-500",  action: () => goSub("history") },
+      ],
+    },
+    {
+      title: "Settings",
+      items: [
+        { label: "Language", icon: <Globe size={18} />, color: "bg-sky-500", action: () => setShowLangSheet(true) },
+      ],
+    },
+    {
+      title: "Support",
+      items: [
+        { label: "FAQ",       icon: <HelpCircle size={18} />, color: "bg-indigo-500", action: () => goSub("faq") },
+        { label: "About App", icon: <Info size={18} />,       color: "bg-slate-500",  action: () => setShowAboutSheet(true) },
+      ],
+    },
+  ];
+
+  return (
+    <div className="flex flex-col h-full bg-background relative">
+      <div className="flex-1 overflow-y-auto">
+        {/* Hero */}
+        <div className="flex flex-col items-center pt-8 pb-5 px-4 bg-card border-b border-border">
+          <div className="w-20 h-20 rounded-3xl bg-emerald-500 flex items-center justify-center text-white mb-3"
+            style={{ boxShadow: "0 4px 20px rgba(16,185,129,0.35)" }}>
+            <span className="text-[32px] font-bold">{name.charAt(0)}</span>
+          </div>
+          <p className="text-[20px] font-bold text-foreground">{name}</p>
+          <p className="text-[13px] text-muted-foreground mt-0.5">{phone}</p>
+          <span className="mt-2 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">Seller</span>
+        </div>
+
+        {/* Balance card */}
+        <div className="px-4 pt-4 pb-2">
+          <button onClick={() => goSub("wallet")}
+            className="w-full rounded-2xl p-4 text-left bg-primary active:scale-[0.97] transition-all"
+            style={{ boxShadow: "0 4px 16px rgba(37,99,235,0.3)" }}>
+            <p className="text-white/70 text-[11px] font-medium">Seller bonus balance</p>
+            <p className="text-white text-[22px] font-bold mt-1 leading-tight">{fmtUZS(balance)} <span className="text-[13px] font-normal opacity-70">UZS</span></p>
+            <p className="text-white/60 text-[10px] mt-0.5">Tap to manage</p>
+          </button>
+        </div>
+
+        {/* Menu sections */}
+        <div className="px-4 pt-2 pb-4 flex flex-col gap-4">
+          {sections.map(section => (
+            <div key={section.title}>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">{section.title}</p>
+              <div className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                {section.items.map((item, i) => (
+                  <button key={item.label} onClick={item.action}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3.5 text-left hover:bg-[#F9FAFB] transition-colors ${i > 0 ? "border-t border-border" : ""}`}>
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white ${item.color}`}>
+                      {item.icon}
+                    </div>
+                    <p className="flex-1 text-[14px] font-semibold text-foreground">{item.label}</p>
+                    {"right" in item && item.right}
+                    <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <button onClick={onLogout}
+            className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl border-2 border-red-100 bg-red-50 text-red-500 font-semibold text-[14px] hover:bg-red-100 transition-colors active:scale-[0.98]">
+            <LogOut size={16} /> Log out
+          </button>
+        </div>
+      </div>
+
+      {/* Language bottom sheet */}
+      {showLangSheet && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setShowLangSheet(false)}>
+          <div className="bg-card rounded-t-3xl px-4 pt-3 pb-10" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />
+            <p className="text-[18px] font-bold text-foreground mb-1">Select Language</p>
+            <p className="text-[13px] text-muted-foreground mb-6">Choose your preferred language</p>
+            <div className="flex flex-col gap-3">
+              {LANGS.map(lang => {
+                const isActive = activeLang === lang.code;
+                return (
+                  <button key={lang.code} onClick={() => { setActiveLang(lang.code); setShowLangSheet(false); }}
+                    className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl border-2 transition-all active:scale-[0.98] ${isActive ? "border-primary bg-primary/5" : "border-border bg-background"}`}
+                    style={{ boxShadow: isActive ? "0 4px 16px rgba(37,99,235,0.12)" : "0 2px 8px rgba(0,0,0,0.04)" }}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[24px] shrink-0 ${isActive ? "bg-primary/10" : "bg-[#F4F5F7]"}`}>
+                      {lang.flag}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className={`text-[15px] font-bold ${isActive ? "text-primary" : "text-foreground"}`}>{lang.native}</p>
+                    </div>
+                    {isActive && (
+                      <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
+                        <Check size={13} className="text-white" strokeWidth={3} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* About app bottom sheet */}
+      {showAboutSheet && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setShowAboutSheet(false)}>
+          <div className="bg-card rounded-t-3xl px-4 pt-3 pb-12 flex flex-col items-center" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-8" />
+            <div className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center mb-4"
+              style={{ boxShadow: "0 8px 32px rgba(37,99,235,0.35)" }}>
+              <span className="text-white text-[36px] font-black leading-none">P</span>
+            </div>
+            <p className="text-[20px] font-black text-foreground tracking-tight">Progress</p>
+            <p className="text-[13px] text-muted-foreground mt-1">Auto Parts Marketplace</p>
+            <div className="mt-5 px-4 py-2 rounded-full bg-[#F4F5F7]">
+              <p className="text-[12px] font-semibold text-muted-foreground">Version 1.0.0</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── SELLER HOME ──────────────────────────────────────────────────────────────
+function SellerHomePage({ onGoToWallet }: { onGoToWallet: () => void }) {
+  const [selectedOrder, setSelectedOrder] = useState<SellerOrder | null>(null);
+
+  if (selectedOrder) {
+    return <SellerOrdersPage initialRef={selectedOrder.ref} onDetailBack={() => setSelectedOrder(null)} />;
+  }
+
+  const name = "Bekzod";
+  const balance = 326500;
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const dateStr = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+  // This-month stats from SELLER_ORDERS
+  const monthOrders = SELLER_ORDERS;
+  const monthRevenue = monthOrders.reduce((s, o) => s + o.items.reduce((si, i) => si + priceToNum(i.price) * i.qty, 0), 0);
+  const monthBonus   = monthOrders.reduce((s, o) => s + o.bonus, 0);
+  const recentOrders = SELLER_ORDERS.slice(0, 3);
+
+  const stats = [
+    { label: "Orders",       value: String(monthOrders.length), unit: "total", icon: <ClipboardList size={13} />, color: "text-primary",     bg: "bg-primary/8" },
+    { label: "Revenue",      value: fmtUZS(monthRevenue),       unit: "UZS",   icon: <Receipt size={13} />,       color: "text-violet-600",  bg: "bg-violet-50" },
+    { label: "Bonus",        value: fmtUZS(monthBonus),         unit: "UZS",   icon: <Gift size={13} />,          color: "text-emerald-600", bg: "bg-emerald-50" },
+  ];
+
+  return (
+    <div className="flex flex-col h-full bg-background overflow-y-auto">
+      <div className="px-4 pt-5 pb-4 flex flex-col gap-4">
+
+        {/* Greeting */}
+        <div>
+          <p className="text-[13px] text-muted-foreground font-medium">{dateStr}</p>
+          <p className="text-[22px] font-black text-foreground mt-0.5 leading-tight">{greeting}, {name} 👋</p>
+        </div>
+
+        {/* Wallet card */}
+        <button onClick={onGoToWallet}
+          className="w-full rounded-2xl p-4 text-left bg-primary active:scale-[0.98] transition-all"
+          style={{ boxShadow: "0 4px 16px rgba(37,99,235,0.3)" }}>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-white/70 text-[11px] font-medium">Bonus balance</p>
+              <p className="text-white text-[26px] font-bold mt-0.5 leading-tight">{fmtUZS(balance)} <span className="text-[13px] font-normal opacity-70">UZS</span></p>
+            </div>
+            <div className="bg-white/15 rounded-xl p-2.5">
+              <Wallet size={20} className="text-white" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5 bg-white/15 rounded-xl px-3 py-2 w-fit">
+            <ArrowDownToLine size={13} className="text-white/80" />
+            <p className="text-white/90 text-[12px] font-semibold">Withdraw</p>
+          </div>
+        </button>
+
+        {/* This-month stats */}
+        <div>
+          <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 px-0.5">This month</p>
+          <div className="grid grid-cols-3 gap-2.5">
+            {stats.map(s => (
+              <div key={s.label} className="bg-card rounded-2xl border border-border p-3 flex flex-col gap-2" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${s.bg} ${s.color}`}>
+                    {s.icon}
+                  </div>
+                  <p className="text-[11px] font-semibold text-foreground leading-tight">{s.label}</p>
+                </div>
+                <div>
+                  <p className={`text-[15px] font-bold leading-tight ${s.color}`}>{s.value}</p>
+                  <p className="text-[10px] font-medium text-muted-foreground mt-0.5">{s.unit}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent orders */}
+        <div>
+          <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 px-0.5">Recent orders</p>
+          <div className="flex flex-col gap-2.5">
+            {recentOrders.map(order => {
+              const total = order.items.reduce((s, i) => s + priceToNum(i.price) * i.qty, 0);
+              const itemCount = order.items.reduce((s, i) => s + i.qty, 0);
+              return (
+                <button key={order.id} onClick={() => setSelectedOrder(order)}
+                  className="w-full bg-card rounded-2xl border border-border p-3.5 text-left flex items-center gap-3 active:scale-[0.98] transition-transform"
+                  style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                  {/* Avatar */}
+                  <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
+                    <Wrench size={18} className="text-primary" />
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-bold text-foreground leading-tight truncate">{order.mechanic}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{itemCount} item{itemCount !== 1 ? "s" : ""} · {order.date.split(" · ")[0]}</p>
+                  </div>
+                  {/* Amount + chevron */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="text-right">
+                      <p className="text-[13px] font-bold text-foreground">{fmtUZS(total)}</p>
+                      <p className="text-[10px] text-muted-foreground">UZS</p>
+                    </div>
+                    <ChevronRight size={15} className="text-muted-foreground" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // ─── SELLER APP ───────────────────────────────────────────────────────────────
 function SellerApp({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<SellerTab>("main");
   const [scanning, setScanning] = useState(false);
   const [showApproval, setShowApproval] = useState(false);
   const [profileSubActive, setProfileSubActive] = useState(false);
+  const [catalogSubActive, setCatalogSubActive] = useState(false);
 
   const tabs: { key: SellerTab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
     { key: "main",    label: "Main",    icon: (a) => <Home        size={22} strokeWidth={a ? 2.5 : 1.8} /> },
@@ -4410,28 +5728,25 @@ function SellerApp({ onLogout }: { onLogout: () => void }) {
         />
       )}
 
-      {/* Header — hidden during the full-screen approval flow */}
-      {!showApproval && <AppHeader role="seller" onLogout={onLogout} />}
+      {/* Header — hidden on catalog tab (has its own top bar) and during approval flow */}
+      {!showApproval && tab !== "catalog" && <AppHeader role="seller" onLogout={onLogout} />}
 
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {showApproval
           ? <TransactionApprovalPage onResolve={() => { setShowApproval(false); setTab("orders"); }} />
-          : tab === "orders"
-            ? <SellerOrdersPage />
-            : tab === "profile"
-              ? <WalletScreen role="seller" name="Bekzod Saidov" phone="+998 91 555 22 11" balance={326500} onLogout={onLogout}
-                  onSubPageChange={setProfileSubActive}
-                  transactions={[
-                    { id: 1, label: "Sale bonus · Akmal K.", date: "Jun 18, 2026", amount: 4800, kind: "earn" },
-                    { id: 2, label: "Withdraw to Click", date: "Jun 14, 2026", amount: 150000, kind: "withdraw" },
-                    { id: 3, label: "Sale bonus · Dilshod R.", date: "Jun 10, 2026", amount: 8200, kind: "earn" },
-                    { id: 4, label: "Sale bonus · Sardor Y.", date: "Jun 05, 2026", amount: 1760, kind: "earn" },
-                  ]} />
-              : <PlaceholderPage label={pageLabel[tab]} icon={pageIcon[tab]} />}
+          : tab === "main"
+            ? <SellerHomePage onGoToWallet={() => setTab("profile")} />
+            : tab === "catalog"
+            ? <SellerCatalogPage onSubPageChange={setCatalogSubActive} />
+            : tab === "orders"
+              ? <SellerOrdersPage />
+              : tab === "profile"
+                ? <SellerProfilePage onLogout={onLogout} onSubPageChange={setProfileSubActive} />
+                : <PlaceholderPage label={pageLabel[tab]} icon={pageIcon[tab]} />}
       </div>
 
-      {/* Bottom nav — hidden during the full-screen approval flow or profile sub-page */}
-      {!showApproval && !profileSubActive && (
+      {/* Bottom nav — hidden during approval flow, profile sub-page, or catalog sub-page */}
+      {!showApproval && !profileSubActive && !catalogSubActive && (
       <div className="shrink-0 bg-card border-t border-border relative">
         <div className="flex items-end justify-around px-2 pt-2 pb-2">
           {tabs.map((t) => {
