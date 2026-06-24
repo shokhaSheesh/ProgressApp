@@ -3949,6 +3949,33 @@ function WalletScreen({ name, phone, balance, transactions, onLogout, onSubPageC
   );
 }
 
+// ─── AUTH FLOW ────────────────────────────────────────────────────────────────
+const AUTH_SCREENS: AuthScreen[] = ["login", "mechanic-login-otp", "mechanic-profile", "forgot-phone", "forgot-otp", "forgot-newpass"];
+
+function AuthFlow({ onLogin }: { onLogin: (role: Role) => void }) {
+  const [screen, setScreen] = useState<AuthScreen>("login");
+  const [lang, setLang] = useState<Lang>("en");
+  const idx = AUTH_SCREENS.indexOf(screen);
+
+  return (
+    <div className="flex-1 overflow-hidden relative">
+      <div className="absolute inset-0 flex transition-transform duration-300 ease-in-out"
+        style={{ transform: `translateX(${-idx * (100 / AUTH_SCREENS.length)}%)`, width: `${AUTH_SCREENS.length * 100}%` }}>
+        {AUTH_SCREENS.map((s) => (
+          <div key={s} style={{ width: `${100 / AUTH_SCREENS.length}%` }} className="h-full overflow-hidden shrink-0">
+            {s === "login"              && <LoginScreen onLogin={onLogin} onNavigate={setScreen} lang={lang} setLang={setLang} />}
+            {s === "mechanic-login-otp" && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("login")} nextScreen="mechanic-profile" title="Verify your number" subtitle="Enter the 6-digit code sent to your phone" lang={lang} setLang={setLang} />}
+            {s === "mechanic-profile"   && <MechanicProfileScreen onLogin={() => onLogin("mechanic")} onBack={() => setScreen("mechanic-login-otp")} lang={lang} setLang={setLang} />}
+            {s === "forgot-phone"       && <ForgotPhoneScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
+            {s === "forgot-otp"         && <OtpScreen onNavigate={setScreen} onBack={() => setScreen("forgot-phone")} nextScreen="forgot-newpass" title="Verify it's you" subtitle="Enter the 6-digit code sent to your registered number" lang={lang} setLang={setLang} />}
+            {s === "forgot-newpass"     && <ForgotNewPassScreen onNavigate={setScreen} lang={lang} setLang={setLang} />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function App() {
   const [loggedInAs, setLoggedInAs] = useState<Role | null>(null);
