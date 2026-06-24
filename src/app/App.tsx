@@ -3169,129 +3169,86 @@ function MyInfoPage({ name: initName, phone: initPhone, onBack }: { name: string
 
 // Main profile hub
 // ─── ORDER HISTORY DATA ───────────────────────────────────────────────────────
-interface OrderItem  { id: number; name: string; img: string; price: string; qty: number; sku?: string; variation?: string; }
-interface PastOrder  {
-  ref: string;
+interface ScannedEntry {
+  id: string;
   date: string;
   shopName: string;
   sellerName: string;
-  items: OrderItem[];
+  productName: string;
+  productImg: string;
+  sku: string;
+  variation?: string;
   bonus: number;
 }
 
-const PAST_ORDERS: PastOrder[] = [
-  {
-    ref: "ORD-2206-A47",
-    date: "Jun 18, 2026 · 14:32",
-    shopName: "AutoZone Tashkent",
-    sellerName: "Jasur Toshmatov",
-    items: [
-      { id: 1, name: "Bosch Oil Filter Premium", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "45 000", qty: 2, sku: "BSH-OF-4722", variation: "Diesel · 1 unit" },
-      { id: 3, name: "NGK Spark Plug x4",        img: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", price: "88 000", qty: 1, sku: "NGK-BKR6E-4PK", variation: "Heat 6 · 1.0 mm" },
-    ],
-    bonus: 5340,
-  },
-  {
-    ref: "ORD-2206-B91",
-    date: "Jun 09, 2026 · 10:15",
-    shopName: "TireHub Yunusabad",
-    sellerName: "Dilshod Razzaqov",
-    items: [
-      { id: 4, name: "Continental Tire 205/55R16", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "320 000", qty: 4, sku: "CNT-205-55R16-91V", variation: "205/55R16 · V · 240 km/h" },
-    ],
-    bonus: 38400,
-  },
-  {
-    ref: "ORD-2206-C03",
-    date: "Jun 02, 2026 · 16:48",
-    shopName: "SparkMaster Pro",
-    sellerName: "Sardor Yusupov",
-    items: [
-      { id: 5, name: "Denso Air Filter",       img: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", price: "62 000", qty: 1, sku: "DNS-AF-268", variation: "Performance" },
-      { id: 6, name: "Monroe Shock Absorber",  img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", price: "145 000", qty: 2, sku: "MNR-E1156", variation: "Front Left · Sport" },
-    ],
-    bonus: 10560,
-  },
+const SCANNED_ENTRIES: ScannedEntry[] = [
+  { id: "SCN-2206-001", date: "Jun 22, 2026 · 11:04", shopName: "AutoZone Tashkent",  sellerName: "Jasur Toshmatov",  productName: "Bosch Oil Filter Premium",    productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", sku: "BSH-OF-4722",       variation: "Diesel",                  bonus: 2000  },
+  { id: "SCN-2206-002", date: "Jun 22, 2026 · 11:06", shopName: "AutoZone Tashkent",  sellerName: "Jasur Toshmatov",  productName: "NGK Spark Plug",              productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", sku: "NGK-BKR6E",        variation: "Heat 6",                  bonus: 4000  },
+  { id: "SCN-2206-003", date: "Jun 18, 2026 · 14:32", shopName: "TireHub Uzbekistan", sellerName: "Dilshod Razzaqov", productName: "Continental Tire 205/55R16",  productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", sku: "CNT-205-55R16-91V", variation: "V-speed",                  bonus: 16000 },
+  { id: "SCN-2206-004", date: "Jun 09, 2026 · 10:15", shopName: "SparkMaster Pro",    sellerName: "Sardor Yusupov",   productName: "Denso Air Filter",            productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", sku: "DNS-AF-268",        variation: "Performance",             bonus: 3000  },
+  { id: "SCN-2206-005", date: "Jun 02, 2026 · 16:48", shopName: "SparkMaster Pro",    sellerName: "Sardor Yusupov",   productName: "Monroe Shock Absorber",       productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", sku: "MNR-E1156",         variation: "Front Left · Sport",      bonus: 7000  },
 ];
 
-// Sub-page: Order history list + detail
-function OrderHistoryPage({ onBack, initialRef }: { onBack: () => void; initialRef?: string }) {
-  const [selected, setSelected] = useState<PastOrder | null>(
-    initialRef ? (PAST_ORDERS.find(o => o.ref === initialRef) ?? null) : null
-  );
+function OrderHistoryPage({ onBack }: { onBack: () => void }) {
+  const [selected, setSelected] = useState<ScannedEntry | null>(null);
 
-  // ── Order detail ──
+  // ── Detail view ──
   if (selected) {
-    const total = selected.items.reduce((s, i) => s + priceToNum(i.price) * i.qty, 0);
-    const totalUnits = selected.items.reduce((s, i) => s + i.qty, 0);
     return (
       <div className="flex flex-col h-full bg-background">
         <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
-          <button onClick={initialRef ? onBack : () => setSelected(null)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => setSelected(null)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
             <ChevronLeft size={20} />
           </button>
           <div className="flex-1 min-w-0">
-            <p className="text-[17px] font-bold text-foreground leading-tight">Order Details</p>
-            <p className="text-[11px] text-muted-foreground">{selected.ref}</p>
+            <p className="text-[17px] font-bold text-foreground leading-tight">Scan Details</p>
+            <p className="text-[11px] font-mono text-muted-foreground">{selected.id}</p>
           </div>
           <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-xl">Completed</span>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4">
-          <div className="flex flex-col gap-3">
-            {/* Seller info */}
-            <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Seller</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
-                  <Store size={18} className="text-primary" />
-                </div>
-                <div>
-                  <p className="text-[14px] font-bold text-foreground">{selected.shopName}</p>
-                  <p className="text-[12px] text-muted-foreground">{selected.sellerName}</p>
-                </div>
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+          {/* Product card */}
+          <div className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <div className="w-full h-44 bg-muted overflow-hidden">
+              <img src={selected.productImg} alt={selected.productName} className="w-full h-full object-cover" />
+            </div>
+            <div className="p-4">
+              <p className="text-[16px] font-bold text-foreground mb-1">{selected.productName}</p>
+              <p className="text-[11px] font-mono text-muted-foreground/70">{selected.sku}</p>
+              {selected.variation && <p className="text-[12px] text-muted-foreground mt-0.5">{selected.variation}</p>}
+            </div>
+          </div>
+
+          {/* Bonus earned */}
+          <div className="bg-emerald-50 rounded-2xl border border-emerald-100 px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+                <Gift size={18} className="text-emerald-600" />
               </div>
-              <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 text-muted-foreground">
-                <Clock size={12} />
-                <span className="text-[12px]">{selected.date}</span>
+              <div>
+                <p className="text-[11px] text-emerald-700 font-medium">Bonus earned</p>
+                <p className="text-[20px] font-bold text-emerald-600 leading-tight">+{fmtUZS(selected.bonus)} <span className="text-[12px] font-semibold">UZS</span></p>
               </div>
             </div>
+            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-lg">Credited</span>
+          </div>
 
-            {/* Items */}
-            <div className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-4 pt-4 pb-2">Items ({totalUnits} units)</p>
-              {selected.items.map((item, i) => (
-                <div key={item.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
-                  <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0">
-                    <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-foreground line-clamp-1">{item.name}</p>
-                    {item.sku && <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{item.sku}</p>}
-                    {item.variation && <p className="text-[10px] text-muted-foreground">{item.variation}</p>}
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{item.price} UZS × {item.qty}</p>
-                  </div>
-                  <p className="text-[13px] font-bold text-foreground shrink-0">{fmtUZS(priceToNum(item.price) * item.qty)}</p>
-                </div>
-              ))}
+          {/* Shop / seller */}
+          <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Shop</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
+                <Store size={18} className="text-primary" />
+              </div>
+              <div>
+                <p className="text-[14px] font-bold text-foreground">{selected.shopName}</p>
+                <p className="text-[12px] text-muted-foreground">{selected.sellerName}</p>
+              </div>
             </div>
-
-            {/* Summary */}
-            <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Summary</p>
-              <div className="flex items-center justify-between text-[13px] mb-2">
-                <span className="text-muted-foreground">Subtotal ({totalUnits} units)</span>
-                <span className="font-semibold text-foreground">{fmtUZS(total)} UZS</span>
-              </div>
-              <div className="flex items-center justify-between text-[13px] mb-3">
-                <span className="flex items-center gap-1.5 text-emerald-600"><Gift size={13} /> Bonus earned (3%)</span>
-                <span className="font-bold text-emerald-600">+{fmtUZS(selected.bonus)} UZS</span>
-              </div>
-              <div className="h-px bg-border mb-3" />
-              <div className="flex items-center justify-between">
-                <span className="text-[15px] font-bold text-foreground">Total paid</span>
-                <span className="text-[20px] font-bold text-primary">{fmtUZS(total)} <span className="text-[11px] font-normal text-muted-foreground">UZS</span></span>
-              </div>
+            <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 text-muted-foreground">
+              <Clock size={12} />
+              <span className="text-[12px]">{selected.date}</span>
             </div>
           </div>
         </div>
@@ -3299,80 +3256,52 @@ function OrderHistoryPage({ onBack, initialRef }: { onBack: () => void; initialR
     );
   }
 
-  // ── Order list ──
+  // ── List view ──
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
-        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-          <ChevronLeft size={20} />
-        </button>
-        <p className="flex-1 text-[17px] font-bold text-foreground">Order History</p>
-        <span className="text-[12px] text-muted-foreground">{PAST_ORDERS.length} orders</span>
+      <div className="px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <p className="text-[20px] font-bold text-foreground">Orders</p>
+        <p className="text-[12px] text-muted-foreground mt-0.5">{SCANNED_ENTRIES.length} scanned products</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="flex flex-col gap-3">
-          {PAST_ORDERS.map(order => {
-            const total = order.items.reduce((s, i) => s + priceToNum(i.price) * i.qty, 0);
-            const totalUnits = order.items.reduce((s, i) => s + i.qty, 0);
-            return (
-              <button key={order.ref} onClick={() => setSelected(order)}
-                className="bg-card rounded-2xl border border-border p-4 text-left w-full hover:border-primary/30 active:scale-[0.98] transition-all"
-                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                {/* Header row */}
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-[12px] font-semibold text-foreground">{order.ref}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                      <Clock size={10} /> {order.date}
-                    </p>
-                  </div>
-                  <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Completed</span>
+          {SCANNED_ENTRIES.map(entry => (
+            <button key={entry.id} onClick={() => setSelected(entry)}
+              className="bg-card rounded-2xl border border-border p-4 text-left w-full hover:border-primary/30 active:scale-[0.98] transition-all"
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div className="flex items-center gap-3">
+                {/* Product thumbnail */}
+                <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0">
+                  <img src={entry.productImg} alt={entry.productName} className="w-full h-full object-cover" />
                 </div>
 
-                {/* Seller row */}
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
-                  <div className="w-7 h-7 rounded-lg bg-primary/8 flex items-center justify-center shrink-0">
-                    <Store size={13} className="text-primary" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-bold text-foreground line-clamp-1">{entry.productName}</p>
+                  {entry.variation && <p className="text-[11px] text-muted-foreground mt-0.5">{entry.variation}</p>}
+
+                  {/* Shop row */}
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <Store size={10} className="text-muted-foreground shrink-0" />
+                    <p className="text-[11px] text-muted-foreground truncate">{entry.shopName}</p>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-semibold text-foreground truncate">{order.shopName}</p>
-                    <p className="text-[10px] text-muted-foreground">{order.sellerName}</p>
+
+                  {/* Date + bonus row */}
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                      <Clock size={10} /> {entry.date}
+                    </span>
+                    <span className="flex items-center gap-1 text-emerald-600">
+                      <Gift size={10} />
+                      <span className="text-[11px] font-bold">+{fmtUZS(entry.bonus)} UZS</span>
+                    </span>
                   </div>
                 </div>
 
-                {/* Items preview */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex -space-x-2">
-                    {order.items.slice(0, 3).map(item => (
-                      <div key={item.id} className="w-9 h-9 rounded-lg bg-muted overflow-hidden border-2 border-card shrink-0">
-                        <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
-                      </div>
-                    ))}
-                    {order.items.length > 3 && (
-                      <div className="w-9 h-9 rounded-lg bg-[#F4F5F7] border-2 border-card flex items-center justify-center shrink-0">
-                        <span className="text-[10px] font-bold text-muted-foreground">+{order.items.length - 3}</span>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground ml-1">{order.items.length} product{order.items.length > 1 ? "s" : ""} · {totalUnits} unit{totalUnits > 1 ? "s" : ""}</p>
-                </div>
-
-                {/* Footer: total + bonus */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-emerald-600">
-                    <Gift size={12} />
-                    <span className="text-[11px] font-semibold">+{fmtUZS(order.bonus)} UZS bonus</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <p className="text-[15px] font-bold text-foreground">{fmtUZS(total)}</p>
-                    <span className="text-[10px] text-muted-foreground">UZS</span>
-                    <ChevronRight size={14} className="text-muted-foreground ml-1" />
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+                <ChevronRight size={16} className="text-muted-foreground shrink-0 ml-1" />
+              </div>
+            </button>
+          ))}
         </div>
       </div>
     </div>
