@@ -2256,9 +2256,15 @@ function ShopsPage() {
                         <span className="text-[11px] text-muted-foreground">{shop.address}</span>
                         <CopyAddressButton address={shop.address} size={13} />
                       </span>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <MapPin size={11} />
-                        <span className="text-[11px]">{shop.distance}</span>
+                      <div className="flex items-center gap-3 text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <MapPin size={11} />
+                          <span className="text-[11px]">{shop.distance}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock size={11} />
+                          <span className="text-[11px]">{shop.hours}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
