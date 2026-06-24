@@ -1960,15 +1960,16 @@ interface Shop {
   id: number; name: string; address: string;
   distance: string; time: string; status: "open" | "closed";
   products: number; rating: number; phone: string;
-  x: number; y: number; // % position on fake map
+  hours: string;
+  x: number; y: number;
 }
 
 const SHOPS: Shop[] = [
-  { id: 1, name: "AutoZone Tashkent",    address: "Chilonzor tumani, 14-mavze",      distance: "1.2 km", time: "8 min",  status: "open",   products: 142, rating: 4.8, phone: "+998 71 234 56 78", x: 42, y: 52 },
-  { id: 2, name: "CarParts Express",      address: "Yunusobod tumani, Amir Temur ko", distance: "3.4 km", time: "18 min", status: "open",   products:  89, rating: 4.5, phone: "+998 71 345 67 89", x: 68, y: 28 },
-  { id: 3, name: "SparkMaster Pro",       address: "Mirzo Ulug'bek tumani, 7-blok",  distance: "5.1 km", time: "26 min", status: "closed", products:  67, rating: 4.2, phone: "+998 71 456 78 90", x: 75, y: 62 },
-  { id: 4, name: "TireHub Uzbekistan",    address: "Sergeli tumani, Nurafshon ko'ch", distance: "6.8 km", time: "32 min", status: "open",   products: 210, rating: 4.9, phone: "+998 71 567 89 01", x: 28, y: 72 },
-  { id: 5, name: "SuspensionKing",        address: "Uchtepa tumani, Bunyodkor shoh",  distance: "2.7 km", time: "14 min", status: "open",   products:  54, rating: 4.3, phone: "+998 71 678 90 12", x: 55, y: 35 },
+  { id: 1, name: "AutoZone Tashkent",    address: "Chilonzor tumani, 14-mavze",      distance: "1.2 km", time: "8 min",  status: "open",   products: 142, rating: 4.8, phone: "+998 71 234 56 78", hours: "09:00 – 20:00", x: 42, y: 52 },
+  { id: 2, name: "CarParts Express",      address: "Yunusobod tumani, Amir Temur ko", distance: "3.4 km", time: "18 min", status: "open",   products:  89, rating: 4.5, phone: "+998 71 345 67 89", hours: "08:00 – 19:00", x: 68, y: 28 },
+  { id: 3, name: "SparkMaster Pro",       address: "Mirzo Ulug'bek tumani, 7-blok",  distance: "5.1 km", time: "26 min", status: "closed", products:  67, rating: 4.2, phone: "+998 71 456 78 90", hours: "09:00 – 18:00", x: 75, y: 62 },
+  { id: 4, name: "TireHub Uzbekistan",    address: "Sergeli tumani, Nurafshon ko'ch", distance: "6.8 km", time: "32 min", status: "open",   products: 210, rating: 4.9, phone: "+998 71 567 89 01", hours: "08:00 – 21:00", x: 28, y: 72 },
+  { id: 5, name: "SuspensionKing",        address: "Uchtepa tumani, Bunyodkor shoh",  distance: "2.7 km", time: "14 min", status: "open",   products:  54, rating: 4.3, phone: "+998 71 678 90 12", hours: "09:00 – 20:00", x: 55, y: 35 },
 ];
 
 function MapBackground() {
@@ -2185,13 +2186,16 @@ function ShopsPage() {
                 {/* Stats row */}
                 <div className="flex gap-2 mb-4">
                   <div className="flex-1 bg-muted rounded-2xl px-3 py-2.5">
-                    <p className="text-[18px] font-bold text-foreground leading-none">{selectedShop.products}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">Products listed</p>
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <Clock size={11} className="text-primary" />
+                      <p className="text-[15px] font-bold text-foreground leading-none">{selectedShop.hours}</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-medium">Today's hours</p>
                   </div>
                   <div className="flex-1 bg-muted rounded-2xl px-3 py-2.5">
                     <div className="flex items-center gap-1">
-                      <Clock size={12} className="text-primary" />
-                      <p className="text-[18px] font-bold text-foreground leading-none">{selectedShop.time}</p>
+                      <MapPin size={11} className="text-primary" />
+                      <p className="text-[15px] font-bold text-foreground leading-none">{selectedShop.time}</p>
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">{selectedShop.distance} away</p>
                   </div>
