@@ -15,7 +15,7 @@ import {
 type AuthScreen = "login" | "mechanic-login-otp" | "mechanic-profile" | "forgot-phone" | "forgot-otp" | "forgot-newpass";
 type Role = "mechanic";
 type Lang = "en" | "ru" | "uz";
-type MechanicTab = "main" | "shops" | "scan" | "cart" | "profile";
+type MechanicTab = "main" | "shops" | "scan" | "orders" | "profile";
 type SellerTab = "main" | "catalog" | "scan" | "orders" | "profile";
 
 const LANGUAGES: { code: Lang; label: string; native: string; flag: string }[] = [
@@ -830,11 +830,9 @@ const PRODUCT_VARIATIONS: Record<string, ProductVariation[]> = {
 };
 
 // ─── SEARCH PAGE ──────────────────────────────────────────────────────────────
-function SearchPage({ onSelect, onClose, onGoToCart, onSelectCategory, cartIds, setCartIds, cartQty, setCartQty }: {
-  onSelect: (p: Product) => void; onClose: () => void; onGoToCart?: () => void;
+function SearchPage({ onSelect, onClose, onSelectCategory }: {
+  onSelect: (p: Product) => void; onClose: () => void;
   onSelectCategory?: (cat: { label: string; emoji: string }) => void;
-  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
-  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
 }) {
   const [query, setQuery] = useState("");
   const [selectedName, setSelectedName] = useState<string | null>(null);
@@ -853,17 +851,6 @@ function SearchPage({ onSelect, onClose, onGoToCart, onSelectCategory, cartIds, 
     : [];
 
   const listings = selectedName ? PRODUCTS.filter(p => p.name === selectedName) : [];
-
-  const getQ = (id: number) => cartQty[id] ?? 1;
-  const changeQ = (id: number, delta: number) => {
-    const next = getQ(id) + delta;
-    if (next < 1) {
-      setCartIds(ids => ids.filter(i => i !== id));
-      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
-    } else {
-      setCartQty(q => ({ ...q, [id]: next }));
-    }
-  };
 
   // ── Shared top bar ──
   const TopBar = ({ onBack, title, subtitle }: { onBack: () => void; title?: string; subtitle?: string }) => (
@@ -928,38 +915,23 @@ function SearchPage({ onSelect, onClose, onGoToCart, onSelectCategory, cartIds, 
     });
 
   // Product card used in both the grid and filter-applied view
-  const ListingCard = ({ p }: { p: Product }) => {
-    const inCart = cartIds.includes(p.id);
-    return (
-      <div className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-        <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={() => { onSelect(p); onClose(); }} />
-        <div className="p-2.5 flex flex-col flex-1">
-          <button onClick={() => { onSelect(p); onClose(); }} className="text-left mb-0.5">
-            <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-1">{p.shop}</p>
-          </button>
-          <p className="text-[10px] text-muted-foreground font-medium">{p.stock} in stock</p>
-          <div className="mt-0.5 mb-2">
-            {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
-            <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
-          </div>
-          <div className="mt-auto">
-            {inCart ? (
-              <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
-                <button onClick={() => changeQ(p.id, -1)} className="w-7 h-7 rounded-lg bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all"><Minus size={12} /></button>
-                <span className="text-[13px] font-bold text-primary">{getQ(p.id)}</span>
-                <button onClick={() => changeQ(p.id, 1)} className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all"><Plus size={12} /></button>
-              </div>
-            ) : (
-              <button onClick={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
-                className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
-                Add to Cart
-              </button>
-            )}
+  const ListingCard = ({ p }: { p: Product }) => (
+    <div className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+      <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={() => { onSelect(p); onClose(); }} />
+      <div className="p-2.5 flex flex-col flex-1">
+        <button onClick={() => { onSelect(p); onClose(); }} className="text-left mb-0.5">
+          <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-1">{p.name}</p>
+        </button>
+        <p className="text-[10px] text-muted-foreground font-medium">{p.shop}</p>
+        <div className="mt-auto pt-1">
+          <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
+            <Gift size={11} className="text-primary shrink-0" />
+            <span className="text-[11px] font-semibold text-primary">{p.cashback ?? 5}% Cashback</span>
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
 
   if (selectedName) {
     // ── Filter page ──
@@ -1115,21 +1087,6 @@ function SearchPage({ onSelect, onClose, onGoToCart, onSelectCategory, cartIds, 
         </div>
 
         {/* Fixed cart FAB */}
-        {cartIds.length > 0 && onGoToCart && (
-          <div className="absolute bottom-5 left-0 right-0 flex justify-center pointer-events-none">
-            <button
-              onClick={onGoToCart}
-              className="pointer-events-auto flex items-center gap-3 bg-primary text-white pl-5 pr-4 py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all"
-              style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.45)" }}
-            >
-              <ShoppingCart size={18} />
-              <span className="text-[14px] font-semibold">View Cart</span>
-              <span className="bg-white text-primary text-[12px] font-bold rounded-xl px-2 py-0.5 min-w-[24px] text-center">
-                {cartIds.length}
-              </span>
-            </button>
-          </div>
-        )}
       </div>
     );
   }
@@ -1223,11 +1180,9 @@ function ProductCardImage({ images, discount, height = "h-32", onClick, initialL
   );
 }
 
-function CategoryPage({ category, emoji, onBack, onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
+function CategoryPage({ category, emoji, onBack, onSelect }: {
   category: string; emoji: string; onBack: () => void;
-  onSelect: (p: Product) => void; onGoToCart: () => void;
-  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
-  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+  onSelect: (p: Product) => void;
 }) {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
@@ -1255,17 +1210,6 @@ function CategoryPage({ category, emoji, onBack, onSelect, onGoToCart, cartIds, 
       if (sortBy === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
       return 0;
     });
-
-  const getQ = (id: number) => cartQty[id] ?? 1;
-  const changeQ = (id: number, delta: number) => {
-    const next = getQ(id) + delta;
-    if (next < 1) {
-      setCartIds(ids => ids.filter(i => i !== id));
-      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
-    } else {
-      setCartQty(q => ({ ...q, [id]: next }));
-    }
-  };
 
   const SORT_OPTS: { key: typeof sortBy; label: string }[] = [
     { key: "default",  label: "Default" },
@@ -1387,12 +1331,7 @@ function CategoryPage({ category, emoji, onBack, onSelect, onGoToCart, cartIds, 
         {filtered.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {filtered.map(p => (
-              <ShopProductCard key={p.id} p={p}
-                inCart={cartIds.includes(p.id)} qty={getQ(p.id)}
-                onAdd={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
-                onChangeQty={delta => changeQ(p.id, delta)}
-                onSelect={() => onSelect(p)}
-              />
+              <ShopProductCard key={p.id} p={p} onSelect={() => onSelect(p)} />
             ))}
           </div>
         ) : (
@@ -1407,18 +1346,6 @@ function CategoryPage({ category, emoji, onBack, onSelect, onGoToCart, cartIds, 
         )}
       </div>
 
-      {/* Cart FAB */}
-      {cartIds.length > 0 && (
-        <div className="absolute bottom-5 left-0 right-0 flex justify-center pointer-events-none">
-          <button onClick={onGoToCart}
-            className="pointer-events-auto flex items-center gap-3 bg-primary text-white pl-5 pr-4 py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all"
-            style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.45)" }}>
-            <ShoppingCart size={18} />
-            <span className="text-[14px] font-semibold">View Cart</span>
-            <span className="bg-white text-primary text-[12px] font-bold rounded-xl px-2 py-0.5 min-w-[24px] text-center">{cartIds.length}</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -1489,26 +1416,12 @@ function NotificationsPage({ onBack }: { onBack: () => void }) {
 }
 
 // ─── LIKED ITEMS PAGE ────────────────────────────────────────────────────────
-function LikedItemsPage({ likedIds, onSelect, onGoToCart, onBack, cartIds, setCartIds, cartQty, setCartQty }: {
-  likedIds: number[]; onSelect: (p: Product) => void; onGoToCart: () => void; onBack: () => void;
-  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
-  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+function LikedItemsPage({ likedIds, onSelect, onBack }: {
+  likedIds: number[]; onSelect: (p: Product) => void; onBack: () => void;
 }) {
   const liked = PRODUCTS.filter(p => likedIds.includes(p.id));
-  const getQ = (id: number) => cartQty[id] ?? 1;
-  const changeQ = (id: number, delta: number) => {
-    const next = getQ(id) + delta;
-    if (next < 1) {
-      setCartIds(ids => ids.filter(i => i !== id));
-      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
-    } else {
-      setCartQty(q => ({ ...q, [id]: next }));
-    }
-  };
-
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-5 pb-3 bg-card border-b border-border shrink-0">
         <button onClick={onBack} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
           <ChevronLeft size={22} />
@@ -1519,7 +1432,6 @@ function LikedItemsPage({ likedIds, onSelect, onGoToCart, onBack, cartIds, setCa
         )}
       </div>
 
-      {/* Content */}
       {liked.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1 gap-3 pb-16">
           <EmptyIllustration />
@@ -1529,38 +1441,27 @@ function LikedItemsPage({ likedIds, onSelect, onGoToCart, onBack, cartIds, setCa
       ) : (
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4">
           <div className="grid grid-cols-2 gap-3">
-            {liked.map(p => {
-              const inCart = cartIds.includes(p.id);
-              return (
-                <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                  <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} initialLiked={true} onClick={() => onSelect(p)} />
-                  <div className="p-2.5 flex flex-col flex-1">
-                    <button onClick={() => onSelect(p)} className="text-left mb-0.5">
-                      <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
-                    </button>
-                    <p className="text-[10px] text-muted-foreground font-medium">{p.shop}</p>
-                    <div className="mt-0.5 mb-2">
-                      {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
-                      <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
-                    </div>
-                    <div className="mt-auto">
-                      {inCart ? (
-                        <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
-                          <button onClick={() => changeQ(p.id, -1)} className="w-7 h-7 rounded-lg bg-white border border-border flex items-center justify-center text-foreground hover:border-primary hover:text-primary transition-all"><Minus size={12} /></button>
-                          <span className="text-[13px] font-bold text-primary">{getQ(p.id)}</span>
-                          <button onClick={() => changeQ(p.id, 1)} className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all"><Plus size={12} /></button>
-                        </div>
-                      ) : (
-                        <button onClick={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
-                          className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
-                          Add to Cart
-                        </button>
-                      )}
+            {liked.map(p => (
+              <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} initialLiked={true} onClick={() => onSelect(p)} />
+                <div className="p-2.5 flex flex-col flex-1">
+                  <button onClick={() => onSelect(p)} className="text-left mb-0.5">
+                    <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
+                  </button>
+                  <p className="text-[10px] text-muted-foreground font-medium">{p.shop}</p>
+                  <div className="mt-0.5 mb-2">
+                    {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
+                    <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
+                  </div>
+                  <div className="mt-auto">
+                    <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
+                      <Gift size={11} className="text-primary shrink-0" />
+                      <span className="text-[11px] font-semibold text-primary">{p.cashback ?? 5}% Cashback</span>
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -1568,14 +1469,9 @@ function LikedItemsPage({ likedIds, onSelect, onGoToCart, onBack, cartIds, setCa
   );
 }
 
-function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setCartIds, cartQty, setCartQty }: {
+function MechanicMainPage({ onSelect, onSubPageChange }: {
   onSelect: (p: Product) => void;
-  onGoToCart: () => void;
   onSubPageChange: (active: boolean) => void;
-  cartIds: number[];
-  setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
-  cartQty: Record<number, number>;
-  setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
 }) {
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -1593,28 +1489,16 @@ function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setC
     const idx = max > 0 ? Math.round((el.scrollLeft / max) * (CAT_NUM_DOTS - 1)) : 0;
     setCatDotIdx(idx);
   };
-  const getQ = (id: number) => cartQty[id] ?? 1;
-  const changeQ = (id: number, delta: number) => {
-    const next = getQ(id) + delta;
-    if (next < 1) {
-      setCartIds(ids => ids.filter(i => i !== id));
-      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
-    } else {
-      setCartQty(q => ({ ...q, [id]: next }));
-    }
-  };
 
   const row1 = CATEGORIES.slice(0, Math.ceil(CATEGORIES.length / 2));
   const row2 = CATEGORIES.slice(Math.ceil(CATEGORIES.length / 2));
 
   if (showNotifications) return <NotificationsPage onBack={() => { setShowNotifications(false); onSubPageChange(false); }} />;
   if (showLiked) return <LikedItemsPage likedIds={likedIds} onBack={() => { setShowLiked(false); onSubPageChange(false); }}
-    onSelect={p => { setShowLiked(false); onSubPageChange(false); onSelect(p); }} onGoToCart={onGoToCart}
-    cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />;
+    onSelect={p => { setShowLiked(false); onSubPageChange(false); onSelect(p); }} />;
   if (activeCatPage) {
     return <CategoryPage category={activeCatPage.label} emoji={activeCatPage.emoji}
-      onBack={() => { setActiveCatPage(null); onSubPageChange(false); }} onSelect={onSelect} onGoToCart={onGoToCart}
-      cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />;
+      onBack={() => { setActiveCatPage(null); onSubPageChange(false); }} onSelect={onSelect} />;
   }
 
   return (
@@ -1626,10 +1510,7 @@ function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setC
           <SearchPage
             onSelect={p => { onSelect(p); setShowSearch(false); }}
             onClose={() => setShowSearch(false)}
-            onGoToCart={() => { setShowSearch(false); onGoToCart(); }}
             onSelectCategory={cat => { setShowSearch(false); setActiveCatPage(cat); }}
-            cartIds={cartIds} setCartIds={setCartIds}
-            cartQty={cartQty} setCartQty={setCartQty}
           />
         </div>
       )}
@@ -1722,7 +1603,6 @@ function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setC
         <p className="text-[13px] font-bold text-foreground mb-3">All Products</p>
         <div className="grid grid-cols-2 gap-3">
           {PRODUCTS.map(p => {
-            const inCart = cartIds.includes(p.id);
             return (
               <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                 <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={() => onSelect(p)} />
@@ -1738,27 +1618,12 @@ function MechanicMainPage({ onSelect, onGoToCart, onSubPageChange, cartIds, setC
                     )}
                     <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
                   </div>
-                  {/* Always-bottom CTA */}
-                  <div className="mt-auto">
-                    {inCart ? (
-                      <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
-                        <button onClick={() => changeQ(p.id, -1)}
-                          className="w-7 h-7 rounded-lg bg-white border border-border flex items-center justify-center text-foreground hover:border-primary hover:text-primary transition-all">
-                          <Minus size={12} />
-                        </button>
-                        <span className="text-[13px] font-bold text-primary">{getQ(p.id)}</span>
-                        <button onClick={() => changeQ(p.id, 1)}
-                          className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all">
-                          <Plus size={12} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
-                        className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
-                        Add to Cart
-                      </button>
-                    )}
+                  {/* Cashback badge */}
+                  <div className="mt-auto pt-1">
+                    <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
+                      <Gift size={11} className="text-primary shrink-0" />
+                      <span className="text-[11px] font-semibold text-primary">{p.cashback ?? 5}% Cashback</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1899,30 +1764,11 @@ function ImageViewer({ images, startIndex, onClose }: {
   );
 }
 
-function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
-  product: Product;
-  onBack: () => void;
-  onGoToCart: () => void;
-  cartIds: number[];
-  setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
-  cartQty: Record<number, number>;
-  setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
-}) {
-  const inCart = cartIds.includes(product.id);
+function ProductDetailPage({ product, onBack }: { product: Product; onBack: () => void }) {
   const similar = PRODUCTS.filter(p => p.id !== product.id && p.category === product.category).slice(0, 6);
   const images = [product.img, ...(PRODUCT_EXTRA_IMGS[product.sku] ?? [])];
   const [imgIdx, setImgIdx] = useState(0);
   const [showViewer, setShowViewer] = useState(false);
-  const getQ = (id: number) => cartQty[id] ?? 1;
-  const changeQ = (id: number, delta: number) => {
-    const next = getQ(id) + delta;
-    if (next < 1) {
-      setCartIds(ids => ids.filter(i => i !== id));
-      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
-    } else {
-      setCartQty(q => ({ ...q, [id]: next }));
-    }
-  };
   const lowStock = product.stock <= 15;
   const [liked, setLiked] = useState(false);
   const variations = PRODUCT_VARIATIONS[product.sku] ?? [];
@@ -2082,37 +1928,21 @@ function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, c
             <div className="mb-2">
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Similar Products</p>
               <div className="grid grid-cols-2 gap-3">
-                {similar.map(sp => {
-                  const spInCart = cartIds.includes(sp.id);
-                  return (
-                    <div key={sp.id} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                      <ProductCardImage images={[sp.img, ...(PRODUCT_EXTRA_IMGS[sp.sku] ?? [])]} discount={sp.discount} height="h-28" onClick={() => {}} />
-                      <div className="p-2.5 flex flex-col flex-1">
-                        <p className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2 mb-0.5">{sp.name}</p>
-                        <p className="text-[10px] text-muted-foreground mb-1">{sp.shop}</p>
-                        <div className="mb-2">
-                          {sp.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{sp.originalPrice} UZS</p>}
-                          <p className="text-[12px] font-bold text-primary leading-tight">{sp.price} <span className="text-[9px] font-normal text-muted-foreground">UZS</span></p>
-                        </div>
-                        <div className="mt-auto">
-                          {spInCart ? (
-                            <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
-                              <button onClick={() => changeQ(sp.id, -1)} className="w-6 h-6 rounded-lg bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all"><Minus size={11} /></button>
-                              <span className="text-[12px] font-bold text-primary">{getQ(sp.id)}</span>
-                              <button onClick={() => changeQ(sp.id, 1)} className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all"><Plus size={11} /></button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => { setCartIds(ids => [...ids, sp.id]); setCartQty(q => ({ ...q, [sp.id]: 1 })); }}
-                              className="w-full py-1.5 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
-                              Add to Cart
-                            </button>
-                          )}
+                {similar.map(sp => (
+                  <div key={sp.id} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                    <ProductCardImage images={[sp.img, ...(PRODUCT_EXTRA_IMGS[sp.sku] ?? [])]} discount={sp.discount} height="h-28" onClick={() => {}} />
+                    <div className="p-2.5 flex flex-col flex-1">
+                      <p className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2 mb-0.5">{sp.name}</p>
+                      <p className="text-[10px] text-muted-foreground mb-1">{sp.shop}</p>
+                      <div className="mt-auto">
+                        <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
+                          <Gift size={10} className="text-primary shrink-0" />
+                          <span className="text-[10px] font-semibold text-primary">{sp.cashback ?? 5}% Cashback</span>
                         </div>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -2121,30 +1951,10 @@ function ProductDetailPage({ product, onBack, onGoToCart, cartIds, setCartIds, c
 
       {/* Bottom CTA */}
       <div className="shrink-0 bg-card border-t border-border px-5 py-3 flex gap-3">
-        {inCart ? (
-          <>
-            <div className="flex items-center justify-between bg-primary/8 rounded-xl px-3 gap-2" style={{ minWidth: 120 }}>
-              <button onClick={() => changeQ(product.id, -1)} className="w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all">
-                <Minus size={15} />
-              </button>
-              <span className="text-[16px] font-bold text-primary">{getQ(product.id)}</span>
-              <button onClick={() => changeQ(product.id, 1)} className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all">
-                <Plus size={15} />
-              </button>
-            </div>
-            <button onClick={onGoToCart} className="shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl bg-primary text-white text-[13px] font-semibold shadow-md hover:bg-blue-700 transition-all">
-              <ShoppingCart size={15} />
-              Go to Cart
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={() => { setCartIds(ids => [...ids, product.id]); setCartQty(q => ({ ...q, [product.id]: 1 })); }}
-            className="flex-1 py-3 rounded-xl text-[14px] font-semibold bg-primary text-white hover:bg-blue-700 shadow-md transition-all flex items-center justify-center gap-2">
-            <ShoppingCart size={16} />
-            Add to Cart
-          </button>
-        )}
+        <div className="flex-1 flex items-center gap-2 px-2 py-2 rounded-xl bg-primary/8">
+          <Gift size={16} className="text-primary shrink-0" />
+          <span className="text-[14px] font-semibold text-primary">{product.cashback ?? 5}% Cashback Bonus on this product</span>
+        </div>
       </div>
     </div>
   );
@@ -2270,10 +2080,7 @@ function DirectionsSheet({ shop, onClose }: { shop: Shop; onClose: () => void })
   );
 }
 
-function ShopProductCard({ p, inCart, qty, onAdd, onChangeQty, onSelect }: {
-  p: Product; inCart: boolean; qty: number;
-  onAdd: () => void; onChangeQty: (delta: number) => void; onSelect: () => void;
-}) {
+function ShopProductCard({ p, onSelect }: { p: Product; onSelect: () => void }) {
   return (
     <div className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
       <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={onSelect} />
@@ -2281,33 +2088,19 @@ function ShopProductCard({ p, inCart, qty, onAdd, onChangeQty, onSelect }: {
         <button onClick={onSelect} className="text-left mb-0.5">
           <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
         </button>
-        <p className="text-[10px] text-muted-foreground font-medium">{p.stock} in stock</p>
-        <div className="mt-0.5 mb-2">
-          {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
-          <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
-        </div>
         <div className="mt-auto">
-          {inCart ? (
-            <div className="flex items-center justify-between bg-primary/8 rounded-xl px-2 py-1.5">
-              <button onClick={() => onChangeQty(-1)} className="w-7 h-7 rounded-lg bg-white border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all"><Minus size={12} /></button>
-              <span className="text-[13px] font-bold text-primary">{qty}</span>
-              <button onClick={() => onChangeQty(1)} className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-all"><Plus size={12} /></button>
-            </div>
-          ) : (
-            <button onClick={onAdd} className="w-full py-2 rounded-xl text-[11px] font-semibold bg-primary text-white hover:bg-blue-700 transition-all">
-              Add to Cart
-            </button>
-          )}
+          <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
+            <Gift size={11} className="text-primary shrink-0" />
+            <span className="text-[11px] font-semibold text-primary">{p.cashback ?? 5}% Cashback</span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function ShopDetailPage({ shop, onBack, onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
-  shop: Shop; onBack: () => void; onSelect: (p: Product) => void; onGoToCart: () => void;
-  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
-  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+function ShopDetailPage({ shop, onBack, onSelect }: {
+  shop: Shop; onBack: () => void; onSelect: (p: Product) => void;
 }) {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
@@ -2335,17 +2128,6 @@ function ShopDetailPage({ shop, onBack, onSelect, onGoToCart, cartIds, setCartId
       if (sortBy === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
       return 0;
     });
-
-  const getQ = (id: number) => cartQty[id] ?? 1;
-  const changeQ = (id: number, delta: number) => {
-    const next = getQ(id) + delta;
-    if (next < 1) {
-      setCartIds(ids => ids.filter(i => i !== id));
-      setCartQty(q => { const n = { ...q }; delete n[id]; return n; });
-    } else {
-      setCartQty(q => ({ ...q, [id]: next }));
-    }
-  };
 
   if (showFilter) {
     const SORT_OPTS: { key: typeof sortBy; label: string }[] = [
@@ -2494,12 +2276,7 @@ function ShopDetailPage({ shop, onBack, onSelect, onGoToCart, cartIds, setCartId
         {filtered.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {filtered.map(p => (
-              <ShopProductCard key={p.id} p={p}
-                inCart={cartIds.includes(p.id)} qty={getQ(p.id)}
-                onAdd={() => { setCartIds(ids => [...ids, p.id]); setCartQty(q => ({ ...q, [p.id]: 1 })); }}
-                onChangeQty={delta => changeQ(p.id, delta)}
-                onSelect={() => onSelect(p)}
-              />
+              <ShopProductCard key={p.id} p={p} onSelect={() => onSelect(p)} />
             ))}
           </div>
         ) : (
@@ -2514,27 +2291,11 @@ function ShopDetailPage({ shop, onBack, onSelect, onGoToCart, cartIds, setCartId
         )}
       </div>
 
-      {/* Cart FAB */}
-      {cartIds.length > 0 && (
-        <div className="absolute bottom-5 left-0 right-0 flex justify-center pointer-events-none">
-          <button onClick={onGoToCart}
-            className="pointer-events-auto flex items-center gap-3 bg-primary text-white pl-5 pr-4 py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all"
-            style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.45)" }}>
-            <ShoppingCart size={18} />
-            <span className="text-[14px] font-semibold">View Cart</span>
-            <span className="bg-white text-primary text-[12px] font-bold rounded-xl px-2 py-0.5 min-w-[24px] text-center">{cartIds.length}</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 }
 
-function ShopsPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCartQty }: {
-  onSelect: (p: Product) => void; onGoToCart: () => void;
-  cartIds: number[]; setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
-  cartQty: Record<number, number>; setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
-}) {
+function ShopsPage({ onSelect }: { onSelect: (p: Product) => void }) {
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
   const [detailShop, setDetailShop] = useState<Shop | null>(null);
@@ -2542,9 +2303,7 @@ function ShopsPage({ onSelect, onGoToCart, cartIds, setCartIds, cartQty, setCart
   const [search, setSearch] = useState("");
 
   if (detailShop) {
-    return <ShopDetailPage shop={detailShop} onBack={() => setDetailShop(null)}
-      onSelect={onSelect} onGoToCart={onGoToCart}
-      cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />;
+    return <ShopDetailPage shop={detailShop} onBack={() => setDetailShop(null)} onSelect={onSelect} />;
   }
 
   const filteredShops = SHOPS.filter(s =>
@@ -4113,29 +3872,16 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<MechanicTab>("main");
   const [scanning, setScanning] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [cartIds, setCartIds] = useState<number[]>([]);
-  const [cartQty, setCartQty] = useState<Record<number, number>>({});
   const [profileSubActive, setProfileSubActive] = useState(false);
   const [mainSubActive, setMainSubActive] = useState(false);
 
   const tabs: { key: MechanicTab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
-    { key: "main",    label: "Main",    icon: (a) => <Home    size={22} strokeWidth={a ? 2.5 : 1.8} /> },
-    { key: "shops",   label: "Shops",   icon: (a) => <MapPin  size={22} strokeWidth={a ? 2.5 : 1.8} /> },
-    { key: "scan",    label: "Scan",    icon: (_) => <ScanLine size={24} strokeWidth={2} /> },
-    { key: "cart",    label: "Cart",    icon: (a) => <ShoppingCart size={22} strokeWidth={a ? 2.5 : 1.8} /> },
-    { key: "profile", label: "Profile", icon: (a) => <User    size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "main",    label: "Main",    icon: (a) => <Home         size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "shops",   label: "Shops",   icon: (a) => <MapPin       size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "scan",    label: "Scan",    icon: (_) => <ScanLine     size={24} strokeWidth={2} /> },
+    { key: "orders",  label: "Orders",  icon: (a) => <ClipboardList size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "profile", label: "Profile", icon: (a) => <User         size={22} strokeWidth={a ? 2.5 : 1.8} /> },
   ];
-
-  const pageIcon: Record<MechanicTab, React.ReactNode> = {
-    main:    <Package size={32} />,
-    shops:   <MapPin size={32} />,
-    scan:    <ScanLine size={32} />,
-    cart:    <ShoppingCart size={32} />,
-    profile: <User size={32} />,
-  };
-  const pageLabel: Record<MechanicTab, string> = {
-    main: "Product Catalog", shops: "Nearby Shops", scan: "Scan", cart: "My Cart", profile: "Profile",
-  };
 
   return (
     <div className="flex flex-col flex-1 min-h-0 relative">
@@ -4145,13 +3891,13 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
 
       <div className="flex-1 min-h-0 overflow-hidden">
         {selectedProduct
-          ? <ProductDetailPage product={selectedProduct} onBack={() => setSelectedProduct(null)} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
+          ? <ProductDetailPage product={selectedProduct} onBack={() => setSelectedProduct(null)} />
           : tab === "main"
-            ? <MechanicMainPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} onSubPageChange={setMainSubActive} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
+            ? <MechanicMainPage onSelect={setSelectedProduct} onSubPageChange={setMainSubActive} />
             : tab === "shops"
-              ? <ShopsPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
-              : tab === "cart"
-                ? <CartPage cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
+              ? <ShopsPage onSelect={setSelectedProduct} />
+              : tab === "orders"
+                ? <OrderHistoryPage onBack={() => setTab("main")} />
                 : tab === "profile"
                   ? <WalletScreen name="Akmal Karimov" phone="+998 90 123 45 67" balance={184000} onLogout={onLogout}
                       onSubPageChange={setProfileSubActive}
@@ -4161,7 +3907,7 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
                         { id: 3, label: "Purchase bonus · TireHub",      date: "Jun 09, 2026", amount: 23400,  kind: "earn",     orderRef: "ORD-2206-B91" },
                         { id: 4, label: "Purchase bonus · SparkMaster",  date: "Jun 02, 2026", amount: 2640,   kind: "earn",     orderRef: "ORD-2206-C03" },
                       ]} />
-                  : <PlaceholderPage label={pageLabel[tab]} icon={pageIcon[tab]} />}
+                  : null}
       </div>
 
       {!selectedProduct && !profileSubActive && !mainSubActive && (
@@ -4191,14 +3937,6 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
                   style={{ minWidth: 48 }}>
                   <div className={`relative transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                     {t.icon(isActive)}
-                    {t.key === "cart" && cartIds.length > 0 && (() => {
-                      const totalUnits = cartIds.reduce((s, id) => s + (cartQty[id] ?? 1), 0);
-                      return (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
-                          {totalUnits > 99 ? "99+" : totalUnits}
-                        </span>
-                      );
-                    })()}
                   </div>
                   <span className={`text-[10px] font-semibold transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                     {t.label}
