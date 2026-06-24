@@ -931,9 +931,9 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
         </button>
         <p className="text-[10px] text-muted-foreground font-medium">{p.shop}</p>
         <div className="mt-auto pt-1">
-          <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
-            <Gift size={11} className="text-primary shrink-0" />
-            <span className="text-[11px] font-semibold text-primary">{fmtBonus(p)}</span>
+          <div className="flex items-center gap-1 bg-emerald-50 rounded-xl px-2 py-1.5">
+            <Gift size={11} className="text-emerald-600 shrink-0" />
+            <span className="text-[11px] font-semibold text-emerald-600">+{fmtBonus(p)}</span>
           </div>
         </div>
       </div>
@@ -1344,9 +1344,9 @@ function CategoryPage({ category, emoji, onBack, onSelect }: {
                     <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
                   </button>
                   <div className="mt-auto">
-                    <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
-                      <Gift size={11} className="text-primary shrink-0" />
-                      <span className="text-[11px] font-semibold text-primary">{fmtBonus(p)}</span>
+                    <div className="flex items-center gap-1 bg-emerald-50 rounded-xl px-2 py-1.5">
+                      <Gift size={11} className="text-emerald-600 shrink-0" />
+                      <span className="text-[11px] font-semibold text-emerald-600">+{fmtBonus(p)}</span>
                     </div>
                   </div>
                 </div>
@@ -1469,9 +1469,9 @@ function LikedItemsPage({ likedIds, onSelect, onBack }: {
                   </button>
                   <p className="text-[10px] text-muted-foreground font-medium">{p.shop}</p>
                   <div className="mt-auto">
-                    <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
-                      <Gift size={11} className="text-primary shrink-0" />
-                      <span className="text-[11px] font-semibold text-primary">{fmtBonus(p)}</span>
+                    <div className="flex items-center gap-1 bg-emerald-50 rounded-xl px-2 py-1.5">
+                      <Gift size={11} className="text-emerald-600 shrink-0" />
+                      <span className="text-[11px] font-semibold text-emerald-600">+{fmtBonus(p)}</span>
                     </div>
                   </div>
                 </div>
@@ -1628,9 +1628,9 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
                   <p className="text-[10px] text-muted-foreground font-medium">{p.shop}</p>
                   {/* Cashback badge */}
                   <div className="mt-auto pt-1">
-                    <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
-                      <Gift size={11} className="text-primary shrink-0" />
-                      <span className="text-[11px] font-semibold text-primary">{fmtBonus(p)}</span>
+                    <div className="flex items-center gap-1 bg-emerald-50 rounded-xl px-2 py-1.5">
+                      <Gift size={11} className="text-emerald-600 shrink-0" />
+                      <span className="text-[11px] font-semibold text-emerald-600">+{fmtBonus(p)}</span>
                     </div>
                   </div>
                 </div>
@@ -1846,19 +1846,13 @@ function ProductDetailPage({ product, onBack }: { product: Product; onBack: () =
           </div>
           <p className="text-[12px] text-muted-foreground font-medium mb-3">by <span className="text-foreground font-semibold">{product.brand}</span> · SKU: {product.sku}</p>
 
-          {/* Price + Stock */}
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-[22px] font-bold text-primary leading-none">{product.price}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">UZS / per unit</p>
+          {/* Bonus value */}
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50">
+              <Gift size={15} className="text-emerald-600 shrink-0" />
+              <span className="text-[17px] font-bold text-emerald-600">+{fmtBonus(product)}</span>
             </div>
-            <div className={`flex items-center gap-1.5 px-3 py-2 rounded-xl ${lowStock ? "bg-orange-50" : "bg-emerald-50"}`}>
-              <div className={`w-2 h-2 rounded-full ${lowStock ? "bg-orange-400" : "bg-emerald-500"}`} />
-              <div>
-                <p className={`text-[13px] font-bold leading-none ${lowStock ? "text-orange-600" : "text-emerald-600"}`}>{product.stock} units</p>
-                <p className={`text-[10px] mt-0.5 font-medium ${lowStock ? "text-orange-400" : "text-emerald-400"}`}>{lowStock ? "Low stock" : "In stock"}</p>
-              </div>
-            </div>
+            <p className="text-[11px] text-muted-foreground">Bonus on purchase</p>
           </div>
 
           {/* Variations */}
@@ -1892,21 +1886,6 @@ function ProductDetailPage({ product, onBack }: { product: Product; onBack: () =
           {/* Divider */}
           <div className="h-px bg-border mb-4" />
 
-          {/* Shop */}
-          <div className="mb-4">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Sold by</p>
-            <button className="w-full flex items-center gap-3 p-3 rounded-2xl border border-border bg-card hover:border-primary hover:bg-primary/3 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Store size={18} className="text-primary" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="text-[13px] font-bold text-foreground">{product.shop}</p>
-                <p className="text-[11px] text-muted-foreground">Tap to view shop & all products</p>
-              </div>
-              <ChevronRight size={16} className="text-muted-foreground shrink-0" />
-            </button>
-          </div>
-
           {/* Description */}
           <div className="mb-5">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Description</p>
@@ -1921,7 +1900,6 @@ function ProductDetailPage({ product, onBack }: { product: Product; onBack: () =
                 { label: "Brand",    value: product.brand },
                 { label: "SKU",      value: product.sku },
                 { label: "Category", value: product.category },
-                { label: "Stock",    value: `${product.stock} units` },
               ].map(s => (
                 <div key={s.label} className="bg-[#F4F5F7] rounded-xl px-3 py-2.5">
                   <p className="text-[10px] text-muted-foreground font-medium">{s.label}</p>
@@ -1944,8 +1922,8 @@ function ProductDetailPage({ product, onBack }: { product: Product; onBack: () =
                       <p className="text-[10px] text-muted-foreground mb-1">{sp.shop}</p>
                       <div className="mt-auto">
                         <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
-                          <Gift size={10} className="text-primary shrink-0" />
-                          <span className="text-[10px] font-semibold text-primary">{fmtBonus(sp)}</span>
+                          <Gift size={10} className="text-emerald-600 shrink-0" />
+                          <span className="text-[10px] font-semibold text-emerald-600">+{fmtBonus(sp)}</span>
                         </div>
                       </div>
                     </div>
@@ -1957,13 +1935,6 @@ function ProductDetailPage({ product, onBack }: { product: Product; onBack: () =
         </div>
       </div>
 
-      {/* Bottom CTA */}
-      <div className="shrink-0 bg-card border-t border-border px-5 py-3 flex gap-3">
-        <div className="flex-1 flex items-center gap-2 px-2 py-2 rounded-xl bg-primary/8">
-          <Gift size={16} className="text-primary shrink-0" />
-          <span className="text-[14px] font-semibold text-primary">{fmtBonus(product)} Cashback Bonus</span>
-        </div>
-      </div>
     </div>
   );
 }
