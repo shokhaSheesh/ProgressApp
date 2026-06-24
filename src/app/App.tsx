@@ -230,13 +230,16 @@ function LoginScreen({ onLogin, onNavigate, lang, setLang }: {
       <TopBar lang={lang} setLang={setLang} />
       <div className="flex-1 overflow-y-auto px-6 pt-5">
         <div className="mb-6">
-          <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">Welcome Back</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">Sign in to your loyalty account</p>
+          <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">Sign In</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">Enter your phone number to sign in to your account</p>
         </div>
 
-        <div className="flex gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-3.5 bg-[#F4F5F7] rounded-xl text-sm font-semibold text-foreground whitespace-nowrap">🇺🇿 +998</div>
-          <div className="flex-1"><InputField placeholder="90 123 45 67" type="tel" value={phone} onChange={setPhone} /></div>
+        <div>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Phone Number</p>
+          <div className="flex gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-3.5 bg-[#F4F5F7] rounded-xl text-sm font-semibold text-foreground whitespace-nowrap">🇺🇿 +998</div>
+            <div className="flex-1"><InputField placeholder="90 123 45 67" type="tel" value={phone} onChange={setPhone} /></div>
+          </div>
         </div>
       </div>
       <div className="px-6 pb-6 pt-3 shrink-0">
@@ -251,25 +254,87 @@ function LoginScreen({ onLogin, onNavigate, lang, setLang }: {
 
 function MechanicProfileScreen({ onLogin, onBack, lang, setLang }: { onLogin: () => void; onBack: () => void; lang: Lang; setLang: (l: Lang) => void }) {
   const [name, setName] = useState("");
+  const [dob, setDob] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [address, setAddress] = useState("");
+  const [showMapSheet, setShowMapSheet] = useState(false);
+  const [mapPin, setMapPin] = useState<{ x: number; y: number } | null>(null);
   const UZ_REGIONS = ["Tashkent", "Samarkand", "Bukhara", "Namangan", "Andijan", "Fergana", "Nukus", "Termez", "Jizzakh", "Guliston", "Navoi", "Urgench"];
   const [region, setRegion] = useState("");
   const [showRegionSheet, setShowRegionSheet] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setAvatarUrl(url);
+  }
+
+  function handleMapTap(e: React.MouseEvent<SVGSVGElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMapPin({ x, y });
+    const streets = ["Amir Temur Ave", "Mustaqillik Ave", "Shota Rustaveli St", "Bodomzor Ave", "Mirzo Ulugbek St"];
+    const districts = ["Yunusabad", "Chilanzar", "Mirzo Ulugbek", "Uchtepa", "Shaykhontohur"];
+    setAddress(`${districts[Math.floor(y / 25)]}, ${streets[Math.floor(x / 25)]}`);
+  }
+
   return (
     <div className="flex flex-col h-full relative">
       <TopBar showBack onBack={onBack} lang={lang} setLang={setLang} />
-      <div className="flex-1 overflow-y-auto px-6 pt-5">
+      <div className="flex-1 overflow-y-auto px-6 pt-5 pb-4">
         <div className="mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-            <Wrench size={26} className="text-primary" />
-          </div>
-          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">Welcome!</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">Looks like you&apos;re new here. Tell us a bit about yourself.</p>
+          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">Complete Profile</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">Tell us a bit about yourself to get started.</p>
         </div>
+
         <div className="flex flex-col gap-4">
+          {/* Avatar upload */}
+          <div className="flex flex-col items-center gap-2 py-2">
+            <button onClick={() => fileInputRef.current?.click()}
+              className="relative w-20 h-20 rounded-3xl overflow-hidden bg-primary/10 flex items-center justify-center active:scale-95 transition-transform">
+              {avatarUrl
+                ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                : <UserCircle size={36} className="text-primary/50" />}
+              <div className="absolute bottom-0 inset-x-0 h-7 bg-black/40 flex items-center justify-center">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </div>
+            </button>
+            <p className="text-[12px] text-muted-foreground">Tap to upload photo</p>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+          </div>
+
+          {/* Full name */}
           <div>
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Full Name</p>
             <InputField placeholder="e.g. Akmal Karimov" value={name} onChange={setName} />
           </div>
+
+          {/* Date of birth */}
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Date of Birth</p>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="DD.MM.YYYY"
+              value={dob}
+              onChange={e => {
+                let v = e.target.value.replace(/[^\d]/g, "");
+                if (v.length > 2) v = v.slice(0,2) + "." + v.slice(2);
+                if (v.length > 5) v = v.slice(0,5) + "." + v.slice(5);
+                if (v.length > 10) v = v.slice(0,10);
+                setDob(v);
+              }}
+              className="w-full px-4 py-3.5 bg-[#F4F5F7] rounded-xl text-[14px] font-medium text-foreground border-2 border-transparent focus:outline-none focus:border-primary/30 transition-all"
+            />
+          </div>
+
+          {/* Region */}
           <div>
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Region</p>
             <button onClick={() => setShowRegionSheet(true)}
@@ -280,8 +345,24 @@ function MechanicProfileScreen({ onLogin, onBack, lang, setLang }: { onLogin: ()
               <ChevronRight size={18} className="text-muted-foreground shrink-0" />
             </button>
           </div>
+
+          {/* Address on map */}
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Address</p>
+            <button onClick={() => setShowMapSheet(true)}
+              className="w-full flex items-center justify-between px-4 py-3.5 bg-[#F4F5F7] rounded-xl border-2 border-transparent focus:outline-none transition-all hover:border-primary/20">
+              <div className="flex items-center gap-2 min-w-0">
+                <MapPin size={16} className={address ? "text-primary shrink-0" : "text-muted-foreground shrink-0"} />
+                <span className={`text-[14px] truncate ${address ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                  {address || "Select on map"}
+                </span>
+              </div>
+              <ChevronRight size={18} className="text-muted-foreground shrink-0" />
+            </button>
+          </div>
         </div>
       </div>
+
       <div className="px-6 pb-6 pt-3 shrink-0">
         <PrimaryButton label="Get Started" onClick={onLogin} />
       </div>
@@ -290,8 +371,7 @@ function MechanicProfileScreen({ onLogin, onBack, lang, setLang }: { onLogin: ()
       {showRegionSheet && (
         <div className="absolute inset-0 z-50">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowRegionSheet(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-3xl overflow-hidden"
-            style={{ maxHeight: "70%" }}>
+          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-3xl overflow-hidden" style={{ maxHeight: "70%" }}>
             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
               <span className="text-[16px] font-bold text-foreground">Select Region</span>
               <button onClick={() => setShowRegionSheet(false)} className="w-8 h-8 rounded-full bg-[#F4F5F7] flex items-center justify-center text-muted-foreground">
@@ -309,6 +389,85 @@ function MechanicProfileScreen({ onLogin, onBack, lang, setLang }: { onLogin: ()
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Map bottom sheet */}
+      {showMapSheet && (
+        <div className="absolute inset-0 z-50 flex flex-col">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowMapSheet(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-3xl overflow-hidden flex flex-col" style={{ height: "75%" }}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border shrink-0">
+              <span className="text-[16px] font-bold text-foreground">Select Address</span>
+              <button onClick={() => setShowMapSheet(false)} className="w-8 h-8 rounded-full bg-[#F4F5F7] flex items-center justify-center text-muted-foreground">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Search bar */}
+            <div className="px-4 py-3 shrink-0">
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-[#F4F5F7] rounded-xl">
+                <Search size={15} className="text-muted-foreground shrink-0" />
+                <span className="text-[13px] text-muted-foreground">Search address…</span>
+              </div>
+            </div>
+
+            {/* Map */}
+            <div className="flex-1 relative mx-4 mb-4 rounded-2xl overflow-hidden border border-border">
+              <svg
+                viewBox="0 0 100 100"
+                className="w-full h-full cursor-crosshair"
+                onClick={handleMapTap}
+                style={{ background: "#e8f0e8" }}
+              >
+                {/* Road grid */}
+                <rect x="0" y="0" width="100" height="100" fill="#e8f0e8" />
+                {/* Blocks */}
+                {[
+                  [5,5,28,18],[35,5,28,18],[65,5,28,18],
+                  [5,28,18,18],[25,28,38,18],[65,28,28,18],
+                  [5,50,28,18],[35,50,18,18],[55,50,38,18],
+                  [5,72,28,18],[35,72,28,18],[65,72,28,18],
+                ].map(([x,y,w,h],i) => (
+                  <rect key={i} x={x} y={y} width={w} height={h} rx="1.5" fill="#d4e4d4" />
+                ))}
+                {/* Roads */}
+                <rect x="0" y="24" width="100" height="3" fill="#fff" opacity="0.9" />
+                <rect x="0" y="46" width="100" height="3" fill="#fff" opacity="0.9" />
+                <rect x="0" y="68" width="100" height="3" fill="#fff" opacity="0.9" />
+                <rect x="22" y="0" width="3" height="100" fill="#fff" opacity="0.9" />
+                <rect x="45" y="0" width="3" height="100" fill="#fff" opacity="0.9" />
+                <rect x="63" y="0" width="3" height="100" fill="#fff" opacity="0.9" />
+                <rect x="94" y="0" width="3" height="100" fill="#fff" opacity="0.9" />
+                {/* Park */}
+                <ellipse cx="50" cy="50" rx="6" ry="5" fill="#a8d5a2" />
+                {/* Pin */}
+                {mapPin && (
+                  <g transform={`translate(${mapPin.x},${mapPin.y})`}>
+                    <circle cx="0" cy="0" r="3.5" fill="#2563EB" opacity="0.2" />
+                    <circle cx="0" cy="0" r="1.8" fill="#2563EB" />
+                    <line x1="0" y1="1.8" x2="0" y2="6" stroke="#2563EB" strokeWidth="1" />
+                  </g>
+                )}
+              </svg>
+              {!mapPin && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-black/60 text-white text-[11px] font-medium px-3 py-1.5 rounded-full">Tap to drop a pin</div>
+                </div>
+              )}
+            </div>
+
+            {/* Confirm bar */}
+            {mapPin && (
+              <div className="px-4 pb-4 shrink-0">
+                <div className="flex items-center gap-3 p-3 bg-primary/8 rounded-xl mb-3">
+                  <MapPin size={15} className="text-primary shrink-0" />
+                  <p className="text-[13px] font-medium text-foreground flex-1 leading-tight">{address || "Tashkent, Uzbekistan"}</p>
+                </div>
+                <PrimaryButton label="Confirm Address" onClick={() => setShowMapSheet(false)} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -3942,6 +4101,111 @@ function WalletScreen({ name, phone, balance, transactions, onLogout, onSubPageC
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── MECHANIC APP ─────────────────────────────────────────────────────────────
+function MechanicApp({ onLogout }: { onLogout: () => void }) {
+  const [tab, setTab] = useState<MechanicTab>("main");
+  const [scanning, setScanning] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [cartIds, setCartIds] = useState<number[]>([]);
+  const [cartQty, setCartQty] = useState<Record<number, number>>({});
+  const [profileSubActive, setProfileSubActive] = useState(false);
+  const [mainSubActive, setMainSubActive] = useState(false);
+
+  const tabs: { key: MechanicTab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
+    { key: "main",    label: "Main",    icon: (a) => <Home    size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "shops",   label: "Shops",   icon: (a) => <MapPin  size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "scan",    label: "Scan",    icon: (_) => <ScanLine size={24} strokeWidth={2} /> },
+    { key: "cart",    label: "Cart",    icon: (a) => <ShoppingCart size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "profile", label: "Profile", icon: (a) => <User    size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+  ];
+
+  const pageIcon: Record<MechanicTab, React.ReactNode> = {
+    main:    <Package size={32} />,
+    shops:   <MapPin size={32} />,
+    scan:    <ScanLine size={32} />,
+    cart:    <ShoppingCart size={32} />,
+    profile: <User size={32} />,
+  };
+  const pageLabel: Record<MechanicTab, string> = {
+    main: "Product Catalog", shops: "Nearby Shops", scan: "Scan", cart: "My Cart", profile: "Profile",
+  };
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 relative">
+      {scanning && <ScanOverlay onClose={() => setScanning(false)} />}
+
+      {!selectedProduct && !mainSubActive && <AppHeader role="mechanic" onLogout={onLogout} />}
+
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {selectedProduct
+          ? <ProductDetailPage product={selectedProduct} onBack={() => setSelectedProduct(null)} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
+          : tab === "main"
+            ? <MechanicMainPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} onSubPageChange={setMainSubActive} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
+            : tab === "shops"
+              ? <ShopsPage onSelect={setSelectedProduct} onGoToCart={() => setTab("cart")} cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
+              : tab === "cart"
+                ? <CartPage cartIds={cartIds} setCartIds={setCartIds} cartQty={cartQty} setCartQty={setCartQty} />
+                : tab === "profile"
+                  ? <WalletScreen name="Akmal Karimov" phone="+998 90 123 45 67" balance={184000} onLogout={onLogout}
+                      onSubPageChange={setProfileSubActive}
+                      transactions={[
+                        { id: 1, label: "Purchase bonus · AutoZone",    date: "Jun 18, 2026", amount: 13500,  kind: "earn",     orderRef: "ORD-2206-A47" },
+                        { id: 2, label: "Withdraw to UzCard",            date: "Jun 12, 2026", amount: 100000, kind: "withdraw" },
+                        { id: 3, label: "Purchase bonus · TireHub",      date: "Jun 09, 2026", amount: 23400,  kind: "earn",     orderRef: "ORD-2206-B91" },
+                        { id: 4, label: "Purchase bonus · SparkMaster",  date: "Jun 02, 2026", amount: 2640,   kind: "earn",     orderRef: "ORD-2206-C03" },
+                      ]} />
+                  : <PlaceholderPage label={pageLabel[tab]} icon={pageIcon[tab]} />}
+      </div>
+
+      {!selectedProduct && !profileSubActive && !mainSubActive && (
+        <div className="shrink-0 bg-card border-t border-border relative" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+          <div className="flex items-end justify-around px-2 pt-2 pb-2">
+            {tabs.map((t) => {
+              const isScan = t.key === "scan";
+              const isActive = tab === t.key && !isScan;
+
+              if (isScan) {
+                return (
+                  <button key={t.key} onClick={() => setScanning(true)}
+                    className="flex flex-col items-center -mt-7 relative"
+                    style={{ minWidth: 56 }}>
+                    <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white shadow-lg"
+                      style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.45)" }}>
+                      {t.icon(true)}
+                    </div>
+                    <span className="text-[10px] font-semibold text-primary mt-1.5">Scan</span>
+                  </button>
+                );
+              }
+
+              return (
+                <button key={t.key} onClick={() => setTab(t.key)}
+                  className="flex flex-col items-center gap-1 flex-1 py-1 transition-all"
+                  style={{ minWidth: 48 }}>
+                  <div className={`relative transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                    {t.icon(isActive)}
+                    {t.key === "cart" && cartIds.length > 0 && (() => {
+                      const totalUnits = cartIds.reduce((s, id) => s + (cartQty[id] ?? 1), 0);
+                      return (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                          {totalUnits > 99 ? "99+" : totalUnits}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <span className={`text-[10px] font-semibold transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                    {t.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
