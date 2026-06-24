@@ -140,8 +140,8 @@ function CopyAddressButton({ address, size = 15 }: { address: string; size?: num
   }
   return (
     <button onClick={handleCopy}
-      className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${copied ? "bg-emerald-50 text-emerald-600" : "bg-[#F4F5F7] text-muted-foreground hover:text-primary hover:bg-primary/8"}`}>
-      {copied ? <CheckCheck size={size - 2} /> : <Copy size={size - 2} />}
+      className={`shrink-0 transition-all ${copied ? "text-emerald-500" : "text-muted-foreground/50 hover:text-primary"}`}>
+      {copied ? <CheckCheck size={size - 3} /> : <Copy size={size - 3} />}
     </button>
   );
 }
@@ -2163,10 +2163,10 @@ function ShopsPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 pr-2">
                     <h3 className="text-[16px] font-bold text-foreground leading-tight">{selectedShop.name}</h3>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <p className="text-[12px] text-muted-foreground leading-tight flex-1">{selectedShop.address}</p>
+                    <span className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[12px] text-muted-foreground leading-tight">{selectedShop.address}</span>
                       <CopyAddressButton address={selectedShop.address} />
-                    </div>
+                    </span>
                   </div>
                   <div className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg ${selectedShop.status === "open" ? "bg-emerald-50" : "bg-red-50"}`}>
                     <div className={`w-1.5 h-1.5 rounded-full ${selectedShop.status === "open" ? "bg-emerald-500" : "bg-red-400"}`} />
@@ -2248,10 +2248,10 @@ function ShopsPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <p className="text-[11px] text-muted-foreground truncate flex-1">{shop.address}</p>
+                      <span className="flex items-center gap-1 mb-2">
+                        <span className="text-[11px] text-muted-foreground">{shop.address}</span>
                         <CopyAddressButton address={shop.address} size={13} />
-                      </div>
+                      </span>
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <MapPin size={11} />
                         <span className="text-[11px]">{shop.distance}</span>
