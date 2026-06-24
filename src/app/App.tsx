@@ -132,6 +132,12 @@ function PrimaryButton({ label, onClick }: { label: string; onClick?: () => void
 
 // ─── SHARED HELPERS ───────────────────────────────────────────────────────────
 const priceToNum = (s: string) => parseInt(s.replace(/\D/g, ""), 10) || 0;
+const bonusUZS = (p: Product) => {
+  if (p.bonusAmount) return p.bonusAmount;
+  const pct = p.cashback ?? 5;
+  return Math.round(priceToNum(p.price) * pct / 100 / 1000) * 1000;
+};
+const fmtBonus = (p: Product) => bonusUZS(p).toLocaleString("uz-UZ").replace(/,/g, " ") + " UZS";
 const fmtUZS = (n: number) => n.toLocaleString("en-US").replace(/,/g, " ");
 
 // Sub-page header used by full-screen pages (Cart, Wallet, Approval) that
@@ -662,6 +668,7 @@ interface Product {
   img: string; category: string; sku: string; stock: number;
   brand: string; description: string;
   originalPrice?: string; discount?: number;
+  cashback?: number; bonusAmount?: number;
 }
 
 const PRODUCTS: Product[] = [
@@ -917,7 +924,7 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
   // Product card used in both the grid and filter-applied view
   const ListingCard = ({ p }: { p: Product }) => (
     <div className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-      <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={() => { onSelect(p); onClose(); }} />
+      <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} onClick={() => { onSelect(p); onClose(); }} />
       <div className="p-2.5 flex flex-col flex-1">
         <button onClick={() => { onSelect(p); onClose(); }} className="text-left mb-0.5">
           <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-1">{p.name}</p>
@@ -926,7 +933,7 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
         <div className="mt-auto pt-1">
           <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
             <Gift size={11} className="text-primary shrink-0" />
-            <span className="text-[11px] font-semibold text-primary">{p.cashback ?? 5}% Cashback</span>
+            <span className="text-[11px] font-semibold text-primary">{fmtBonus(p)}</span>
           </div>
         </div>
       </div>
@@ -1137,8 +1144,8 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
   );
 }
 
-function ProductCardImage({ images, discount, height = "h-32", onClick, initialLiked = false, showLike = true }: {
-  images: string[]; discount?: number; height?: string; onClick: () => void; initialLiked?: boolean; showLike?: boolean;
+function ProductCardImage({ images, height = "h-32", onClick, initialLiked = false, showLike = true }: {
+  images: string[]; height?: string; onClick: () => void; initialLiked?: boolean; showLike?: boolean;
 }) {
   const [idx, setIdx] = useState(0);
   const [liked, setLiked] = useState(initialLiked);
@@ -1157,7 +1164,6 @@ function ProductCardImage({ images, discount, height = "h-32", onClick, initialL
       onClick={() => { if (!gesture.current.moved) onClick(); }}
     >
       <img src={images[idx]} alt="" className="w-full h-full object-cover" />
-      {discount && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-bold leading-none">-{discount}%</span>}
       {/* Like button */}
       {showLike && (
         <button
@@ -1331,7 +1337,20 @@ function CategoryPage({ category, emoji, onBack, onSelect }: {
         {filtered.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {filtered.map(p => (
-              <ShopProductCard key={p.id} p={p} onSelect={() => onSelect(p)} />
+              <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} onClick={() => onSelect(p)} />
+                <div className="p-2.5 flex flex-col flex-1">
+                  <button onClick={() => onSelect(p)} className="text-left mb-1">
+                    <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
+                  </button>
+                  <div className="mt-auto">
+                    <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
+                      <Gift size={11} className="text-primary shrink-0" />
+                      <span className="text-[11px] font-semibold text-primary">{fmtBonus(p)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         ) : (
@@ -1443,20 +1462,16 @@ function LikedItemsPage({ likedIds, onSelect, onBack }: {
           <div className="grid grid-cols-2 gap-3">
             {liked.map(p => (
               <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} initialLiked={true} onClick={() => onSelect(p)} />
+                <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} initialLiked={true} onClick={() => onSelect(p)} />
                 <div className="p-2.5 flex flex-col flex-1">
                   <button onClick={() => onSelect(p)} className="text-left mb-0.5">
                     <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
                   </button>
                   <p className="text-[10px] text-muted-foreground font-medium">{p.shop}</p>
-                  <div className="mt-0.5 mb-2">
-                    {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
-                    <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
-                  </div>
                   <div className="mt-auto">
                     <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
                       <Gift size={11} className="text-primary shrink-0" />
-                      <span className="text-[11px] font-semibold text-primary">{p.cashback ?? 5}% Cashback</span>
+                      <span className="text-[11px] font-semibold text-primary">{fmtBonus(p)}</span>
                     </div>
                   </div>
                 </div>
@@ -1605,24 +1620,17 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
           {PRODUCTS.map(p => {
             return (
               <div key={p.id} className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={() => onSelect(p)} />
+                <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} onClick={() => onSelect(p)} />
                 <div className="p-2.5 flex flex-col flex-1">
                   <button onClick={() => onSelect(p)} className="text-left mb-0.5">
                     <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
                   </button>
                   <p className="text-[10px] text-muted-foreground font-medium">{p.shop}</p>
-                  {/* Price block */}
-                  <div className="mt-0.5 mb-2">
-                    {p.originalPrice && (
-                      <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>
-                    )}
-                    <p className="text-[13px] font-bold text-primary leading-tight">{p.price} <span className="text-[10px] font-normal text-muted-foreground">UZS</span></p>
-                  </div>
                   {/* Cashback badge */}
                   <div className="mt-auto pt-1">
                     <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
                       <Gift size={11} className="text-primary shrink-0" />
-                      <span className="text-[11px] font-semibold text-primary">{p.cashback ?? 5}% Cashback</span>
+                      <span className="text-[11px] font-semibold text-primary">{fmtBonus(p)}</span>
                     </div>
                   </div>
                 </div>
@@ -1930,14 +1938,14 @@ function ProductDetailPage({ product, onBack }: { product: Product; onBack: () =
               <div className="grid grid-cols-2 gap-3">
                 {similar.map(sp => (
                   <div key={sp.id} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                    <ProductCardImage images={[sp.img, ...(PRODUCT_EXTRA_IMGS[sp.sku] ?? [])]} discount={sp.discount} height="h-28" onClick={() => {}} />
+                    <ProductCardImage images={[sp.img, ...(PRODUCT_EXTRA_IMGS[sp.sku] ?? [])]} height="h-28" onClick={() => {}} />
                     <div className="p-2.5 flex flex-col flex-1">
                       <p className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2 mb-0.5">{sp.name}</p>
                       <p className="text-[10px] text-muted-foreground mb-1">{sp.shop}</p>
                       <div className="mt-auto">
                         <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
                           <Gift size={10} className="text-primary shrink-0" />
-                          <span className="text-[10px] font-semibold text-primary">{sp.cashback ?? 5}% Cashback</span>
+                          <span className="text-[10px] font-semibold text-primary">{fmtBonus(sp)}</span>
                         </div>
                       </div>
                     </div>
@@ -1953,7 +1961,7 @@ function ProductDetailPage({ product, onBack }: { product: Product; onBack: () =
       <div className="shrink-0 bg-card border-t border-border px-5 py-3 flex gap-3">
         <div className="flex-1 flex items-center gap-2 px-2 py-2 rounded-xl bg-primary/8">
           <Gift size={16} className="text-primary shrink-0" />
-          <span className="text-[14px] font-semibold text-primary">{product.cashback ?? 5}% Cashback Bonus on this product</span>
+          <span className="text-[14px] font-semibold text-primary">{fmtBonus(product)} Cashback Bonus</span>
         </div>
       </div>
     </div>
@@ -2080,231 +2088,11 @@ function DirectionsSheet({ shop, onClose }: { shop: Shop; onClose: () => void })
   );
 }
 
-function ShopProductCard({ p, onSelect }: { p: Product; onSelect: () => void }) {
-  return (
-    <div className="bg-card rounded-2xl overflow-hidden border border-border flex flex-col" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-      <ProductCardImage images={[p.img, ...(PRODUCT_EXTRA_IMGS[p.sku] ?? [])]} discount={p.discount} onClick={onSelect} />
-      <div className="p-2.5 flex flex-col flex-1">
-        <button onClick={onSelect} className="text-left mb-0.5">
-          <p className="text-[12px] font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
-        </button>
-        <div className="mt-auto">
-          <div className="flex items-center gap-1 bg-primary/8 rounded-xl px-2 py-1.5">
-            <Gift size={11} className="text-primary shrink-0" />
-            <span className="text-[11px] font-semibold text-primary">{p.cashback ?? 5}% Cashback</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ShopDetailPage({ shop, onBack, onSelect }: {
-  shop: Shop; onBack: () => void; onSelect: (p: Product) => void;
-}) {
-  const [search, setSearch] = useState("");
-  const [showFilter, setShowFilter] = useState(false);
-  const [sortBy, setSortBy] = useState<"default" | "low" | "high" | "discount">("default");
-  const [onlyDiscount, setOnlyDiscount] = useState(false);
-  const [onlyInStock, setOnlyInStock] = useState(false);
-
-  const shopProducts = PRODUCTS.filter(p => p.shop === shop.name);
-  const allPrices = shopProducts.map(p => priceToNum(p.price));
-  const absMin = allPrices.length ? Math.min(...allPrices) : 0;
-  const absMax = allPrices.length ? Math.max(...allPrices) : 1000000;
-  const [sliderMax, setSliderMax] = useState(absMax);
-
-  const priceFiltered = sliderMax < absMax;
-  const activeFilterCount = [sortBy !== "default", onlyDiscount, onlyInStock, priceFiltered].filter(Boolean).length;
-
-  const filtered = shopProducts
-    .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase()))
-    .filter(p => !onlyDiscount || !!p.discount)
-    .filter(p => !onlyInStock || p.stock > 0)
-    .filter(p => priceToNum(p.price) <= sliderMax)
-    .sort((a, b) => {
-      if (sortBy === "low") return priceToNum(a.price) - priceToNum(b.price);
-      if (sortBy === "high") return priceToNum(b.price) - priceToNum(a.price);
-      if (sortBy === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
-      return 0;
-    });
-
-  if (showFilter) {
-    const SORT_OPTS: { key: typeof sortBy; label: string }[] = [
-      { key: "default", label: "Default" },
-      { key: "low", label: "Price: Low → High" },
-      { key: "high", label: "Price: High → Low" },
-      { key: "discount", label: "Biggest Discount" },
-    ];
-    return (
-      <div className="flex flex-col h-full bg-background">
-        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
-          <button onClick={() => setShowFilter(false)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronLeft size={22} />
-          </button>
-          <p className="flex-1 text-[16px] font-bold text-foreground">Filters</p>
-          <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
-            className="text-[12px] font-semibold text-primary hover:text-blue-700 transition-colors">
-            Reset all
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
-          <div>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sort by</p>
-            <div className="flex flex-col gap-2">
-              {SORT_OPTS.map(o => (
-                <button key={o.key} onClick={() => setSortBy(o.key)}
-                  className={`flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all ${sortBy === o.key ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
-                  <span className={`text-[13px] font-semibold ${sortBy === o.key ? "text-primary" : "text-foreground"}`}>{o.label}</span>
-                  {sortBy === o.key && <Check size={16} className="text-primary" />}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Max price</p>
-              <span className={`text-[13px] font-bold ${priceFiltered ? "text-primary" : "text-muted-foreground"}`}>
-                {priceFiltered ? `${sliderMax.toLocaleString()} UZS` : "Any"}
-              </span>
-            </div>
-            <div className="px-1">
-              <input type="range" min={absMin} max={absMax}
-                step={Math.max(1000, Math.round((absMax - absMin) / 100))}
-                value={sliderMax} onChange={e => setSliderMax(Number(e.target.value))}
-                className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                style={{
-                  background: `linear-gradient(to right, #2563EB ${((sliderMax - absMin) / (absMax - absMin)) * 100}%, #E5E7EB ${((sliderMax - absMin) / (absMax - absMin)) * 100}%)`,
-                  accentColor: "#2563EB",
-                }}
-              />
-              <div className="flex justify-between mt-2">
-                <span className="text-[10px] text-muted-foreground">{absMin.toLocaleString()} UZS</span>
-                <span className="text-[10px] text-muted-foreground">{absMax.toLocaleString()} UZS</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Show only</p>
-            <div className="flex flex-col gap-2">
-              {[
-                { label: "Has discount", sub: "Products with active price cuts", val: onlyDiscount, set: setOnlyDiscount },
-                { label: "In stock", sub: "Available for immediate purchase", val: onlyInStock, set: setOnlyInStock },
-              ].map(t => (
-                <button key={t.label} onClick={() => t.set(!t.val)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all ${t.val ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
-                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${t.val ? "bg-primary border-primary" : "border-border"}`}>
-                    {t.val && <Check size={12} className="text-white" />}
-                  </div>
-                  <div className="text-left">
-                    <p className={`text-[13px] font-semibold leading-tight ${t.val ? "text-primary" : "text-foreground"}`}>{t.label}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{t.sub}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="shrink-0 px-4 py-3 bg-card border-t border-border">
-          <button onClick={() => setShowFilter(false)}
-            className="w-full bg-primary text-white rounded-xl py-3.5 text-[14px] font-semibold shadow-md hover:bg-blue-700 active:scale-[0.98] transition-all">
-            Show {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col h-full bg-background relative">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
-        <button onClick={onBack} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
-          <ChevronLeft size={22} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-[16px] font-bold text-foreground leading-tight truncate">{shop.name}</p>
-          <p className="text-[11px] text-muted-foreground truncate">{shop.address}</p>
-        </div>
-        <div className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg ${shop.status === "open" ? "bg-emerald-50" : "bg-red-50"}`}>
-          <div className={`w-1.5 h-1.5 rounded-full ${shop.status === "open" ? "bg-emerald-500" : "bg-red-400"}`} />
-          <span className={`text-[11px] font-bold ${shop.status === "open" ? "text-emerald-600" : "text-red-500"}`}>
-            {shop.status === "open" ? "Open" : "Closed"}
-          </span>
-        </div>
-      </div>
-
-      {/* Search + filter */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-card border-b border-border shrink-0">
-        <div className="flex-1 relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
-            <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-          <input type="text" placeholder="Search in this shop..."
-            value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full bg-[#F4F5F7] rounded-xl pl-9 pr-9 py-2.5 text-[13px] text-foreground placeholder-muted-foreground border border-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
-          />
-          {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-              <X size={14} />
-            </button>
-          )}
-        </div>
-        <button onClick={() => setShowFilter(true)}
-          className="relative shrink-0 w-10 h-10 rounded-xl bg-[#F4F5F7] border border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-all">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-          {activeFilterCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* Count */}
-      <div className="px-4 pt-3 pb-1 shrink-0">
-        <p className="text-[12px] text-muted-foreground">{filtered.length} product{filtered.length !== 1 ? "s" : ""}</p>
-      </div>
-
-      {/* Grid */}
-      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-24">
-        {filtered.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {filtered.map(p => (
-              <ShopProductCard key={p.id} p={p} onSelect={() => onSelect(p)} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center py-10 gap-3">
-            <EmptyIllustration />
-            <p className="text-[14px] font-semibold text-foreground">No products found</p>
-            {(search || activeFilterCount > 0) && (
-              <button onClick={() => { setSearch(""); setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
-                className="text-[13px] font-semibold text-primary hover:underline">Clear filters</button>
-            )}
-          </div>
-        )}
-      </div>
-
-    </div>
-  );
-}
-
-function ShopsPage({ onSelect }: { onSelect: (p: Product) => void }) {
+function ShopsPage() {
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
-  const [detailShop, setDetailShop] = useState<Shop | null>(null);
   const [showDirections, setShowDirections] = useState(false);
   const [search, setSearch] = useState("");
-
-  if (detailShop) {
-    return <ShopDetailPage shop={detailShop} onBack={() => setDetailShop(null)} onSelect={onSelect} />;
-  }
 
   const filteredShops = SHOPS.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -2423,15 +2211,10 @@ function ShopsPage({ onSelect }: { onSelect: (p: Product) => void }) {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowDirections(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-semibold transition-all shadow-sm"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary hover:bg-blue-700 text-white text-[13px] font-semibold transition-all shadow-sm"
                   >
                     <Navigation size={15} />
                     {selectedShop.distance} · Directions
-                  </button>
-                  <button onClick={() => { setDetailShop(selectedShop); setSelectedShop(null); }}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary hover:bg-blue-700 text-white text-[13px] font-semibold transition-all shadow-sm">
-                    <Store size={15} />
-                    View Catalog
                   </button>
                 </div>
               </div>
@@ -2456,18 +2239,15 @@ function ShopsPage({ onSelect }: { onSelect: (p: Product) => void }) {
           ) : (
             <div className="flex flex-col gap-3">
               {filteredShops.map(shop => (
-                <button
+                <div
                   key={shop.id}
-                  onClick={() => setDetailShop(shop)}
-                  className="w-full bg-card rounded-2xl border border-border p-4 text-left hover:border-primary/40 transition-all"
+                  className="w-full bg-card rounded-2xl border border-border p-4 text-left"
                   style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Icon */}
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                       <Store size={20} className="text-primary" />
                     </div>
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-0.5">
                         <p className="text-[14px] font-bold text-foreground truncate">{shop.name}</p>
@@ -2488,15 +2268,10 @@ function ShopsPage({ onSelect }: { onSelect: (p: Product) => void }) {
                           <MapPin size={11} />
                           <span className="text-[11px]">{shop.distance}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Package size={11} />
-                          <span className="text-[11px]">{shop.products} products</span>
-                        </div>
                       </div>
                     </div>
-                    <ChevronRight size={16} className="text-muted-foreground shrink-0 mt-1" />
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}
@@ -3895,7 +3670,7 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
           : tab === "main"
             ? <MechanicMainPage onSelect={setSelectedProduct} onSubPageChange={setMainSubActive} />
             : tab === "shops"
-              ? <ShopsPage onSelect={setSelectedProduct} />
+              ? <ShopsPage />
               : tab === "orders"
                 ? <OrderHistoryPage onBack={() => setTab("main")} />
                 : tab === "profile"
