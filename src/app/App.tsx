@@ -1634,9 +1634,9 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
                 {row.map((cat) => (
                   <button key={cat.label} onClick={() => { setActiveCatPage({ label: cat.label, icon: cat.icon }); onSubPageChange(true); }}
                     className="flex flex-col items-center gap-1.5" style={{ width: 68 }}>
-                    <div className={`w-16 h-16 rounded-full overflow-hidden flex items-center justify-center transition-all border-2 border-transparent hover:border-primary text-primary ${cat.img ? "bg-white" : "bg-[#F4F5F7] hover:bg-primary/10"}`}>
+                    <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center transition-all border-2 border-transparent bg-[#F4F5F7] hover:border-primary hover:bg-primary/10 text-primary">
                       {cat.img
-                        ? <img src={cat.img} alt={cat.label} className="w-10 h-10 object-contain" style={{ mixBlendMode: "multiply" }} />
+                        ? <img src={cat.img} alt={cat.label} className="w-10 h-10 object-contain" />
                         : <CatIcon name={cat.icon} size={26} />}
                     </div>
                     <span className="text-[10px] font-semibold text-center leading-tight text-muted-foreground" style={{ width: 68 }}>
