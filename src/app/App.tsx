@@ -1285,8 +1285,8 @@ function ProductCardImage({ images, height = "h-32", onClick, initialLiked = fal
   );
 }
 
-function CategoryPage({ category, icon, onBack, onSelect }: {
-  category: string; icon: string; onBack: () => void;
+function CategoryPage({ category, icon, brand, onBack, onSelect }: {
+  category: string; icon: string; brand?: string; onBack: () => void;
   onSelect: (p: Product) => void;
 }) {
   const [search, setSearch] = useState("");
@@ -1556,6 +1556,49 @@ function LikedItemsPage({ likedIds, onSelect, onBack }: {
   );
 }
 
+const BRANDS = [
+  { id: "chevrolet", name: "Chevrolet", logo: null as string | null },
+  { id: "byd",       name: "BYD",       logo: null as string | null },
+  { id: "kia",       name: "Kia",       logo: null as string | null },
+  { id: "hyundai",   name: "Hyundai",   logo: null as string | null },
+];
+
+function BrandSelectionPage({ category, onBack, onSelectBrand }: {
+  category: string;
+  onBack: () => void;
+  onSelectBrand: (brand: string) => void;
+}) {
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center gap-3 px-4 pt-5 pb-4 shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-foreground">
+          <ArrowLeft size={18} />
+        </button>
+        <div>
+          <p className="text-[11px] text-muted-foreground font-medium">{category}</p>
+          <h1 className="text-[18px] font-bold text-foreground leading-tight">Select Car Brand</h1>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pb-6">
+        <div className="grid grid-cols-2 gap-3">
+          {BRANDS.map(brand => (
+            <button key={brand.id} onClick={() => onSelectBrand(brand.id)}
+              className="flex flex-col items-center justify-center gap-3 bg-card rounded-2xl border border-border p-6 active:scale-[0.97] transition-transform">
+              <div className="w-16 h-16 rounded-full bg-[#F4F5F7] flex items-center justify-center overflow-hidden">
+                {brand.logo
+                  ? <img src={brand.logo} alt={brand.name} className="w-12 h-12 object-contain" />
+                  : <span className="text-[22px] font-bold text-primary">{brand.name[0]}</span>}
+              </div>
+              <span className="text-[15px] font-bold text-foreground">{brand.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MechanicMainPage({ onSelect, onSubPageChange }: {
   onSelect: (p: Product) => void;
   onSubPageChange: (active: boolean) => void;
@@ -1566,13 +1609,19 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
   const [feedbackModal, setFeedbackModal] = useState<FeedbackModalProps | null>(null);
   const [likedIds, setLikedIds] = useState<number[]>([PRODUCTS[0]?.id, PRODUCTS[2]?.id, PRODUCTS[4]?.id].filter(Boolean) as number[]);
   const [activeCatPage, setActiveCatPage] = useState<{ label: string; icon: string } | null>(null);
+  const [activeBrand, setActiveBrand] = useState<string | null>(null);
 
   if (showNotifications) return <NotificationsPage onBack={() => { setShowNotifications(false); onSubPageChange(false); }} />;
   if (showLiked) return <LikedItemsPage likedIds={likedIds} onBack={() => { setShowLiked(false); onSubPageChange(false); }}
     onSelect={p => { setShowLiked(false); onSubPageChange(false); onSelect(p); }} />;
-  if (activeCatPage) {
-    return <CategoryPage category={activeCatPage.label} icon={activeCatPage.icon}
-      onBack={() => { setActiveCatPage(null); onSubPageChange(false); }} onSelect={onSelect} />;
+  if (activeCatPage && activeBrand) {
+    return <CategoryPage category={activeCatPage.label} icon={activeCatPage.icon} brand={activeBrand}
+      onBack={() => { setActiveBrand(null); }} onSelect={onSelect} />;
+  }
+  if (activeCatPage && !activeBrand) {
+    return <BrandSelectionPage category={activeCatPage.label}
+      onBack={() => { setActiveCatPage(null); onSubPageChange(false); }}
+      onSelectBrand={b => setActiveBrand(b)} />;
   }
 
   return (
