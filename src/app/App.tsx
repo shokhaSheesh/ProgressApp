@@ -6,6 +6,7 @@ import catFiltersImg from "../assets/categories/filters.png";
 import catTiresImg from "../assets/categories/tires.png";
 import catSteeringImg from "../assets/categories/steering.png";
 import catSuspensionImg from "../assets/categories/suspension.png";
+import catLightingImg from "../assets/categories/lighting.png";
 import {
   Eye, EyeOff, Wrench, Store, ChevronRight, ArrowLeft,
   ChevronDown, Check, Home, MapPin, ShoppingCart, User,
@@ -679,7 +680,7 @@ const CATEGORIES: { label: string; icon: string; img?: string }[] = [
   { label: "Steering",      icon: "Steering",     img: catSteeringImg },
   { label: "Filters",       icon: "Filters",      img: catFiltersImg },
   { label: "Tires & Wheels",icon: "Tires",        img: catTiresImg },
-  { label: "Lighting",      icon: "Lighting" },
+  { label: "Lighting",      icon: "Lighting",     img: catLightingImg },
 ];
 
 function CatIcon({ name, size = 22 }: { name: string; size?: number }) {
