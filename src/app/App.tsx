@@ -665,19 +665,124 @@ function PlaceholderPage({ label, icon }: { label: string; icon: React.ReactNode
 
 // ─── MECHANIC MAIN PAGE ───────────────────────────────────────────────────────
 const CATEGORIES = [
-  { label: "Engine",      emoji: "⚙️" },
-  { label: "Brakes",      emoji: "🔴" },
-  { label: "Filters",     emoji: "🔧" },
-  { label: "Tires",       emoji: "🛞" },
-  { label: "Electrical",  emoji: "⚡" },
-  { label: "Body Parts",  emoji: "🚗" },
-  { label: "Oil & Fluids",emoji: "🛢️" },
-  { label: "Suspension",  emoji: "🔩" },
-  { label: "Exhaust",     emoji: "💨" },
-  { label: "Accessories", emoji: "🪛" },
-  { label: "Lighting",    emoji: "💡" },
-  { label: "Cooling",     emoji: "❄️" },
+  { label: "Engine",        icon: "Engine" },
+  { label: "Transmission",  icon: "Transmission" },
+  { label: "Brakes",        icon: "Brakes" },
+  { label: "Suspension",    icon: "Suspension" },
+  { label: "Steering",      icon: "Steering" },
+  { label: "Electrical",    icon: "Electrical" },
+  { label: "Filters",       icon: "Filters" },
+  { label: "Oil & Fluids",  icon: "Oil" },
+  { label: "Tires & Wheels",icon: "Tires" },
+  { label: "Exhaust",       icon: "Exhaust" },
+  { label: "Cooling",       icon: "Cooling" },
+  { label: "Lighting",      icon: "Lighting" },
 ];
+
+function CatIcon({ name, size = 22 }: { name: string; size?: number }) {
+  const p = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.75, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  switch (name) {
+    case "Engine": return (
+      <svg {...p}>
+        <rect x="7" y="2" width="10" height="11" rx="1.5"/>
+        <path d="M10 13v3M14 13v3M8 16h8"/>
+        <path d="M3 5h4M17 5h4M3 9h4M17 9h4"/>
+      </svg>
+    );
+    case "Transmission": return (
+      <svg {...p}>
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>
+        <circle cx="12" cy="12" r="7" strokeDasharray="3 3"/>
+      </svg>
+    );
+    case "Brakes": return (
+      <svg {...p}>
+        <circle cx="12" cy="12" r="8.5"/>
+        <circle cx="12" cy="12" r="3.5"/>
+        <path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/>
+        <rect x="1.5" y="9.5" width="3" height="5" rx="1"/>
+      </svg>
+    );
+    case "Suspension": return (
+      <svg {...p}>
+        <path d="M12 2v1.5"/>
+        <path d="M9 3.5C15 3.5 15 5.5 9 5.5C15 5.5 15 7.5 9 7.5C15 7.5 15 9.5 9 9.5C15 9.5 15 11.5 9 11.5C15 11.5 15 13.5 9 13.5C15 13.5 15 15.5 9 15.5"/>
+        <path d="M12 15.5v1.5"/>
+        <rect x="9" y="17" width="6" height="3" rx="1"/>
+        <path d="M10 2h4"/>
+        <path d="M11 20v2M13 20v2"/>
+      </svg>
+    );
+    case "Steering": return (
+      <svg {...p}>
+        <circle cx="12" cy="12" r="9.5"/>
+        <circle cx="12" cy="12" r="2.5"/>
+        <path d="M12 2.5v7M5.5 5.5l4.8 4.8M18.5 5.5l-4.8 4.8"/>
+      </svg>
+    );
+    case "Electrical": return (
+      <svg {...p}>
+        <path d="M13 2L5 13h7l-1 9 9-12h-7l1-8z"/>
+      </svg>
+    );
+    case "Filters": return (
+      <svg {...p}>
+        <rect x="6" y="3" width="12" height="17" rx="2"/>
+        <path d="M6 8h12M6 12h12M6 16h12"/>
+        <path d="M9 3V1M15 3V1"/>
+      </svg>
+    );
+    case "Oil": return (
+      <svg {...p}>
+        <path d="M12 2C9.5 5 6 9 6 13.5a6 6 0 0012 0C18 9 14.5 5 12 2z"/>
+        <path d="M9.5 17.5c.8 1.8 3 2.5 4.5 1.5"/>
+      </svg>
+    );
+    case "Tires": return (
+      <svg {...p}>
+        <circle cx="12" cy="12" r="9.5"/>
+        <circle cx="12" cy="12" r="5.5"/>
+        <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+        <path d="M12 6.5v3M12 14.5v3M6.5 12h3M14.5 12h3"/>
+      </svg>
+    );
+    case "Exhaust": return (
+      <svg {...p}>
+        <path d="M2 13h8"/>
+        <path d="M10 10v6"/>
+        <path d="M10 11h6a3 3 0 010 6h-6"/>
+        <path d="M16 11v6"/>
+        <path d="M16 13h4"/>
+        <path d="M16 15h4"/>
+        <path d="M19 5c0 2.5-2 3-2 5"/>
+        <path d="M21.5 4c0 3-2.5 3.5-2.5 6"/>
+      </svg>
+    );
+    case "Cooling": return (
+      <svg {...p}>
+        <circle cx="12" cy="12" r="2.5"/>
+        <path d="M12 2c-1.5 1.5-1.5 4 0 5.5"/>
+        <path d="M22 12c-1.5-1.5-4-1.5-5.5 0"/>
+        <path d="M12 22c1.5-1.5 1.5-4 0-5.5"/>
+        <path d="M2 12c1.5 1.5 4 1.5 5.5 0"/>
+        <path d="M5.6 5.6c.5 2 2.5 3 4 2"/>
+        <path d="M18.4 5.6c-2 .5-3 2.5-2 4"/>
+        <path d="M18.4 18.4c-.5-2-2.5-3-4-2"/>
+        <path d="M5.6 18.4c2-.5 3-2.5 2-4"/>
+      </svg>
+    );
+    case "Lighting": return (
+      <svg {...p}>
+        <path d="M7 5h5c3.3 0 6 2.7 6 6v2c0 3.3-2.7 6-6 6H7V5z"/>
+        <path d="M7 5v14"/>
+        <path d="M3 9l4 3-4 3"/>
+        <path d="M13 9h3M13 12h4M13 15h3"/>
+      </svg>
+    );
+    default: return <svg {...p}><circle cx="12" cy="12" r="9"/></svg>;
+  }
+}
 
 interface Product {
   id: number; name: string; shop: string; price: string;
@@ -855,7 +960,7 @@ const PRODUCT_VARIATIONS: Record<string, ProductVariation[]> = {
 // ─── SEARCH PAGE ──────────────────────────────────────────────────────────────
 function SearchPage({ onSelect, onClose, onSelectCategory }: {
   onSelect: (p: Product) => void; onClose: () => void;
-  onSelectCategory?: (cat: { label: string; emoji: string }) => void;
+  onSelectCategory?: (cat: { label: string; icon: string }) => void;
 }) {
   const [query, setQuery] = useState("");
   const [selectedName, setSelectedName] = useState<string | null>(null);
@@ -1116,9 +1221,9 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
         {!q && (
           <div className="px-4 pt-3 flex flex-col gap-1">
             {CATEGORIES.map(cat => (
-              <button key={cat.label} onClick={() => onSelectCategory?.({ label: cat.label, emoji: cat.emoji })}
+              <button key={cat.label} onClick={() => onSelectCategory?.({ label: cat.label, icon: cat.icon })}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#F4F5F7] transition-all text-left">
-                <div className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-lg shrink-0">{cat.emoji}</div>
+                <div className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-primary shrink-0"><CatIcon name={cat.icon} size={20} /></div>
                 <span className="text-[14px] font-semibold text-foreground">{cat.label}</span>
                 <ChevronRight size={16} className="ml-auto text-muted-foreground shrink-0" />
               </button>
@@ -1172,8 +1277,8 @@ function ProductCardImage({ images, height = "h-32", onClick, initialLiked = fal
   );
 }
 
-function CategoryPage({ category, emoji, onBack, onSelect }: {
-  category: string; emoji: string; onBack: () => void;
+function CategoryPage({ category, icon, onBack, onSelect }: {
+  category: string; icon: string; onBack: () => void;
   onSelect: (p: Product) => void;
 }) {
   const [search, setSearch] = useState("");
@@ -1452,7 +1557,7 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
   const [showLiked, setShowLiked] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState<FeedbackModalProps | null>(null);
   const [likedIds, setLikedIds] = useState<number[]>([PRODUCTS[0]?.id, PRODUCTS[2]?.id, PRODUCTS[4]?.id].filter(Boolean) as number[]);
-  const [activeCatPage, setActiveCatPage] = useState<{ label: string; emoji: string } | null>(null);
+  const [activeCatPage, setActiveCatPage] = useState<{ label: string; icon: string } | null>(null);
   const catScrollRef = useRef<HTMLDivElement>(null);
   const [catDotIdx, setCatDotIdx] = useState(0);
   const CAT_NUM_DOTS = 3;
@@ -1471,7 +1576,7 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
   if (showLiked) return <LikedItemsPage likedIds={likedIds} onBack={() => { setShowLiked(false); onSubPageChange(false); }}
     onSelect={p => { setShowLiked(false); onSubPageChange(false); onSelect(p); }} />;
   if (activeCatPage) {
-    return <CategoryPage category={activeCatPage.label} emoji={activeCatPage.emoji}
+    return <CategoryPage category={activeCatPage.label} icon={activeCatPage.icon}
       onBack={() => { setActiveCatPage(null); onSubPageChange(false); }} onSelect={onSelect} />;
   }
 
@@ -1526,10 +1631,10 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
             {[row1, row2].map((row, ri) => (
               <div key={ri} className="flex gap-2.5">
                 {row.map((cat) => (
-                  <button key={cat.label} onClick={() => { setActiveCatPage({ label: cat.label, emoji: cat.emoji }); onSubPageChange(true); }}
+                  <button key={cat.label} onClick={() => { setActiveCatPage({ label: cat.label, icon: cat.icon }); onSubPageChange(true); }}
                     className="flex flex-col items-center gap-1.5" style={{ width: 58 }}>
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all border-2 border-transparent bg-[#F4F5F7] hover:border-primary hover:bg-primary/10">
-                      {cat.emoji}
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center transition-all border-2 border-transparent bg-[#F4F5F7] hover:border-primary hover:bg-primary/10 text-primary">
+                      <CatIcon name={cat.icon} size={22} />
                     </div>
                     <span className="text-[10px] font-semibold text-center leading-tight text-muted-foreground" style={{ width: 58 }}>
                       {cat.label}
