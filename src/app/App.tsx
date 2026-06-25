@@ -665,18 +665,18 @@ function PlaceholderPage({ label, icon }: { label: string; icon: React.ReactNode
 
 // ─── MECHANIC MAIN PAGE ───────────────────────────────────────────────────────
 const CATEGORIES = [
-  { label: "Engine",        icon: "Engine" },
-  { label: "Transmission",  icon: "Transmission" },
-  { label: "Brakes",        icon: "Brakes" },
-  { label: "Suspension",    icon: "Suspension" },
-  { label: "Steering",      icon: "Steering" },
-  { label: "Electrical",    icon: "Electrical" },
-  { label: "Filters",       icon: "Filters" },
-  { label: "Oil & Fluids",  icon: "Oil" },
-  { label: "Tires & Wheels",icon: "Tires" },
-  { label: "Exhaust",       icon: "Exhaust" },
-  { label: "Cooling",       icon: "Cooling" },
-  { label: "Lighting",      icon: "Lighting" },
+  { label: "Engine",        icon: "Engine",       img: "https://images.unsplash.com/photo-1552656967-7a0991a13906?w=300&q=80&auto=format&fit=crop" },
+  { label: "Transmission",  icon: "Transmission", img: "https://images.unsplash.com/photo-1582639510494-c80b5de9f148?w=300&q=80&auto=format&fit=crop" },
+  { label: "Brakes",        icon: "Brakes",       img: "https://images.unsplash.com/photo-1613214150384-14921ff659b2?w=300&q=80&auto=format&fit=crop" },
+  { label: "Suspension",    icon: "Suspension",   img: "https://images.unsplash.com/photo-1429772011165-0c2e054367b8?w=300&q=80&auto=format&fit=crop" },
+  { label: "Steering",      icon: "Steering",     img: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=300&q=80&auto=format&fit=crop" },
+  { label: "Electrical",    icon: "Electrical",   img: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=300&q=80&auto=format&fit=crop" },
+  { label: "Filters",       icon: "Filters",      img: "https://images.unsplash.com/photo-1523559094051-53bac879eb80?w=300&q=80&auto=format&fit=crop" },
+  { label: "Oil & Fluids",  icon: "Oil",          img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80&auto=format&fit=crop" },
+  { label: "Tires & Wheels",icon: "Tires",        img: "https://images.unsplash.com/photo-1656232976683-7b688560e427?w=300&q=80&auto=format&fit=crop" },
+  { label: "Exhaust",       icon: "Exhaust",      img: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=300&q=80&auto=format&fit=crop" },
+  { label: "Cooling",       icon: "Cooling",      img: "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=300&q=80&auto=format&fit=crop" },
+  { label: "Lighting",      icon: "Lighting",     img: "https://images.unsplash.com/photo-1609152168127-b89b33eb6af5?w=300&q=80&auto=format&fit=crop" },
 ];
 
 function CatIcon({ name, size = 22 }: { name: string; size?: number }) {
@@ -960,7 +960,7 @@ const PRODUCT_VARIATIONS: Record<string, ProductVariation[]> = {
 // ─── SEARCH PAGE ──────────────────────────────────────────────────────────────
 function SearchPage({ onSelect, onClose, onSelectCategory }: {
   onSelect: (p: Product) => void; onClose: () => void;
-  onSelectCategory?: (cat: { label: string; icon: string }) => void;
+  onSelectCategory?: (cat: { label: string; icon: string; img: string }) => void;
 }) {
   const [query, setQuery] = useState("");
   const [selectedName, setSelectedName] = useState<string | null>(null);
@@ -1221,9 +1221,11 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
         {!q && (
           <div className="px-4 pt-3 flex flex-col gap-1">
             {CATEGORIES.map(cat => (
-              <button key={cat.label} onClick={() => onSelectCategory?.({ label: cat.label, icon: cat.icon })}
+              <button key={cat.label} onClick={() => onSelectCategory?.({ label: cat.label, icon: cat.icon, img: cat.img })}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#F4F5F7] transition-all text-left">
-                <div className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-primary shrink-0"><CatIcon name={cat.icon} size={20} /></div>
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#EEF2FF] shrink-0">
+                  <img src={cat.img} alt={cat.label} className="w-full h-full object-cover" />
+                </div>
                 <span className="text-[14px] font-semibold text-foreground">{cat.label}</span>
                 <ChevronRight size={16} className="ml-auto text-muted-foreground shrink-0" />
               </button>
@@ -1277,8 +1279,8 @@ function ProductCardImage({ images, height = "h-32", onClick, initialLiked = fal
   );
 }
 
-function CategoryPage({ category, icon, onBack, onSelect }: {
-  category: string; icon: string; onBack: () => void;
+function CategoryPage({ category, icon, img, onBack, onSelect }: {
+  category: string; icon: string; img: string; onBack: () => void;
   onSelect: (p: Product) => void;
 }) {
   const [search, setSearch] = useState("");
@@ -1557,26 +1559,14 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
   const [showLiked, setShowLiked] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState<FeedbackModalProps | null>(null);
   const [likedIds, setLikedIds] = useState<number[]>([PRODUCTS[0]?.id, PRODUCTS[2]?.id, PRODUCTS[4]?.id].filter(Boolean) as number[]);
-  const [activeCatPage, setActiveCatPage] = useState<{ label: string; icon: string } | null>(null);
+  const [activeCatPage, setActiveCatPage] = useState<{ label: string; icon: string; img: string } | null>(null);
   const catScrollRef = useRef<HTMLDivElement>(null);
-  const [catDotIdx, setCatDotIdx] = useState(0);
-  const CAT_NUM_DOTS = 3;
-  const handleCatScroll = () => {
-    const el = catScrollRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    const idx = max > 0 ? Math.round((el.scrollLeft / max) * (CAT_NUM_DOTS - 1)) : 0;
-    setCatDotIdx(idx);
-  };
-
-  const row1 = CATEGORIES.slice(0, Math.ceil(CATEGORIES.length / 2));
-  const row2 = CATEGORIES.slice(Math.ceil(CATEGORIES.length / 2));
 
   if (showNotifications) return <NotificationsPage onBack={() => { setShowNotifications(false); onSubPageChange(false); }} />;
   if (showLiked) return <LikedItemsPage likedIds={likedIds} onBack={() => { setShowLiked(false); onSubPageChange(false); }}
     onSelect={p => { setShowLiked(false); onSubPageChange(false); onSelect(p); }} />;
   if (activeCatPage) {
-    return <CategoryPage category={activeCatPage.label} icon={activeCatPage.icon}
+    return <CategoryPage category={activeCatPage.label} icon={activeCatPage.icon} img={activeCatPage.img}
       onBack={() => { setActiveCatPage(null); onSubPageChange(false); }} onSelect={onSelect} />;
   }
 
@@ -1625,32 +1615,26 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
           <span className="text-[13px] font-bold text-foreground">Categories</span>
           <button onClick={() => setShowSearch(true)} className="text-[11px] font-semibold text-primary">See all</button>
         </div>
-        <div ref={catScrollRef} onScroll={handleCatScroll}
+        <div ref={catScrollRef}
           className="overflow-x-auto" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
-          <div className="flex flex-col gap-2.5" style={{ width: "max-content" }}>
-            {[row1, row2].map((row, ri) => (
-              <div key={ri} className="flex gap-2.5">
-                {row.map((cat) => (
-                  <button key={cat.label} onClick={() => { setActiveCatPage({ label: cat.label, icon: cat.icon }); onSubPageChange(true); }}
-                    className="flex flex-col items-center gap-1.5" style={{ width: 58 }}>
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center transition-all border-2 border-transparent bg-[#F4F5F7] hover:border-primary hover:bg-primary/10 text-primary">
-                      <CatIcon name={cat.icon} size={22} />
-                    </div>
-                    <span className="text-[10px] font-semibold text-center leading-tight text-muted-foreground" style={{ width: 58 }}>
-                      {cat.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
+          <div className="flex gap-3 pb-1" style={{ width: "max-content" }}>
+            {CATEGORIES.map((cat) => (
+              <button key={cat.label}
+                onClick={() => { setActiveCatPage({ label: cat.label, icon: cat.icon, img: cat.img }); onSubPageChange(true); }}
+                className="relative overflow-hidden rounded-2xl flex-shrink-0 active:scale-[0.97] transition-transform"
+                style={{ width: 148, height: 88, background: "linear-gradient(135deg, #EEF2FF 45%, #DBEAFE 100%)" }}>
+                <span className="absolute top-3 left-3 text-[12px] font-bold text-foreground leading-snug z-10" style={{ maxWidth: 78 }}>
+                  {cat.label}
+                </span>
+                <img
+                  src={cat.img}
+                  alt={cat.label}
+                  className="absolute bottom-[-4px] right-[-6px] object-contain pointer-events-none"
+                  style={{ width: 82, height: 82, filter: "drop-shadow(2px 4px 8px rgba(0,0,0,0.18))" }}
+                />
+              </button>
             ))}
           </div>
-        </div>
-        {/* Scroll dots */}
-        <div className="flex items-center justify-center gap-1.5 mt-2.5">
-          {Array.from({ length: CAT_NUM_DOTS }).map((_, i) => (
-            <div key={i} className="transition-all duration-200 rounded-full bg-primary"
-              style={{ width: i === catDotIdx ? 16 : 6, height: 6, opacity: i === catDotIdx ? 1 : 0.2 }} />
-          ))}
         </div>
       </div>
 
