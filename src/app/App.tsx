@@ -4,6 +4,7 @@ import catTransmissionImg from "../assets/categories/transmission.png";
 import catBrakesImg from "../assets/categories/brakes.png";
 import catFiltersImg from "../assets/categories/filters.png";
 import catTiresImg from "../assets/categories/tires.png";
+import catSteeringImg from "../assets/categories/steering.png";
 import {
   Eye, EyeOff, Wrench, Store, ChevronRight, ArrowLeft,
   ChevronDown, Check, Home, MapPin, ShoppingCart, User,
@@ -674,7 +675,7 @@ const CATEGORIES: { label: string; icon: string; img?: string }[] = [
   { label: "Transmission",  icon: "Transmission", img: catTransmissionImg },
   { label: "Brakes",        icon: "Brakes",       img: catBrakesImg },
   { label: "Suspension",    icon: "Suspension" },
-  { label: "Steering",      icon: "Steering" },
+  { label: "Steering",      icon: "Steering",     img: catSteeringImg },
   { label: "Filters",       icon: "Filters",      img: catFiltersImg },
   { label: "Tires & Wheels",icon: "Tires",        img: catTiresImg },
   { label: "Lighting",      icon: "Lighting" },
