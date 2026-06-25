@@ -1558,19 +1558,6 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
   const [feedbackModal, setFeedbackModal] = useState<FeedbackModalProps | null>(null);
   const [likedIds, setLikedIds] = useState<number[]>([PRODUCTS[0]?.id, PRODUCTS[2]?.id, PRODUCTS[4]?.id].filter(Boolean) as number[]);
   const [activeCatPage, setActiveCatPage] = useState<{ label: string; icon: string } | null>(null);
-  const catScrollRef = useRef<HTMLDivElement>(null);
-  const [catDotIdx, setCatDotIdx] = useState(0);
-  const CAT_NUM_DOTS = 3;
-  const handleCatScroll = () => {
-    const el = catScrollRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    const idx = max > 0 ? Math.round((el.scrollLeft / max) * (CAT_NUM_DOTS - 1)) : 0;
-    setCatDotIdx(idx);
-  };
-
-  const row1 = CATEGORIES.slice(0, Math.ceil(CATEGORIES.length / 2));
-  const row2 = CATEGORIES.slice(Math.ceil(CATEGORIES.length / 2));
 
   if (showNotifications) return <NotificationsPage onBack={() => { setShowNotifications(false); onSubPageChange(false); }} />;
   if (showLiked) return <LikedItemsPage likedIds={likedIds} onBack={() => { setShowLiked(false); onSubPageChange(false); }}
@@ -1625,33 +1612,19 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
           <span className="text-[13px] font-bold text-foreground">Categories</span>
           <button onClick={() => setShowSearch(true)} className="text-[11px] font-semibold text-primary">See all</button>
         </div>
-        <div ref={catScrollRef} onScroll={handleCatScroll}
-          className="overflow-x-auto" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
-          <div className="flex flex-col gap-2.5" style={{ width: "max-content" }}>
-            {[row1, row2].map((row, ri) => (
-              <div key={ri} className="flex gap-2.5">
-                {row.map((cat) => (
-                  <button key={cat.label} onClick={() => { setActiveCatPage({ label: cat.label, icon: cat.icon }); onSubPageChange(true); }}
-                    className="flex flex-col items-center gap-1.5" style={{ width: 68 }}>
-                    <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center transition-all border-2 border-transparent bg-[#F4F5F7] hover:border-primary hover:bg-primary/10 text-primary">
-                      {cat.img
-                        ? <img src={cat.img} alt={cat.label} className="w-13 h-13 object-contain" />
-                        : <CatIcon name={cat.icon} size={26} />}
-                    </div>
-                    <span className="text-[10px] font-semibold text-center leading-tight text-muted-foreground" style={{ width: 68 }}>
-                      {cat.label}
-                    </span>
-                  </button>
-                ))}
+        <div className="grid grid-cols-4 gap-y-3">
+          {CATEGORIES.map((cat) => (
+            <button key={cat.label} onClick={() => { setActiveCatPage({ label: cat.label, icon: cat.icon }); onSubPageChange(true); }}
+              className="flex flex-col items-center gap-1.5">
+              <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center transition-all border-2 border-transparent bg-[#F4F5F7] hover:border-primary hover:bg-primary/10 text-primary">
+                {cat.img
+                  ? <img src={cat.img} alt={cat.label} className="w-13 h-13 object-contain" />
+                  : <CatIcon name={cat.icon} size={26} />}
               </div>
-            ))}
-          </div>
-        </div>
-        {/* Scroll dots */}
-        <div className="flex items-center justify-center gap-1.5 mt-2.5">
-          {Array.from({ length: CAT_NUM_DOTS }).map((_, i) => (
-            <div key={i} className="transition-all duration-200 rounded-full bg-primary"
-              style={{ width: i === catDotIdx ? 16 : 6, height: 6, opacity: i === catDotIdx ? 1 : 0.2 }} />
+              <span className="text-[10px] font-semibold text-center leading-tight text-muted-foreground w-full px-1">
+                {cat.label}
+              </span>
+            </button>
           ))}
         </div>
       </div>
