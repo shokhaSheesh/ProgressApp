@@ -15,7 +15,7 @@ import {
 type AuthScreen = "login" | "mechanic-login-otp" | "mechanic-profile" | "forgot-phone" | "forgot-otp" | "forgot-newpass";
 type Role = "mechanic";
 type Lang = "en" | "ru" | "uz";
-type MechanicTab = "main" | "shops" | "scan" | "orders" | "profile";
+type MechanicTab = "main" | "shops" | "scan" | "bonus" | "profile";
 type SellerTab = "main" | "catalog" | "scan" | "orders" | "profile";
 
 const LANGUAGES: { code: Lang; label: string; native: string; flag: string }[] = [
@@ -2557,7 +2557,7 @@ function CartPage({ cartIds, setCartIds, cartQty, setCartQty }: {
 
 // ─── PROFILE / WALLET (multi-page, shared by both roles) ─────────────────────
 
-interface WalletTxn { id: number; label: string; date: string; amount: number; kind: "earn" | "withdraw"; orderRef?: string; }
+interface WalletTxn { id: number; label: string; date: string; amount: number; kind: "earn" | "withdraw"; orderRef?: string; productName?: string; productImg?: string; }
 
 type WithdrawStatus = "pending" | "processing" | "out_for_delivery" | "delivered" | "failed";
 interface WithdrawRequest {
@@ -2801,8 +2801,8 @@ function DatePickerWheel({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 
-function TransactionHistoryPage({ role, transactions, requests, onBack, onOrderTap }: {
-  role: Role; transactions: WalletTxn[]; requests: WithdrawRequest[]; onBack: () => void; onOrderTap?: (ref: string) => void;
+function TransactionHistoryPage({ role, transactions, requests, onBack, onOrderTap, showBack = true }: {
+  role: Role; transactions: WalletTxn[]; requests: WithdrawRequest[]; onBack: () => void; onOrderTap?: (ref: string) => void; showBack?: boolean;
 }) {
 
   const [activeTab, setActiveTab] = useState<"history"|"requests">("history");
@@ -2863,10 +2863,12 @@ function TransactionHistoryPage({ role, transactions, requests, onBack, onOrderT
     <div className="flex flex-col h-full bg-background relative">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
-        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-          <ChevronLeft size={20} />
-        </button>
-        <p className="flex-1 text-[17px] font-bold text-foreground">Bonus History</p>
+        {showBack && (
+          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft size={20} />
+          </button>
+        )}
+        <p className={`flex-1 font-bold text-foreground ${showBack ? "text-[17px]" : "text-[20px]"}`}>Bonus History</p>
         {activeTab === "history" && (
           <button onClick={() => { setShowFilter(true); setFilterStep("main"); }}
             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors relative ${isFiltered ? "bg-primary text-white" : "bg-[#F4F5F7] text-muted-foreground hover:text-foreground"}`}>
@@ -2924,28 +2926,31 @@ function TransactionHistoryPage({ role, transactions, requests, onBack, onOrderT
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {g.items.map(t => {
-                    const tappable = t.kind === "earn" && !!t.orderRef && !!onOrderTap;
-                    return (
-                      <div key={t.id}
-                        onClick={tappable ? () => onOrderTap!(t.orderRef!) : undefined}
-                        className={`flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5 ${tappable ? "cursor-pointer active:scale-[0.98] transition-transform" : ""}`}
-                        style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                  {g.items.map(t => (
+                    <div key={t.id}
+                      className="flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5"
+                      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                      {/* Icon / product thumbnail */}
+                      {t.kind === "earn" && t.productImg ? (
+                        <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-muted">
+                          <img src={t.productImg} alt={t.productName} className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
                           {t.kind === "earn" ? <Gift size={17} /> : <ArrowDownToLine size={17} />}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-semibold text-foreground leading-tight">{t.label}</p>
-                          {t.orderRef && <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{t.orderRef}</p>}
-                          <p className="text-[11px] text-muted-foreground mt-0.5">{t.date}</p>
-                        </div>
-                        <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-red-500"}`}>
-                          {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)}
-                        </span>
-                        {tappable && <ChevronRight size={15} className="text-muted-foreground shrink-0 ml-1" />}
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-foreground leading-tight line-clamp-1">
+                          {t.kind === "earn" && t.productName ? t.productName : t.label}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{t.date}</p>
                       </div>
-                    );
-                  })}
+                      <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-red-500"}`}>
+                        {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)} <span className="text-[10px] font-normal">UZS</span>
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
@@ -3580,7 +3585,7 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
     { key: "main",    label: "Main",    icon: (a) => <Home         size={22} strokeWidth={a ? 2.5 : 1.8} /> },
     { key: "shops",   label: "Shops",   icon: (a) => <MapPin       size={22} strokeWidth={a ? 2.5 : 1.8} /> },
     { key: "scan",    label: "Scan",    icon: (_) => <ScanLine     size={24} strokeWidth={2} /> },
-    { key: "orders",  label: "Orders",  icon: (a) => <ClipboardList size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "bonus",   label: "Bonus",   icon: (a) => <Gift size={22} strokeWidth={a ? 2.5 : 1.8} /> },
     { key: "profile", label: "Profile", icon: (a) => <User         size={22} strokeWidth={a ? 2.5 : 1.8} /> },
   ];
 
@@ -3597,16 +3602,26 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
             ? <MechanicMainPage onSelect={setSelectedProduct} onSubPageChange={setMainSubActive} />
             : tab === "shops"
               ? <ShopsPage />
-              : tab === "orders"
-                ? <OrderHistoryPage onBack={() => setTab("main")} />
+              : tab === "bonus"
+                ? <TransactionHistoryPage role="mechanic" showBack={false} onBack={() => {}} requests={MOCK_WITHDRAW_REQUESTS}
+                    transactions={[
+                      { id: 1, label: "Bosch Oil Filter Premium",    date: "Jun 22, 2026", amount: 2000,  kind: "earn",     productName: "Bosch Oil Filter Premium",    productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
+                      { id: 2, label: "NGK Spark Plug",              date: "Jun 22, 2026", amount: 4000,  kind: "earn",     productName: "NGK Spark Plug",              productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
+                      { id: 3, label: "Withdraw to UzCard",          date: "Jun 20, 2026", amount: 100000, kind: "withdraw" },
+                      { id: 4, label: "Continental Tire 205/55R16",  date: "Jun 18, 2026", amount: 16000, kind: "earn",     productName: "Continental Tire 205/55R16",  productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
+                      { id: 5, label: "Denso Air Filter",            date: "Jun 09, 2026", amount: 3000,  kind: "earn",     productName: "Denso Air Filter",            productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
+                      { id: 6, label: "Monroe Shock Absorber",       date: "Jun 02, 2026", amount: 7000,  kind: "earn",     productName: "Monroe Shock Absorber",       productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
+                    ]} />
                 : tab === "profile"
                   ? <WalletScreen name="Akmal Karimov" phone="+998 90 123 45 67" balance={184000} onLogout={onLogout}
                       onSubPageChange={setProfileSubActive}
                       transactions={[
-                        { id: 1, label: "Purchase bonus · AutoZone",    date: "Jun 18, 2026", amount: 13500,  kind: "earn",     orderRef: "ORD-2206-A47" },
-                        { id: 2, label: "Withdraw to UzCard",            date: "Jun 12, 2026", amount: 100000, kind: "withdraw" },
-                        { id: 3, label: "Purchase bonus · TireHub",      date: "Jun 09, 2026", amount: 23400,  kind: "earn",     orderRef: "ORD-2206-B91" },
-                        { id: 4, label: "Purchase bonus · SparkMaster",  date: "Jun 02, 2026", amount: 2640,   kind: "earn",     orderRef: "ORD-2206-C03" },
+                        { id: 1, label: "Bosch Oil Filter Premium",   date: "Jun 22, 2026", amount: 2000,  kind: "earn",    productName: "Bosch Oil Filter Premium",   productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
+                        { id: 2, label: "NGK Spark Plug",             date: "Jun 22, 2026", amount: 4000,  kind: "earn",    productName: "NGK Spark Plug",             productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
+                        { id: 3, label: "Withdraw to UzCard",         date: "Jun 20, 2026", amount: 100000, kind: "withdraw" },
+                        { id: 4, label: "Continental Tire 205/55R16", date: "Jun 18, 2026", amount: 16000, kind: "earn",    productName: "Continental Tire 205/55R16", productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
+                        { id: 5, label: "Denso Air Filter",           date: "Jun 09, 2026", amount: 3000,  kind: "earn",    productName: "Denso Air Filter",           productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
+                        { id: 6, label: "Monroe Shock Absorber",      date: "Jun 02, 2026", amount: 7000,  kind: "earn",    productName: "Monroe Shock Absorber",      productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
                       ]} />
                   : null}
       </div>
