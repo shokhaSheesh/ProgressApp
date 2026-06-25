@@ -798,6 +798,7 @@ interface Product {
   brand: string; description: string;
   originalPrice?: string; discount?: number;
   cashback?: number; bonusAmount?: number;
+  models?: string[];
 }
 
 const PRODUCTS: Product[] = [
@@ -807,6 +808,7 @@ const PRODUCTS: Product[] = [
     price: "45 000", originalPrice: "60 000", discount: 25,
     img: "https://images.unsplash.com/photo-1523559094051-53bac879eb80?w=600&h=600&fit=crop&auto=format",
     category: "Filters", sku: "BSH-OF-4722", stock: 38, brand: "Bosch",
+    models: ["chevrolet/Cruze", "chevrolet/Nexia", "kia/Cerato", "kia/Rio", "hyundai/Accent", "hyundai/Elantra"],
     description: "High-performance oil filter with multi-layer filtration media. Removes up to 99% of contaminants, protecting your engine from wear. Compatible with most gasoline and diesel engines. Recommended replacement every 10,000 km.",
   },
   {
@@ -814,6 +816,7 @@ const PRODUCTS: Product[] = [
     price: "47 000",
     img: "https://images.unsplash.com/photo-1523559094051-53bac879eb80?w=600&h=600&fit=crop&auto=format",
     category: "Filters", sku: "BSH-OF-4722", stock: 14, brand: "Bosch",
+    models: ["chevrolet/Cruze", "chevrolet/Nexia", "kia/Cerato", "kia/Rio", "hyundai/Accent", "hyundai/Elantra"],
     description: "High-performance oil filter with multi-layer filtration media. Removes up to 99% of contaminants, protecting your engine from wear. Compatible with most gasoline and diesel engines. Recommended replacement every 10,000 km.",
   },
   {
@@ -821,6 +824,7 @@ const PRODUCTS: Product[] = [
     price: "43 500", originalPrice: "48 000", discount: 9,
     img: "https://images.unsplash.com/photo-1523559094051-53bac879eb80?w=600&h=600&fit=crop&auto=format",
     category: "Filters", sku: "BSH-OF-4722", stock: 6, brand: "Bosch",
+    models: ["chevrolet/Cruze", "chevrolet/Nexia", "kia/Cerato", "kia/Rio", "hyundai/Accent", "hyundai/Elantra"],
     description: "High-performance oil filter with multi-layer filtration media. Removes up to 99% of contaminants, protecting your engine from wear. Compatible with most gasoline and diesel engines. Recommended replacement every 10,000 km.",
   },
   // ── Brembo Brake Disc Set — 2 shops ──
@@ -829,6 +833,7 @@ const PRODUCTS: Product[] = [
     price: "320 000",
     img: "https://images.unsplash.com/photo-1613214150384-14921ff659b2?w=600&h=600&fit=crop&auto=format",
     category: "Brakes", sku: "BRM-BD-09A778", stock: 12, brand: "Brembo",
+    models: ["chevrolet/Malibu", "chevrolet/Captiva", "kia/Sportage", "kia/Sorento", "hyundai/Tucson", "hyundai/Santa Fe"],
     description: "OEM-quality ventilated brake disc set for superior stopping power. UV-coated to prevent rust on the hat and edges. Pre-mounted hub reduces installation time. Fits most European and Asian models (check fitment guide).",
   },
   {
@@ -836,6 +841,7 @@ const PRODUCTS: Product[] = [
     price: "295 000", originalPrice: "320 000", discount: 8,
     img: "https://images.unsplash.com/photo-1613214150384-14921ff659b2?w=600&h=600&fit=crop&auto=format",
     category: "Brakes", sku: "BRM-BD-09A778", stock: 5, brand: "Brembo",
+    models: ["chevrolet/Malibu", "chevrolet/Captiva", "kia/Sportage", "kia/Sorento", "hyundai/Tucson", "hyundai/Santa Fe"],
     description: "OEM-quality ventilated brake disc set for superior stopping power. UV-coated to prevent rust on the hat and edges. Pre-mounted hub reduces installation time. Fits most European and Asian models (check fitment guide).",
   },
   // ── NGK Spark Plug x4 — 3 shops ──
@@ -844,6 +850,7 @@ const PRODUCTS: Product[] = [
     price: "88 000", originalPrice: "110 000", discount: 20,
     img: "https://images.unsplash.com/photo-1552656967-7a0991a13906?w=600&h=600&fit=crop&auto=format",
     category: "Engine", sku: "NGK-BKR6E-4PK", stock: 74, brand: "NGK",
+    models: ["chevrolet/Cruze", "chevrolet/Tracker", "kia/Rio", "kia/K5", "hyundai/Elantra", "hyundai/Sonata", "byd/Han", "byd/Seal"],
     description: "Set of 4 iridium-tipped spark plugs for improved ignition efficiency and fuel economy. Laser-welded fine-wire iridium centre electrode ensures consistent spark. Lifespan up to 100,000 km under normal driving conditions.",
   },
   {
@@ -851,6 +858,7 @@ const PRODUCTS: Product[] = [
     price: "92 000",
     img: "https://images.unsplash.com/photo-1552656967-7a0991a13906?w=600&h=600&fit=crop&auto=format",
     category: "Engine", sku: "NGK-BKR6E-4PK", stock: 29, brand: "NGK",
+    models: ["chevrolet/Cruze", "chevrolet/Tracker", "kia/Rio", "kia/K5", "hyundai/Elantra", "hyundai/Sonata", "byd/Han", "byd/Seal"],
     description: "Set of 4 iridium-tipped spark plugs for improved ignition efficiency and fuel economy. Laser-welded fine-wire iridium centre electrode ensures consistent spark. Lifespan up to 100,000 km under normal driving conditions.",
   },
   {
@@ -858,6 +866,7 @@ const PRODUCTS: Product[] = [
     price: "90 000", originalPrice: "95 000", discount: 5,
     img: "https://images.unsplash.com/photo-1552656967-7a0991a13906?w=600&h=600&fit=crop&auto=format",
     category: "Engine", sku: "NGK-BKR6E-4PK", stock: 11, brand: "NGK",
+    models: ["chevrolet/Cruze", "chevrolet/Tracker", "kia/Rio", "kia/K5", "hyundai/Elantra", "hyundai/Sonata", "byd/Han", "byd/Seal"],
     description: "Set of 4 iridium-tipped spark plugs for improved ignition efficiency and fuel economy. Laser-welded fine-wire iridium centre electrode ensures consistent spark. Lifespan up to 100,000 km under normal driving conditions.",
   },
   // ── Continental Tire — 2 shops ──
@@ -866,6 +875,7 @@ const PRODUCTS: Product[] = [
     price: "780 000",
     img: "https://images.unsplash.com/photo-1656232976683-7b688560e427?w=600&h=600&fit=crop&auto=format",
     category: "Tires", sku: "CNT-205-55R16-91V", stock: 8, brand: "Continental",
+    models: ["chevrolet/Malibu", "kia/K5", "kia/Sportage", "hyundai/Sonata", "hyundai/Tucson", "byd/Atto 3", "byd/Han"],
     description: "All-season radial tire with optimised tread pattern for wet and dry grip. EcoPlus technology reduces rolling resistance for better fuel economy. Speed rating V (up to 240 km/h). Sold individually.",
   },
   {
@@ -873,6 +883,7 @@ const PRODUCTS: Product[] = [
     price: "760 000", originalPrice: "780 000", discount: 3,
     img: "https://images.unsplash.com/photo-1656232976683-7b688560e427?w=600&h=600&fit=crop&auto=format",
     category: "Tires", sku: "CNT-205-55R16-91V", stock: 4, brand: "Continental",
+    models: ["chevrolet/Malibu", "kia/K5", "kia/Sportage", "hyundai/Sonata", "hyundai/Tucson", "byd/Atto 3", "byd/Han"],
     description: "All-season radial tire with optimised tread pattern for wet and dry grip. EcoPlus technology reduces rolling resistance for better fuel economy. Speed rating V (up to 240 km/h). Sold individually.",
   },
   // ── Denso Air Filter — 2 shops ──
@@ -881,6 +892,7 @@ const PRODUCTS: Product[] = [
     price: "62 000",
     img: "https://images.unsplash.com/photo-1527383418406-f85a3b146499?w=600&h=600&fit=crop&auto=format",
     category: "Filters", sku: "DNS-AF-268", stock: 51, brand: "Denso",
+    models: ["kia/Sorento", "kia/Sportage", "hyundai/Santa Fe", "hyundai/Tucson", "byd/Atto 3", "byd/Song"],
     description: "OEM-grade paper air filter designed for maximum airflow and dust retention. Precision-moulded frame ensures a perfect seal. Direct replacement for Denso OE parts. Change every 15,000–20,000 km or annually.",
   },
   {
@@ -888,6 +900,7 @@ const PRODUCTS: Product[] = [
     price: "65 000",
     img: "https://images.unsplash.com/photo-1527383418406-f85a3b146499?w=600&h=600&fit=crop&auto=format",
     category: "Filters", sku: "DNS-AF-268", stock: 22, brand: "Denso",
+    models: ["kia/Sorento", "kia/Sportage", "hyundai/Santa Fe", "hyundai/Tucson", "byd/Atto 3", "byd/Song"],
     description: "OEM-grade paper air filter designed for maximum airflow and dust retention. Precision-moulded frame ensures a perfect seal. Direct replacement for Denso OE parts. Change every 15,000–20,000 km or annually.",
   },
   // ── Monroe Shock Absorber — 2 shops ──
@@ -896,6 +909,7 @@ const PRODUCTS: Product[] = [
     price: "215 000", originalPrice: "258 000", discount: 17,
     img: "https://images.unsplash.com/photo-1429772011165-0c2e054367b8?w=600&h=600&fit=crop&auto=format",
     category: "Suspension", sku: "MNR-E1156", stock: 19, brand: "Monroe",
+    models: ["chevrolet/Captiva", "chevrolet/Tracker", "kia/Sportage", "kia/Sorento", "hyundai/Tucson", "hyundai/Santa Fe"],
     description: "Gas-charged monotube shock absorber for responsive handling and a comfortable ride. All-weather fluid maintains consistent damping from -40°C to +120°C. Direct OE replacement. Sold individually — order 2 for an axle.",
   },
   {
@@ -903,6 +917,7 @@ const PRODUCTS: Product[] = [
     price: "225 000",
     img: "https://images.unsplash.com/photo-1429772011165-0c2e054367b8?w=600&h=600&fit=crop&auto=format",
     category: "Suspension", sku: "MNR-E1156", stock: 7, brand: "Monroe",
+    models: ["chevrolet/Captiva", "chevrolet/Tracker", "kia/Sportage", "kia/Sorento", "hyundai/Tucson", "hyundai/Santa Fe"],
     description: "Gas-charged monotube shock absorber for responsive handling and a comfortable ride. All-weather fluid maintains consistent damping from -40°C to +120°C. Direct OE replacement. Sold individually — order 2 for an axle.",
   },
 ];
@@ -1296,18 +1311,21 @@ function CategoryPage({ category, icon, brand, onBack, onSelect }: {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [sortBy, setSortBy] = useState<"default"|"bonus-high"|"bonus-low">("default");
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const catProducts = PRODUCTS.filter(p => p.category === category);
   const allBonus = catProducts.map(p => bonusUZS(p));
   const absMin = allBonus.length ? Math.min(...allBonus) : 0;
   const absMax = allBonus.length ? Math.max(...allBonus) : 100000;
   const [sliderMin, setSliderMin] = useState(absMin);
 
+  const brandModels = brand ? (BRAND_MODELS[brand] ?? []) : [];
   const bonusFiltered = sliderMin > absMin;
-  const activeFilterCount = [sortBy !== "default", bonusFiltered].filter(Boolean).length;
+  const activeFilterCount = [sortBy !== "default", bonusFiltered, !!selectedModel].filter(Boolean).length;
 
   const filtered = catProducts
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase()))
     .filter(p => bonusUZS(p) >= sliderMin)
+    .filter(p => !selectedModel || !brand || !p.models || p.models.includes(`${brand}/${selectedModel}`))
     .sort((a, b) => {
       if (sortBy === "bonus-high") return bonusUZS(b) - bonusUZS(a);
       if (sortBy === "bonus-low")  return bonusUZS(a) - bonusUZS(b);
@@ -1326,10 +1344,23 @@ function CategoryPage({ category, icon, brand, onBack, onSelect }: {
         <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
           <button onClick={() => setShowFilter(false)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"><ChevronLeft size={22} /></button>
           <p className="flex-1 text-[16px] font-bold text-foreground">Filters</p>
-          <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+          <button onClick={() => { setSortBy("default"); setSliderMin(absMin); setSelectedModel(null); }}
             className="text-[12px] font-semibold text-primary hover:text-blue-700 transition-colors">Reset all</button>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+          {brandModels.length > 0 && (
+            <div>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Model</p>
+              <div className="flex flex-wrap gap-2">
+                {brandModels.map(model => (
+                  <button key={model} onClick={() => setSelectedModel(selectedModel === model ? null : model)}
+                    className={`px-3 py-2 rounded-xl text-[13px] font-semibold border-2 transition-all ${selectedModel === model ? "border-primary bg-primary/5 text-primary" : "border-border bg-card text-foreground"}`}>
+                    {model}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sort by</p>
             <div className="flex flex-col gap-2">
@@ -1559,6 +1590,13 @@ function LikedItemsPage({ likedIds, onSelect, onBack }: {
     </div>
   );
 }
+
+const BRAND_MODELS: Record<string, string[]> = {
+  chevrolet: ["Cruze", "Nexia", "Captiva", "Malibu", "Tracker"],
+  byd:       ["Atto 3", "Han", "Seal", "Dolphin", "Song"],
+  kia:       ["Sportage", "Sorento", "Rio", "Cerato", "K5"],
+  hyundai:   ["Tucson", "Santa Fe", "Elantra", "Accent", "Sonata"],
+};
 
 const BRANDS = [
   { id: "chevrolet", name: "Chevrolet", logo: brandChevroletImg as string | null },
