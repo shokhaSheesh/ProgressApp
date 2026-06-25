@@ -3,6 +3,7 @@ import catEngineImg from "../assets/categories/engine.png";
 import catTransmissionImg from "../assets/categories/transmission.png";
 import catBrakesImg from "../assets/categories/brakes.png";
 import catFiltersImg from "../assets/categories/filters.png";
+import catTiresImg from "../assets/categories/tires.png";
 import {
   Eye, EyeOff, Wrench, Store, ChevronRight, ArrowLeft,
   ChevronDown, Check, Home, MapPin, ShoppingCart, User,
@@ -675,7 +676,7 @@ const CATEGORIES: { label: string; icon: string; img?: string }[] = [
   { label: "Suspension",    icon: "Suspension" },
   { label: "Steering",      icon: "Steering" },
   { label: "Filters",       icon: "Filters",      img: catFiltersImg },
-  { label: "Tires & Wheels",icon: "Tires" },
+  { label: "Tires & Wheels",icon: "Tires",        img: catTiresImg },
   { label: "Lighting",      icon: "Lighting" },
 ];
 
