@@ -7,6 +7,7 @@ import catTiresImg from "../assets/categories/tires.png";
 import catSteeringImg from "../assets/categories/steering.png";
 import catSuspensionImg from "../assets/categories/suspension.png";
 import catLightingImg from "../assets/categories/lighting.png";
+import brandKiaImg from "../assets/brands/kia.png";
 import {
   Eye, EyeOff, Wrench, Store, ChevronRight, ArrowLeft,
   ChevronDown, Check, Home, MapPin, ShoppingCart, User,
@@ -1559,7 +1560,7 @@ function LikedItemsPage({ likedIds, onSelect, onBack }: {
 const BRANDS = [
   { id: "chevrolet", name: "Chevrolet", logo: null as string | null },
   { id: "byd",       name: "BYD",       logo: null as string | null },
-  { id: "kia",       name: "Kia",       logo: null as string | null },
+  { id: "kia",       name: "Kia",       logo: brandKiaImg as string | null },
   { id: "hyundai",   name: "Hyundai",   logo: null as string | null },
 ];
 
