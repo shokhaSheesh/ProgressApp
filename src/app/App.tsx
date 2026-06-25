@@ -2557,7 +2557,7 @@ function CartPage({ cartIds, setCartIds, cartQty, setCartQty }: {
 
 // ─── PROFILE / WALLET (multi-page, shared by both roles) ─────────────────────
 
-interface WalletTxn { id: number; label: string; date: string; amount: number; kind: "earn" | "withdraw"; orderRef?: string; productName?: string; productImg?: string; }
+interface WalletTxn { id: number; label: string; date: string; amount: number; kind: "earn" | "withdraw"; orderRef?: string; productName?: string; productImg?: string; productId?: number; }
 
 type WithdrawStatus = "pending" | "processing" | "out_for_delivery" | "delivered" | "failed";
 interface WithdrawRequest {
@@ -2801,8 +2801,8 @@ function DatePickerWheel({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 
-function TransactionHistoryPage({ role, transactions, requests, onBack, onOrderTap, showBack = true }: {
-  role: Role; transactions: WalletTxn[]; requests: WithdrawRequest[]; onBack: () => void; onOrderTap?: (ref: string) => void; showBack?: boolean;
+function TransactionHistoryPage({ role, transactions, requests, onBack, onProductTap, showBack = true }: {
+  role: Role; transactions: WalletTxn[]; requests: WithdrawRequest[]; onBack: () => void; onProductTap?: (product: Product) => void; showBack?: boolean;
 }) {
 
   const [activeTab, setActiveTab] = useState<"history"|"requests">("history");
@@ -2926,9 +2926,13 @@ function TransactionHistoryPage({ role, transactions, requests, onBack, onOrderT
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {g.items.map(t => (
+                  {g.items.map(t => {
+                    const product = t.kind === "earn" && t.productId ? PRODUCTS.find(p => p.id === t.productId) : null;
+                    const tappable = !!product && !!onProductTap;
+                    return (
                     <div key={t.id}
-                      className="flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5"
+                      onClick={tappable ? () => onProductTap!(product!) : undefined}
+                      className={`flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5 ${tappable ? "cursor-pointer active:scale-[0.98] transition-transform" : ""}`}
                       style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
                       {/* Icon / product thumbnail */}
                       {t.kind === "earn" && t.productImg ? (
@@ -2949,8 +2953,10 @@ function TransactionHistoryPage({ role, transactions, requests, onBack, onOrderT
                       <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-red-500"}`}>
                         {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)} <span className="text-[10px] font-normal">UZS</span>
                       </span>
+                      {tappable && <ChevronRight size={15} className="text-muted-foreground shrink-0 ml-1" />}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -3174,144 +3180,6 @@ function MyInfoPage({ name: initName, phone: initPhone, onBack }: { name: string
 
 // Main profile hub
 // ─── ORDER HISTORY DATA ───────────────────────────────────────────────────────
-interface ScannedEntry {
-  id: string;
-  date: string;
-  shopName: string;
-  sellerName: string;
-  productName: string;
-  productImg: string;
-  sku: string;
-  variation?: string;
-  bonus: number;
-}
-
-const SCANNED_ENTRIES: ScannedEntry[] = [
-  { id: "SCN-2206-001", date: "Jun 22, 2026 · 11:04", shopName: "AutoZone Tashkent",  sellerName: "Jasur Toshmatov",  productName: "Bosch Oil Filter Premium",    productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", sku: "BSH-OF-4722",       variation: "Diesel",                  bonus: 2000  },
-  { id: "SCN-2206-002", date: "Jun 22, 2026 · 11:06", shopName: "AutoZone Tashkent",  sellerName: "Jasur Toshmatov",  productName: "NGK Spark Plug",              productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", sku: "NGK-BKR6E",        variation: "Heat 6",                  bonus: 4000  },
-  { id: "SCN-2206-003", date: "Jun 18, 2026 · 14:32", shopName: "TireHub Uzbekistan", sellerName: "Dilshod Razzaqov", productName: "Continental Tire 205/55R16",  productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", sku: "CNT-205-55R16-91V", variation: "V-speed",                  bonus: 16000 },
-  { id: "SCN-2206-004", date: "Jun 09, 2026 · 10:15", shopName: "SparkMaster Pro",    sellerName: "Sardor Yusupov",   productName: "Denso Air Filter",            productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80", sku: "DNS-AF-268",        variation: "Performance",             bonus: 3000  },
-  { id: "SCN-2206-005", date: "Jun 02, 2026 · 16:48", shopName: "SparkMaster Pro",    sellerName: "Sardor Yusupov",   productName: "Monroe Shock Absorber",       productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80", sku: "MNR-E1156",         variation: "Front Left · Sport",      bonus: 7000  },
-];
-
-function OrderHistoryPage({ onBack }: { onBack: () => void }) {
-  const [selected, setSelected] = useState<ScannedEntry | null>(null);
-
-  // ── Detail view ──
-  if (selected) {
-    return (
-      <div className="flex flex-col h-full bg-background">
-        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
-          <button onClick={() => setSelected(null)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronLeft size={20} />
-          </button>
-          <div className="flex-1 min-w-0">
-            <p className="text-[17px] font-bold text-foreground leading-tight">Scan Details</p>
-            <p className="text-[11px] font-mono text-muted-foreground">{selected.id}</p>
-          </div>
-          <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-xl">Completed</span>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
-          {/* Product card */}
-          <div className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-            <div className="w-full h-44 bg-muted overflow-hidden">
-              <img src={selected.productImg} alt={selected.productName} className="w-full h-full object-cover" />
-            </div>
-            <div className="p-4">
-              <p className="text-[16px] font-bold text-foreground mb-1">{selected.productName}</p>
-              <p className="text-[11px] font-mono text-muted-foreground/70">{selected.sku}</p>
-              {selected.variation && <p className="text-[12px] text-muted-foreground mt-0.5">{selected.variation}</p>}
-            </div>
-          </div>
-
-          {/* Bonus earned */}
-          <div className="bg-emerald-50 rounded-2xl border border-emerald-100 px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-                <Gift size={18} className="text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-[11px] text-emerald-700 font-medium">Bonus earned</p>
-                <p className="text-[20px] font-bold text-emerald-600 leading-tight">+{fmtUZS(selected.bonus)} <span className="text-[12px] font-semibold">UZS</span></p>
-              </div>
-            </div>
-            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-lg">Credited</span>
-          </div>
-
-          {/* Shop / seller */}
-          <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Shop</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
-                <Store size={18} className="text-primary" />
-              </div>
-              <div>
-                <p className="text-[14px] font-bold text-foreground">{selected.shopName}</p>
-                <p className="text-[12px] text-muted-foreground">{selected.sellerName}</p>
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 text-muted-foreground">
-              <Clock size={12} />
-              <span className="text-[12px]">{selected.date}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── List view ──
-  return (
-    <div className="flex flex-col h-full bg-background">
-      <div className="px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
-        <p className="text-[20px] font-bold text-foreground">Orders</p>
-        <p className="text-[12px] text-muted-foreground mt-0.5">{SCANNED_ENTRIES.length} scanned products</p>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="flex flex-col gap-3">
-          {SCANNED_ENTRIES.map(entry => (
-            <button key={entry.id} onClick={() => setSelected(entry)}
-              className="bg-card rounded-2xl border border-border p-4 text-left w-full hover:border-primary/30 active:scale-[0.98] transition-all"
-              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <div className="flex items-center gap-3">
-                {/* Product thumbnail */}
-                <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0">
-                  <img src={entry.productImg} alt={entry.productName} className="w-full h-full object-cover" />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-bold text-foreground line-clamp-1">{entry.productName}</p>
-                  {entry.variation && <p className="text-[11px] text-muted-foreground mt-0.5">{entry.variation}</p>}
-
-                  {/* Shop row */}
-                  <div className="flex items-center gap-1 mt-1.5">
-                    <Store size={10} className="text-muted-foreground shrink-0" />
-                    <p className="text-[11px] text-muted-foreground truncate">{entry.shopName}</p>
-                  </div>
-
-                  {/* Date + bonus row */}
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                      <Clock size={10} /> {entry.date}
-                    </span>
-                    <span className="flex items-center gap-1 text-emerald-600">
-                      <Gift size={10} />
-                      <span className="text-[11px] font-bold">+{fmtUZS(entry.bonus)} UZS</span>
-                    </span>
-                  </div>
-                </div>
-
-                <ChevronRight size={16} className="text-muted-foreground shrink-0 ml-1" />
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── FAQ PAGE ─────────────────────────────────────────────────────────────────
 const FAQ_ITEMS = [
@@ -3399,7 +3267,7 @@ function FAQPage({ onBack }: { onBack: () => void }) {
   );
 }
 
-type ProfileSubPage = "wallet" | "history" | "info" | "orders" | "faq" | null;
+type ProfileSubPage = "wallet" | "history" | "info" | "faq" | null;
 
 const LANGS = [
   { code: "en", label: "English",  native: "English",    flag: "🇬🇧" },
@@ -3415,19 +3283,13 @@ function WalletScreen({ name, phone, balance, transactions, onLogout, onSubPageC
   const [showLangSheet, setShowLangSheet] = useState(false);
   const [showAboutSheet, setShowAboutSheet] = useState(false);
   const [activeLang, setActiveLang] = useState<LangCode>("en");
-  const [histOrderRef, setHistOrderRef] = useState<string | null>(null);
-
   const goSub = (s: ProfileSubPage) => { setSub(s); onSubPageChange?.(s !== null); };
-  const goBack = () => { setSub(null); setHistOrderRef(null); onSubPageChange?.(false); };
+  const goBack = () => { setSub(null); onSubPageChange?.(false); };
   const currentLang = LANGS.find(l => l.code === activeLang)!;
 
   if (sub === "wallet")  return <WalletPage role="mechanic" balance={balance} name={name} phone={phone} onBack={goBack} />;
-  if (sub === "history") {
-    if (histOrderRef) return <OrderHistoryPage initialRef={histOrderRef} onBack={() => setHistOrderRef(null)} />;
-    return <TransactionHistoryPage role="mechanic" transactions={transactions} requests={MOCK_WITHDRAW_REQUESTS} onBack={goBack} onOrderTap={ref => setHistOrderRef(ref)} />;
-  }
+  if (sub === "history") return <TransactionHistoryPage role="mechanic" transactions={transactions} requests={MOCK_WITHDRAW_REQUESTS} onBack={goBack} />;
   if (sub === "info")    return <MyInfoPage name={name} phone={phone} onBack={goBack} />;
-  if (sub === "orders")  return <OrderHistoryPage onBack={goBack} />;
   if (sub === "faq")     return <FAQPage onBack={goBack} />;
 
   // ── Profile hub ──
@@ -3435,10 +3297,9 @@ function WalletScreen({ name, phone, balance, transactions, onLogout, onSubPageC
     {
       title: "General",
       items: [
-        { label: "My information", icon: <UserCircle size={18} />,  color: "bg-blue-500",    action: () => goSub("info") },
-        { label: "Bonus wallet",   icon: <Wallet size={18} />,      color: "bg-emerald-500", action: () => goSub("wallet") },
-        { label: "Order history",  icon: <ShoppingBag size={18} />, color: "bg-orange-500",  action: () => goSub("orders") },
-        { label: "Bonus history",  icon: <BarChart2 size={18} />,   color: "bg-violet-500",  action: () => goSub("history") },
+        { label: "My information", icon: <UserCircle size={18} />, color: "bg-blue-500",    action: () => goSub("info") },
+        { label: "Bonus wallet",   icon: <Wallet size={18} />,     color: "bg-emerald-500", action: () => goSub("wallet") },
+        { label: "Bonus history",  icon: <BarChart2 size={18} />,  color: "bg-violet-500",  action: () => goSub("history") },
       ],
     },
     {
@@ -3604,13 +3465,14 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
               ? <ShopsPage />
               : tab === "bonus"
                 ? <TransactionHistoryPage role="mechanic" showBack={false} onBack={() => {}} requests={MOCK_WITHDRAW_REQUESTS}
+                    onProductTap={setSelectedProduct}
                     transactions={[
-                      { id: 1, label: "Bosch Oil Filter Premium",    date: "Jun 22, 2026", amount: 2000,  kind: "earn",     productName: "Bosch Oil Filter Premium",    productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
-                      { id: 2, label: "NGK Spark Plug",              date: "Jun 22, 2026", amount: 4000,  kind: "earn",     productName: "NGK Spark Plug",              productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
-                      { id: 3, label: "Withdraw to UzCard",          date: "Jun 20, 2026", amount: 100000, kind: "withdraw" },
-                      { id: 4, label: "Continental Tire 205/55R16",  date: "Jun 18, 2026", amount: 16000, kind: "earn",     productName: "Continental Tire 205/55R16",  productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
-                      { id: 5, label: "Denso Air Filter",            date: "Jun 09, 2026", amount: 3000,  kind: "earn",     productName: "Denso Air Filter",            productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
-                      { id: 6, label: "Monroe Shock Absorber",       date: "Jun 02, 2026", amount: 7000,  kind: "earn",     productName: "Monroe Shock Absorber",       productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
+                      { id: 1, label: "Bosch Oil Filter Premium",   date: "Jun 22, 2026", amount: 2000,   kind: "earn",    productId: 1,   productName: "Bosch Oil Filter Premium",   productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
+                      { id: 2, label: "NGK Spark Plug",             date: "Jun 22, 2026", amount: 4000,   kind: "earn",    productId: 5,   productName: "NGK Spark Plug",             productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
+                      { id: 3, label: "Withdraw to UzCard",         date: "Jun 20, 2026", amount: 100000, kind: "withdraw" },
+                      { id: 4, label: "Continental Tire 205/55R16", date: "Jun 18, 2026", amount: 16000,  kind: "earn",    productId: 9,   productName: "Continental Tire 205/55R16", productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
+                      { id: 5, label: "Denso Air Filter",           date: "Jun 09, 2026", amount: 3000,   kind: "earn",    productId: 13,  productName: "Denso Air Filter",           productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
+                      { id: 6, label: "Monroe Shock Absorber",      date: "Jun 02, 2026", amount: 7000,   kind: "earn",    productId: 17,  productName: "Monroe Shock Absorber",      productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
                     ]} />
                 : tab === "profile"
                   ? <WalletScreen name="Akmal Karimov" phone="+998 90 123 45 67" balance={184000} onLogout={onLogout}
