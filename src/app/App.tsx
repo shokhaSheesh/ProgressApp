@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import catEngineImg from "../assets/categories/engine.png";
 import catTransmissionImg from "../assets/categories/transmission.png";
+import catBrakesImg from "../assets/categories/brakes.png";
 import {
   Eye, EyeOff, Wrench, Store, ChevronRight, ArrowLeft,
   ChevronDown, Check, Home, MapPin, ShoppingCart, User,
@@ -669,7 +670,7 @@ function PlaceholderPage({ label, icon }: { label: string; icon: React.ReactNode
 const CATEGORIES: { label: string; icon: string; img?: string }[] = [
   { label: "Engine",        icon: "Engine",       img: catEngineImg },
   { label: "Transmission",  icon: "Transmission", img: catTransmissionImg },
-  { label: "Brakes",        icon: "Brakes" },
+  { label: "Brakes",        icon: "Brakes",       img: catBrakesImg },
   { label: "Suspension",    icon: "Suspension" },
   { label: "Steering",      icon: "Steering" },
   { label: "Electrical",    icon: "Electrical" },
