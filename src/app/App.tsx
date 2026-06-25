@@ -908,32 +908,28 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
 
   // ── Step 2: product grid for selected name ──
   const [showFilter, setShowFilter] = useState(false);
-  const [sortBy, setSortBy] = useState<"default"|"low"|"high"|"discount">("default");
-  const [onlyDiscount, setOnlyDiscount] = useState(false);
+  const [sortBy, setSortBy] = useState<"default"|"bonus-high"|"bonus-low">("default");
   const [onlyInStock, setOnlyInStock] = useState(false);
 
-  const allPrices = listings.map(p => priceToNum(p.price));
-  const absMin = allPrices.length ? Math.min(...allPrices) : 0;
-  const absMax = allPrices.length ? Math.max(...allPrices) : 1000000;
-  const [sliderMax, setSliderMax] = useState(absMax);
+  const allBonus = listings.map(p => bonusUZS(p));
+  const absMin = allBonus.length ? Math.min(...allBonus) : 0;
+  const absMax = allBonus.length ? Math.max(...allBonus) : 100000;
+  const [sliderMin, setSliderMin] = useState(absMin);
 
-  const priceFiltered = sliderMax < absMax;
+  const bonusFiltered = sliderMin > absMin;
 
   const activeFilterCount = [
     sortBy !== "default",
-    onlyDiscount,
     onlyInStock,
-    priceFiltered,
+    bonusFiltered,
   ].filter(Boolean).length;
 
   const filteredListings = listings
-    .filter(p => !onlyDiscount || !!p.discount)
     .filter(p => !onlyInStock || p.stock > 0)
-    .filter(p => priceToNum(p.price) <= sliderMax)
+    .filter(p => bonusUZS(p) >= sliderMin)
     .sort((a, b) => {
-      if (sortBy === "low")  return priceToNum(a.price) - priceToNum(b.price);
-      if (sortBy === "high") return priceToNum(b.price) - priceToNum(a.price);
-      if (sortBy === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
+      if (sortBy === "bonus-high") return bonusUZS(b) - bonusUZS(a);
+      if (sortBy === "bonus-low")  return bonusUZS(a) - bonusUZS(b);
       return 0;
     });
 
@@ -960,10 +956,9 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
     // ── Filter page ──
     if (showFilter) {
       const SORT_OPTS: { key: typeof sortBy; label: string }[] = [
-        { key: "default",  label: "Default" },
-        { key: "low",      label: "Price: Low → High" },
-        { key: "high",     label: "Price: High → Low" },
-        { key: "discount", label: "Biggest Discount" },
+        { key: "default",    label: "Default" },
+        { key: "bonus-high", label: "Bonus: High → Low" },
+        { key: "bonus-low",  label: "Bonus: Low → High" },
       ];
       return (
         <div className="flex flex-col h-full bg-background">
@@ -972,7 +967,7 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
               <ChevronLeft size={22} />
             </button>
             <p className="flex-1 text-[16px] font-bold text-foreground">Filters</p>
-            <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+            <button onClick={() => { setSortBy("default"); setOnlyInStock(false); setSliderMin(absMin); }}
               className="text-[12px] font-semibold text-primary hover:text-blue-700 transition-colors">
               Reset all
             </button>
@@ -993,12 +988,12 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
               </div>
             </div>
 
-            {/* Max price slider */}
+            {/* Min bonus slider */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Max price</p>
-                <span className={`text-[13px] font-bold ${priceFiltered ? "text-primary" : "text-muted-foreground"}`}>
-                  {priceFiltered ? `${sliderMax.toLocaleString()} UZS` : "Any"}
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Min bonus</p>
+                <span className={`text-[13px] font-bold ${bonusFiltered ? "text-emerald-600" : "text-muted-foreground"}`}>
+                  {bonusFiltered ? `+${sliderMin.toLocaleString()} UZS` : "Any"}
                 </span>
               </div>
               <div className="px-1">
@@ -1006,18 +1001,18 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
                   type="range"
                   min={absMin}
                   max={absMax}
-                  step={Math.max(1000, Math.round((absMax - absMin) / 100))}
-                  value={sliderMax}
-                  onChange={e => setSliderMax(Number(e.target.value))}
+                  step={Math.max(500, Math.round((absMax - absMin) / 100))}
+                  value={sliderMin}
+                  onChange={e => setSliderMin(Number(e.target.value))}
                   className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
                   style={{
-                    background: `linear-gradient(to right, #2563EB ${((sliderMax - absMin) / (absMax - absMin)) * 100}%, #E5E7EB ${((sliderMax - absMin) / (absMax - absMin)) * 100}%)`,
-                    accentColor: "#2563EB",
+                    background: `linear-gradient(to right, #10B981 ${((sliderMin - absMin) / (absMax - absMin)) * 100}%, #E5E7EB ${((sliderMin - absMin) / (absMax - absMin)) * 100}%)`,
+                    accentColor: "#10B981",
                   }}
                 />
                 <div className="flex justify-between mt-2">
-                  <span className="text-[10px] text-muted-foreground">{absMin.toLocaleString()} UZS</span>
-                  <span className="text-[10px] text-muted-foreground">{absMax.toLocaleString()} UZS</span>
+                  <span className="text-[10px] text-muted-foreground">+{absMin.toLocaleString()} UZS</span>
+                  <span className="text-[10px] text-muted-foreground">+{absMax.toLocaleString()} UZS</span>
                 </div>
               </div>
             </div>
@@ -1027,7 +1022,6 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Show only</p>
               <div className="flex flex-col gap-2">
                 {[
-                  { label: "Has discount", sub: "Products with active price cuts", val: onlyDiscount, set: setOnlyDiscount },
                   { label: "In stock", sub: "Available for immediate purchase", val: onlyInStock, set: setOnlyInStock },
                 ].map(t => (
                   <button key={t.label} onClick={() => t.set(!t.val)}
@@ -1103,7 +1097,7 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
             <div className="flex flex-col items-center py-10 gap-3">
               <EmptyIllustration />
               <p className="text-[14px] font-semibold text-foreground">No results match your filters</p>
-              <button onClick={() => { setSortBy("default"); setOnlyDiscount(false); setOnlyInStock(false); setSliderMax(absMax); }}
+              <button onClick={() => { setSortBy("default"); setOnlyInStock(false); setSliderMin(absMin); }}
                 className="text-[13px] font-semibold text-primary hover:underline">Clear filters</button>
             </div>
           )}
@@ -1208,36 +1202,32 @@ function CategoryPage({ category, emoji, onBack, onSelect }: {
 }) {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
-  const [sortBy, setSortBy] = useState<"default"|"low"|"high"|"discount">("default");
-  const [onlyDiscount, setOnlyDiscount] = useState(false);
+  const [sortBy, setSortBy] = useState<"default"|"bonus-high"|"bonus-low">("default");
   const [onlyInStock, setOnlyInStock] = useState(false);
 
   const catProducts = PRODUCTS.filter(p => p.category === category);
-  const allPrices = catProducts.map(p => priceToNum(p.price));
-  const absMin = allPrices.length ? Math.min(...allPrices) : 0;
-  const absMax = allPrices.length ? Math.max(...allPrices) : 1000000;
-  const [sliderMax, setSliderMax] = useState(absMax);
+  const allBonus = catProducts.map(p => bonusUZS(p));
+  const absMin = allBonus.length ? Math.min(...allBonus) : 0;
+  const absMax = allBonus.length ? Math.max(...allBonus) : 100000;
+  const [sliderMin, setSliderMin] = useState(absMin);
 
-  const priceFiltered = sliderMax < absMax;
-  const activeFilterCount = [sortBy !== "default", onlyDiscount, onlyInStock, priceFiltered].filter(Boolean).length;
+  const bonusFiltered = sliderMin > absMin;
+  const activeFilterCount = [sortBy !== "default", onlyInStock, bonusFiltered].filter(Boolean).length;
 
   const filtered = catProducts
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase()))
-    .filter(p => !onlyDiscount || !!p.discount)
     .filter(p => !onlyInStock || p.stock > 0)
-    .filter(p => priceToNum(p.price) <= sliderMax)
+    .filter(p => bonusUZS(p) >= sliderMin)
     .sort((a, b) => {
-      if (sortBy === "low") return priceToNum(a.price) - priceToNum(b.price);
-      if (sortBy === "high") return priceToNum(b.price) - priceToNum(a.price);
-      if (sortBy === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
+      if (sortBy === "bonus-high") return bonusUZS(b) - bonusUZS(a);
+      if (sortBy === "bonus-low")  return bonusUZS(a) - bonusUZS(b);
       return 0;
     });
 
   const SORT_OPTS: { key: typeof sortBy; label: string }[] = [
-    { key: "default",  label: "Default" },
-    { key: "low",      label: "Price: Low → High" },
-    { key: "high",     label: "Price: High → Low" },
-    { key: "discount", label: "Biggest Discount" },
+    { key: "default",    label: "Default" },
+    { key: "bonus-high", label: "Bonus: High → Low" },
+    { key: "bonus-low",  label: "Bonus: Low → High" },
   ];
 
   if (showFilter) {
@@ -1264,20 +1254,20 @@ function CategoryPage({ category, emoji, onBack, onSelect }: {
           </div>
           <div>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Max price</p>
-              <span className={`text-[13px] font-bold ${priceFiltered ? "text-primary" : "text-muted-foreground"}`}>
-                {priceFiltered ? `${sliderMax.toLocaleString()} UZS` : "Any"}
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Min bonus</p>
+              <span className={`text-[13px] font-bold ${bonusFiltered ? "text-emerald-600" : "text-muted-foreground"}`}>
+                {bonusFiltered ? `+${sliderMin.toLocaleString()} UZS` : "Any"}
               </span>
             </div>
             <div className="px-1">
-              <input type="range" min={absMin} max={absMax} step={Math.max(1000, Math.round((absMax - absMin) / 100))}
-                value={sliderMax} onChange={e => setSliderMax(Number(e.target.value))}
+              <input type="range" min={absMin} max={absMax} step={Math.max(500, Math.round((absMax - absMin) / 100))}
+                value={sliderMin} onChange={e => setSliderMin(Number(e.target.value))}
                 className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                style={{ background: `linear-gradient(to right, #2563EB ${((sliderMax-absMin)/(absMax-absMin))*100}%, #E5E7EB ${((sliderMax-absMin)/(absMax-absMin))*100}%)`, accentColor: "#2563EB" }}
+                style={{ background: `linear-gradient(to right, #10B981 ${((sliderMin-absMin)/(absMax-absMin))*100}%, #E5E7EB ${((sliderMin-absMin)/(absMax-absMin))*100}%)`, accentColor: "#10B981" }}
               />
               <div className="flex justify-between mt-2">
-                <span className="text-[10px] text-muted-foreground">{absMin.toLocaleString()} UZS</span>
-                <span className="text-[10px] text-muted-foreground">{absMax.toLocaleString()} UZS</span>
+                <span className="text-[10px] text-muted-foreground">+{absMin.toLocaleString()} UZS</span>
+                <span className="text-[10px] text-muted-foreground">+{absMax.toLocaleString()} UZS</span>
               </div>
             </div>
           </div>
@@ -1285,7 +1275,6 @@ function CategoryPage({ category, emoji, onBack, onSelect }: {
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Show only</p>
             <div className="flex flex-col gap-2">
               {[
-                { label: "Has discount", sub: "Products with active price cuts", val: onlyDiscount, set: setOnlyDiscount },
                 { label: "In stock", sub: "Available for immediate purchase", val: onlyInStock, set: setOnlyInStock },
               ].map(t => (
                 <button key={t.label} onClick={() => t.set(!t.val)}
