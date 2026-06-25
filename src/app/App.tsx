@@ -9,7 +9,7 @@ import {
   Gift, TrendingUp, ShieldCheck, Receipt, ChevronLeft,
   Globe, SunMoon, Headphones, HelpCircle, Info, ShoppingBag,
   BarChart2, UserCircle, Settings, LogOut,
-  Search, Bell, MoreHorizontal, Copy, CheckCheck,
+  Search, Bell, MoreHorizontal, Copy, CheckCheck, MessageSquare, Send,
 } from "lucide-react";
 
 type AuthScreen = "login" | "mechanic-login-otp" | "mechanic-profile" | "forgot-phone" | "forgot-otp" | "forgot-newpass";
@@ -3213,6 +3213,95 @@ const FAQ_ITEMS = [
   },
 ];
 
+function SupportPage({ onBack, name, phone }: { onBack: () => void; name: string; phone: string }) {
+  const [message, setMessage] = useState("");
+  const [sent, setSent] = useState(false);
+  const MAX = 500;
+
+  function handleSend() {
+    if (!message.trim()) return;
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft size={20} />
+          </button>
+          <p className="flex-1 text-[17px] font-bold text-foreground">Support</p>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center">
+            <CheckCircle2 size={32} className="text-emerald-500" />
+          </div>
+          <p className="text-[18px] font-bold text-foreground">Message sent!</p>
+          <p className="text-[13px] text-muted-foreground leading-relaxed">Our support team will get back to you shortly. Thank you for reaching out.</p>
+          <button onClick={onBack}
+            className="mt-4 px-8 py-3 rounded-2xl bg-primary text-white text-[15px] font-semibold">
+            Back to Profile
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft size={20} />
+        </button>
+        <p className="flex-1 text-[17px] font-bold text-foreground">Support</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-5">
+        {/* Name — read only */}
+        <div>
+          <p className="text-[13px] font-semibold text-foreground mb-1.5">Name</p>
+          <div className="bg-card border border-border rounded-2xl px-4 py-3.5">
+            <p className="text-[15px] font-semibold text-foreground">{name}</p>
+          </div>
+        </div>
+
+        {/* Phone — read only */}
+        <div>
+          <p className="text-[13px] font-semibold text-foreground mb-1.5">Phone number</p>
+          <div className="bg-card border border-border rounded-2xl px-4 py-3.5">
+            <p className="text-[15px] font-semibold text-foreground">{phone}</p>
+          </div>
+        </div>
+
+        {/* Message */}
+        <div className="flex flex-col flex-1">
+          <p className="text-[13px] font-semibold text-foreground mb-1.5">What's the issue?</p>
+          <textarea
+            value={message}
+            onChange={e => setMessage(e.target.value.slice(0, MAX))}
+            placeholder="Describe your problem here…"
+            rows={7}
+            className="flex-1 w-full bg-card border border-border rounded-2xl px-4 py-3.5 text-[15px] text-foreground placeholder:text-muted-foreground/60 resize-none outline-none focus:border-primary/40 transition-colors"
+          />
+          <p className="text-[11px] text-muted-foreground text-right mt-1.5">{message.length}/{MAX}</p>
+        </div>
+      </div>
+
+      {/* Send button */}
+      <div className="shrink-0 px-4 pb-6 pt-2 bg-background">
+        <button
+          onClick={handleSend}
+          disabled={!message.trim()}
+          className={`w-full py-4 rounded-2xl text-[16px] font-bold transition-all flex items-center justify-center gap-2 ${message.trim() ? "bg-primary text-white shadow-md" : "bg-[#F4F5F7] text-muted-foreground"}`}>
+          <Send size={17} />
+          Send
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function FAQPage({ onBack }: { onBack: () => void }) {
   const [open, setOpen] = useState<number | null>(null);
   return (
@@ -3267,7 +3356,7 @@ function FAQPage({ onBack }: { onBack: () => void }) {
   );
 }
 
-type ProfileSubPage = "wallet" | "history" | "info" | "faq" | null;
+type ProfileSubPage = "wallet" | "history" | "info" | "faq" | "support" | null;
 
 const LANGS = [
   { code: "en", label: "English",  native: "English",    flag: "🇬🇧" },
@@ -3290,6 +3379,7 @@ function WalletScreen({ name, phone, balance, transactions, onLogout, onSubPageC
   if (sub === "wallet")  return <WalletPage role="mechanic" balance={balance} name={name} phone={phone} onBack={goBack} />;
   if (sub === "history") return <TransactionHistoryPage role="mechanic" transactions={transactions} requests={MOCK_WITHDRAW_REQUESTS} onBack={goBack} />;
   if (sub === "info")    return <MyInfoPage name={name} phone={phone} onBack={goBack} />;
+  if (sub === "support") return <SupportPage name={name} phone={phone} onBack={goBack} />;
   if (sub === "faq")     return <FAQPage onBack={goBack} />;
 
   // ── Profile hub ──
@@ -3311,7 +3401,8 @@ function WalletScreen({ name, phone, balance, transactions, onLogout, onSubPageC
     {
       title: "Support",
       items: [
-        { label: "FAQ",       icon: <HelpCircle size={18} />, color: "bg-indigo-500", action: () => goSub("faq") },
+        { label: "Support",   icon: <MessageSquare size={18} />, color: "bg-sky-500",    action: () => goSub("support") },
+        { label: "FAQ",       icon: <HelpCircle size={18} />,    color: "bg-indigo-500", action: () => goSub("faq") },
         { label: "About app", icon: <Info size={18} />,       color: "bg-slate-500",  action: () => setShowAboutSheet(true) },
       ],
     },
