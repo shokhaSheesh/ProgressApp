@@ -1227,7 +1227,11 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
             {CATEGORIES.map(cat => (
               <button key={cat.label} onClick={() => onSelectCategory?.({ label: cat.label, icon: cat.icon })}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#F4F5F7] transition-all text-left">
-                <div className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-primary shrink-0"><CatIcon name={cat.icon} size={20} /></div>
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-[#F4F5F7] flex items-center justify-center text-primary shrink-0">
+                  {cat.img
+                    ? <img src={cat.img} alt={cat.label} className="w-8 h-8 object-contain" />
+                    : <CatIcon name={cat.icon} size={20} />}
+                </div>
                 <span className="text-[14px] font-semibold text-foreground">{cat.label}</span>
                 <ChevronRight size={16} className="ml-auto text-muted-foreground shrink-0" />
               </button>
