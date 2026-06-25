@@ -10,6 +10,7 @@ import catLightingImg from "../assets/categories/lighting.png";
 import brandKiaImg from "../assets/brands/kia.png";
 import brandBydImg from "../assets/brands/byd.png";
 import brandChevroletImg from "../assets/brands/chevrolet.png";
+import brandHyundaiImg from "../assets/brands/hyundai.png";
 import {
   Eye, EyeOff, Wrench, Store, ChevronRight, ArrowLeft,
   ChevronDown, Check, Home, MapPin, ShoppingCart, User,
@@ -1563,7 +1564,7 @@ const BRANDS = [
   { id: "chevrolet", name: "Chevrolet", logo: brandChevroletImg as string | null },
   { id: "byd",       name: "BYD",       logo: brandBydImg as string | null },
   { id: "kia",       name: "Kia",       logo: brandKiaImg as string | null },
-  { id: "hyundai",   name: "Hyundai",   logo: null as string | null },
+  { id: "hyundai",   name: "Hyundai",   logo: brandHyundaiImg as string | null },
 ];
 
 function BrandSelectionPage({ category, onBack, onSelectBrand }: {
