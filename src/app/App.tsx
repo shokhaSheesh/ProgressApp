@@ -3545,7 +3545,6 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
     <div className="flex flex-col flex-1 min-h-0 relative">
       {scanning && <ScanOverlay onClose={() => setScanning(false)} />}
 
-      {!selectedProduct && !mainSubActive && <AppHeader role="mechanic" onLogout={onLogout} />}
 
       <div className="flex-1 min-h-0 overflow-hidden">
         {selectedProduct
