@@ -909,8 +909,6 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
   // ── Step 2: product grid for selected name ──
   const [showFilter, setShowFilter] = useState(false);
   const [sortBy, setSortBy] = useState<"default"|"bonus-high"|"bonus-low">("default");
-  const [onlyInStock, setOnlyInStock] = useState(false);
-
   const allBonus = listings.map(p => bonusUZS(p));
   const absMin = allBonus.length ? Math.min(...allBonus) : 0;
   const absMax = allBonus.length ? Math.max(...allBonus) : 100000;
@@ -920,12 +918,10 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
 
   const activeFilterCount = [
     sortBy !== "default",
-    onlyInStock,
     bonusFiltered,
   ].filter(Boolean).length;
 
   const filteredListings = listings
-    .filter(p => !onlyInStock || p.stock > 0)
     .filter(p => bonusUZS(p) >= sliderMin)
     .sort((a, b) => {
       if (sortBy === "bonus-high") return bonusUZS(b) - bonusUZS(a);
@@ -967,7 +963,7 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
               <ChevronLeft size={22} />
             </button>
             <p className="flex-1 text-[16px] font-bold text-foreground">Filters</p>
-            <button onClick={() => { setSortBy("default"); setOnlyInStock(false); setSliderMin(absMin); }}
+            <button onClick={() => { setSortBy("default"); setSliderMin(absMin); }}
               className="text-[12px] font-semibold text-primary hover:text-blue-700 transition-colors">
               Reset all
             </button>
@@ -1017,26 +1013,6 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
               </div>
             </div>
 
-            {/* Toggles */}
-            <div>
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Show only</p>
-              <div className="flex flex-col gap-2">
-                {[
-                  { label: "In stock", sub: "Available for immediate purchase", val: onlyInStock, set: setOnlyInStock },
-                ].map(t => (
-                  <button key={t.label} onClick={() => t.set(!t.val)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all ${t.val ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
-                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${t.val ? "bg-primary border-primary" : "border-border"}`}>
-                      {t.val && <Check size={12} className="text-white" />}
-                    </div>
-                    <div className="text-left">
-                      <p className={`text-[13px] font-semibold leading-tight ${t.val ? "text-primary" : "text-foreground"}`}>{t.label}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{t.sub}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
           <div className="shrink-0 px-4 py-3 bg-card border-t border-border">
@@ -1097,7 +1073,7 @@ function SearchPage({ onSelect, onClose, onSelectCategory }: {
             <div className="flex flex-col items-center py-10 gap-3">
               <EmptyIllustration />
               <p className="text-[14px] font-semibold text-foreground">No results match your filters</p>
-              <button onClick={() => { setSortBy("default"); setOnlyInStock(false); setSliderMin(absMin); }}
+              <button onClick={() => { setSortBy("default"); setSliderMin(absMin); }}
                 className="text-[13px] font-semibold text-primary hover:underline">Clear filters</button>
             </div>
           )}
@@ -1203,8 +1179,6 @@ function CategoryPage({ category, emoji, onBack, onSelect }: {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [sortBy, setSortBy] = useState<"default"|"bonus-high"|"bonus-low">("default");
-  const [onlyInStock, setOnlyInStock] = useState(false);
-
   const catProducts = PRODUCTS.filter(p => p.category === category);
   const allBonus = catProducts.map(p => bonusUZS(p));
   const absMin = allBonus.length ? Math.min(...allBonus) : 0;
@@ -1212,11 +1186,10 @@ function CategoryPage({ category, emoji, onBack, onSelect }: {
   const [sliderMin, setSliderMin] = useState(absMin);
 
   const bonusFiltered = sliderMin > absMin;
-  const activeFilterCount = [sortBy !== "default", onlyInStock, bonusFiltered].filter(Boolean).length;
+  const activeFilterCount = [sortBy !== "default", bonusFiltered].filter(Boolean).length;
 
   const filtered = catProducts
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase()))
-    .filter(p => !onlyInStock || p.stock > 0)
     .filter(p => bonusUZS(p) >= sliderMin)
     .sort((a, b) => {
       if (sortBy === "bonus-high") return bonusUZS(b) - bonusUZS(a);
@@ -1269,25 +1242,6 @@ function CategoryPage({ category, emoji, onBack, onSelect }: {
                 <span className="text-[10px] text-muted-foreground">+{absMin.toLocaleString()} UZS</span>
                 <span className="text-[10px] text-muted-foreground">+{absMax.toLocaleString()} UZS</span>
               </div>
-            </div>
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Show only</p>
-            <div className="flex flex-col gap-2">
-              {[
-                { label: "In stock", sub: "Available for immediate purchase", val: onlyInStock, set: setOnlyInStock },
-              ].map(t => (
-                <button key={t.label} onClick={() => t.set(!t.val)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all ${t.val ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
-                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${t.val ? "bg-primary border-primary" : "border-border"}`}>
-                    {t.val && <Check size={12} className="text-white" />}
-                  </div>
-                  <div className="text-left">
-                    <p className={`text-[13px] font-semibold leading-tight ${t.val ? "text-primary" : "text-foreground"}`}>{t.label}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{t.sub}</p>
-                  </div>
-                </button>
-              ))}
             </div>
           </div>
         </div>
