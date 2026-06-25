@@ -674,12 +674,8 @@ const CATEGORIES: { label: string; icon: string; img?: string }[] = [
   { label: "Brakes",        icon: "Brakes",       img: catBrakesImg },
   { label: "Suspension",    icon: "Suspension" },
   { label: "Steering",      icon: "Steering" },
-  { label: "Electrical",    icon: "Electrical" },
   { label: "Filters",       icon: "Filters",      img: catFiltersImg },
-  { label: "Oil & Fluids",  icon: "Oil" },
   { label: "Tires & Wheels",icon: "Tires" },
-  { label: "Exhaust",       icon: "Exhaust" },
-  { label: "Cooling",       icon: "Cooling" },
   { label: "Lighting",      icon: "Lighting" },
 ];
 
