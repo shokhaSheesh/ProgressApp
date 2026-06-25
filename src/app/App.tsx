@@ -1351,28 +1351,17 @@ function CategoryPage({ category, icon, brand, onBack, onSelect }: {
           {brandModels.length > 0 && (
             <div>
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Model</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-2">
                 {brandModels.map(model => (
                   <button key={model} onClick={() => setSelectedModel(selectedModel === model ? null : model)}
-                    className={`px-3 py-2 rounded-xl text-[13px] font-semibold border-2 transition-all ${selectedModel === model ? "border-primary bg-primary/5 text-primary" : "border-border bg-card text-foreground"}`}>
-                    {model}
+                    className={`flex items-center justify-between w-full px-4 py-3 rounded-2xl border-2 transition-all ${selectedModel === model ? "border-primary bg-primary/5 text-primary" : "border-border bg-card text-foreground"}`}>
+                    <span className="text-[13px] font-semibold">{model}</span>
+                    {selectedModel === model && <Check size={16} className="text-primary" />}
                   </button>
                 ))}
               </div>
             </div>
           )}
-          <div>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sort by</p>
-            <div className="flex flex-col gap-2">
-              {SORT_OPTS.map(o => (
-                <button key={o.key} onClick={() => setSortBy(o.key)}
-                  className={`flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all ${sortBy === o.key ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
-                  <span className={`text-[13px] font-semibold ${sortBy === o.key ? "text-primary" : "text-foreground"}`}>{o.label}</span>
-                  {sortBy === o.key && <Check size={16} className="text-primary" />}
-                </button>
-              ))}
-            </div>
-          </div>
           <div>
             <div className="flex items-center justify-between mb-4">
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Min bonus</p>
