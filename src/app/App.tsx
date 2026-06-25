@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import catEngineImg from "../assets/categories/engine.png";
 import {
   Eye, EyeOff, Wrench, Store, ChevronRight, ArrowLeft,
   ChevronDown, Check, Home, MapPin, ShoppingCart, User,
@@ -664,8 +665,8 @@ function PlaceholderPage({ label, icon }: { label: string; icon: React.ReactNode
 }
 
 // ─── MECHANIC MAIN PAGE ───────────────────────────────────────────────────────
-const CATEGORIES = [
-  { label: "Engine",        icon: "Engine" },
+const CATEGORIES: { label: string; icon: string; img?: string }[] = [
+  { label: "Engine",        icon: "Engine",       img: catEngineImg },
   { label: "Transmission",  icon: "Transmission" },
   { label: "Brakes",        icon: "Brakes" },
   { label: "Suspension",    icon: "Suspension" },
@@ -1632,11 +1633,13 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
               <div key={ri} className="flex gap-2.5">
                 {row.map((cat) => (
                   <button key={cat.label} onClick={() => { setActiveCatPage({ label: cat.label, icon: cat.icon }); onSubPageChange(true); }}
-                    className="flex flex-col items-center gap-1.5" style={{ width: 58 }}>
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center transition-all border-2 border-transparent bg-[#F4F5F7] hover:border-primary hover:bg-primary/10 text-primary">
-                      <CatIcon name={cat.icon} size={22} />
+                    className="flex flex-col items-center gap-1.5" style={{ width: 68 }}>
+                    <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center transition-all border-2 border-transparent bg-[#F4F5F7] hover:border-primary hover:bg-primary/10 text-primary">
+                      {cat.img
+                        ? <img src={cat.img} alt={cat.label} className="w-full h-full object-cover" />
+                        : <CatIcon name={cat.icon} size={26} />}
                     </div>
-                    <span className="text-[10px] font-semibold text-center leading-tight text-muted-foreground" style={{ width: 58 }}>
+                    <span className="text-[10px] font-semibold text-center leading-tight text-muted-foreground" style={{ width: 68 }}>
                       {cat.label}
                     </span>
                   </button>
