@@ -28,7 +28,7 @@ import {
 type AuthScreen = "login" | "mechanic-login-otp" | "mechanic-profile" | "forgot-phone" | "forgot-otp" | "forgot-newpass";
 type Role = "mechanic";
 type Lang = "en" | "ru" | "uz";
-type MechanicTab = "main" | "shops" | "scan" | "bonus" | "profile";
+type MechanicTab = "main" | "shops" | "scan" | "cart" | "profile";
 type SellerTab = "main" | "catalog" | "scan" | "orders" | "profile";
 
 const LANGUAGES: { code: Lang; label: string; native: string; flag: string }[] = [
@@ -2435,248 +2435,281 @@ function ScanOverlay({ onClose, onScanComplete, title = "Scan Barcode / QR", hin
   );
 }
 
-// ─── MECHANIC: CART ───────────────────────────────────────────────────────────
-function CartPage({ cartIds, setCartIds, cartQty, setCartQty }: {
-  cartIds: number[];
-  setCartIds: React.Dispatch<React.SetStateAction<number[]>>;
-  cartQty: Record<number, number>;
-  setCartQty: React.Dispatch<React.SetStateAction<Record<number, number>>>;
+// ─── MECHANIC: SCAN CART ─────────────────────────────────────────────────────
+
+interface CartItem {
+  productId: number;
+  productName: string;
+  productImg: string;
+  sku: string;
+  shop: string;
+  bonus: number;
+  scannedAt: string;
+}
+
+interface Order {
+  id: string;
+  date: string;
+  items: CartItem[];
+  totalBonus: number;
+}
+
+function CartPage({ cart, onRemove, onGetBonus }: {
+  cart: CartItem[];
+  onRemove: (productId: number) => void;
+  onGetBonus: () => void;
 }) {
-  const items = PRODUCTS.filter(p => cartIds.includes(p.id));
-  const [showQR, setShowQR] = useState(false);
+  const totalBonus = cart.reduce((s, i) => s + i.bonus, 0);
 
-  const getQ = (id: number) => cartQty[id] ?? 1;
-  const setQ = (id: number, n: number) => {
-    if (n < 1) {
-      setCartIds(ids => ids.filter(i => i !== id));
-      setCartQty(q => { const next = { ...q }; delete next[id]; return next; });
-    } else {
-      setCartQty(q => ({ ...q, [id]: n }));
-    }
-  };
-
-  const total = items.reduce((sum, p) => sum + priceToNum(p.price) * getQ(p.id), 0);
-  const totalUnits = items.reduce((sum, p) => sum + getQ(p.id), 0);
-  const bonus = Math.round(total * 0.03);
-
-  // ── Empty state ──
-  if (items.length === 0) {
+  if (cart.length === 0) {
     return (
       <div className="flex flex-col h-full bg-background">
         <div className="px-5 pt-5 pb-4 shrink-0">
-          <p className="text-[22px] font-bold text-foreground">My Cart</p>
-          <p className="text-[13px] text-muted-foreground mt-0.5">0 items</p>
+          <p className="text-[22px] font-bold text-foreground">Cart</p>
+          <p className="text-[13px] text-muted-foreground mt-0.5">No scanned products yet</p>
+        </div>
+        {/* How it works */}
+        <div className="mx-4 mb-3 bg-blue-50 border border-blue-100 rounded-2xl p-4 shrink-0">
+          <p className="text-[12px] font-bold text-blue-700 mb-2">How it works</p>
+          <div className="flex items-center gap-2">
+            {[
+              { icon: <ScanLine size={14} />, label: "Scan products" },
+              { icon: <ChevronRight size={12} />, label: null },
+              { icon: <ShoppingCart size={14} />, label: "Fill cart" },
+              { icon: <ChevronRight size={12} />, label: null },
+              { icon: <Gift size={14} />, label: "Get bonus" },
+            ].map((step, i) => step.label
+              ? <div key={i} className="flex items-center gap-1 text-blue-600"><span>{step.icon}</span><span className="text-[11px] font-semibold">{step.label}</span></div>
+              : <span key={i} className="text-blue-300">{step.icon}</span>
+            )}
+          </div>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8 pb-12">
           <EmptyIllustration />
           <div className="text-center">
-            <p className="text-[16px] font-bold text-foreground">Your cart is empty</p>
-            <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">Browse the catalog and add parts to generate a purchase QR.</p>
+            <p className="text-[16px] font-bold text-foreground">Cart is empty</p>
+            <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">Scan products to add them here, then press Get Bonus to claim your reward.</p>
           </div>
         </div>
       </div>
     );
   }
 
-  // ── QR full-screen view ──
-  if (showQR) {
-    return (
-      <div className="flex flex-col h-full bg-background">
-        {/* Header */}
-        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
-          <button onClick={() => setShowQR(false)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronLeft size={20} />
-          </button>
-          <div className="flex-1">
-            <p className="text-[17px] font-bold text-foreground leading-tight">Purchase QR</p>
-            <p className="text-[12px] text-muted-foreground">Show to seller to confirm order</p>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto flex flex-col items-center px-6 py-6 gap-5">
-          {/* QR code */}
-          <div className="bg-white rounded-3xl p-5 border border-border w-full flex justify-center" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.07)" }}>
-            <QRCodePlaceholder seed={`CART-${cartIds.join("-")}-${total}`} size={220} />
-          </div>
-
-          {/* Amount */}
-          <div className="w-full bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">Order summary</p>
-              <span className="text-[11px] text-muted-foreground">{items.length} product{items.length > 1 ? "s" : ""}</span>
-            </div>
-            <div className="flex items-center justify-between text-[13px] mb-2">
-              <span className="text-muted-foreground">Total units</span>
-              <span className="font-semibold text-foreground">{totalUnits}</span>
-            </div>
-            <div className="flex items-center justify-between text-[13px] mb-2">
-              <span className="text-muted-foreground">Amount</span>
-              <span className="font-semibold text-foreground">{fmtUZS(total)} UZS</span>
-            </div>
-            <div className="h-px bg-border my-2.5" />
-            <div className="flex items-center justify-between">
-              <span className="text-[15px] font-bold text-foreground">Total</span>
-              <span className="text-[20px] font-bold text-primary">{fmtUZS(total)} <span className="text-[11px] font-normal text-muted-foreground">UZS</span></span>
-            </div>
-          </div>
-
-          {/* Bonus pill */}
-          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3 w-full">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-              <Gift size={16} className="text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-[12px] font-semibold text-emerald-700">You'll earn <span className="text-emerald-600">+{fmtUZS(bonus)} UZS</span> bonus</p>
-              <p className="text-[11px] text-emerald-500 mt-0.5">3% loyalty reward · added after seller confirms</p>
-            </div>
-          </div>
-
-          {/* Items recap */}
-          <div className="w-full">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Items in this order</p>
-            <div className="flex flex-col gap-2">
-              {items.map(p => (
-                <div key={p.id} className="flex items-center gap-3 bg-card rounded-xl border border-border px-3 py-2.5">
-                  <div className="w-9 h-9 rounded-lg bg-muted overflow-hidden shrink-0">
-                    <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-semibold text-foreground line-clamp-1">{p.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{p.shop}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[12px] font-bold text-primary">{fmtUZS(priceToNum(p.price) * getQ(p.id))}</p>
-                    <p className="text-[10px] text-muted-foreground">×{getQ(p.id)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Cart list ──
   return (
-    <div className="flex flex-col h-full bg-background">
-      {/* Title */}
+    <div className="flex flex-col h-full min-h-0 bg-background">
       <div className="px-5 pt-5 pb-3 shrink-0">
-        <p className="text-[22px] font-bold text-foreground">My Cart</p>
-        <p className="text-[13px] text-muted-foreground mt-0.5">{items.length} item{items.length > 1 ? "s" : ""} · {totalUnits} unit{totalUnits > 1 ? "s" : ""}</p>
+        <p className="text-[22px] font-bold text-foreground">Cart</p>
+        <p className="text-[13px] text-muted-foreground mt-0.5">{cart.length} scanned product{cart.length !== 1 ? "s" : ""}</p>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
-        <div className="flex flex-col gap-3">
-
-        {/* Item rows */}
-        {items.map(p => (
-          <div key={p.id} className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-            <div className="flex gap-3 p-3">
-              {/* Thumbnail */}
-              <div className="w-[72px] h-[72px] rounded-xl bg-muted overflow-hidden shrink-0">
-                <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0 flex flex-col justify-between">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2">{p.name}</p>
-                    <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{p.sku}</p>
-                    <p className="text-[11px] text-muted-foreground">{p.shop}</p>
-                  </div>
-                  <button onClick={() => setCartIds(ids => ids.filter(i => i !== p.id))}
-                    className="shrink-0 w-7 h-7 rounded-lg bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors mt-0.5">
-                    <Trash2 size={13} />
-                  </button>
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 flex flex-col gap-3">
+        {cart.map((item, idx) => (
+          <div key={idx} className="bg-card rounded-2xl border border-border overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <div className="flex items-center gap-3 px-3 pt-3 pb-4">
+              {/* Index badge + image */}
+              <div className="relative shrink-0">
+                <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden">
+                  <img src={item.productImg} alt={item.productName} className="w-full h-full object-cover" />
                 </div>
-
-                {/* Price + stepper */}
-                <div className="flex items-center justify-between mt-2">
-                  <div>
-                    {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through leading-none">{p.originalPrice} UZS</p>}
-                    <p className="text-[15px] font-bold text-primary leading-tight">
-                      {fmtUZS(priceToNum(p.price) * getQ(p.id))} <span className="text-[10px] font-normal text-muted-foreground">UZS</span>
-                    </p>
-                  </div>
-                  <div className="flex items-center bg-[#F4F5F7] rounded-xl overflow-hidden border border-border">
-                    <button onClick={() => setQ(p.id, getQ(p.id) - 1)}
-                      className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors">
-                      <Minus size={13} />
-                    </button>
-                    <span className="text-[13px] font-bold text-foreground px-2">{getQ(p.id)}</span>
-                    <button onClick={() => setQ(p.id, getQ(p.id) + 1)}
-                      className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors">
-                      <Plus size={13} />
-                    </button>
-                  </div>
-                </div>
+                <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                  {idx + 1}
+                </span>
               </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-foreground line-clamp-1">{item.productName}</p>
+                <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{item.sku}</p>
+                <p className="text-[11px] text-muted-foreground">{item.shop}</p>
+              </div>
+              <button onClick={() => onRemove(item.productId)}
+                className="shrink-0 w-8 h-8 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors">
+                <Trash2 size={14} />
+              </button>
             </div>
-
-            {/* Per-unit price footer */}
-            <div className="border-t border-border px-3 py-1.5 bg-[#FAFAFA]">
-              <p className="text-[11px] text-muted-foreground">{p.price} UZS per unit</p>
+            <div className="border-t border-border px-3 py-1.5 bg-[#FAFAFA] flex items-center justify-between">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Clock size={11} />
+                <span className="text-[11px]">Scanned at {item.scannedAt}</span>
+              </div>
+              <span className="text-[12px] font-bold text-emerald-600">+{item.bonus.toLocaleString()} UZS</span>
             </div>
           </div>
         ))}
 
-        {/* Order summary card */}
-        <div className="bg-card rounded-2xl border border-border p-4 mt-1" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-          <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Order summary</p>
-
+        {/* Summary card */}
+        <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Session summary</p>
           <div className="flex items-center justify-between text-[13px] mb-2">
-            <span className="text-muted-foreground">Products</span>
-            <span className="font-medium text-foreground">{items.length}</span>
+            <span className="text-muted-foreground">Products scanned</span>
+            <span className="font-semibold text-foreground">{cart.length}</span>
           </div>
-          <div className="flex items-center justify-between text-[13px] mb-2">
-            <span className="text-muted-foreground">Total units</span>
-            <span className="font-medium text-foreground">{totalUnits}</span>
-          </div>
-          <div className="flex items-center justify-between text-[13px] mb-2">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-semibold text-foreground">{fmtUZS(total)} UZS</span>
-          </div>
-
-          <div className="h-px bg-border my-3" />
-
-          {/* Bonus row */}
-          <div className="flex items-center justify-between mb-3">
+          <div className="h-px bg-border my-2" />
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Gift size={13} className="text-emerald-500" />
-              <span className="text-[13px] text-emerald-600 font-medium">Loyalty bonus</span>
-              <span className="text-[10px] bg-emerald-50 text-emerald-500 px-1.5 py-0.5 rounded-md font-semibold">3%</span>
+              <Gift size={14} className="text-emerald-500" />
+              <span className="text-[14px] font-bold text-foreground">Total bonus</span>
             </div>
-            <span className="text-[13px] font-bold text-emerald-600">+{fmtUZS(bonus)} UZS</span>
-          </div>
-
-          {/* Total */}
-          <div className="flex items-center justify-between bg-primary/5 rounded-xl px-3 py-2.5">
-            <span className="text-[14px] font-bold text-foreground">Total to pay</span>
-            <span className="text-[20px] font-bold text-primary">{fmtUZS(total)} <span className="text-[11px] font-normal text-muted-foreground">UZS</span></span>
+            <span className="text-[18px] font-bold text-emerald-600">+{totalBonus.toLocaleString()} <span className="text-[11px] font-normal text-muted-foreground">UZS</span></span>
           </div>
         </div>
-        </div>{/* end inner flex-col */}
-      </div>{/* end scroll */}
 
-      {/* Generate QR button */}
+        {/* Info strip */}
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 flex items-start gap-2.5">
+          <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
+          <p className="text-[12px] text-blue-700 leading-relaxed">Pressing <span className="font-bold">Get Bonus</span> will finalize this session. Your bonus will be credited to your wallet and the cart will reset.</p>
+        </div>
+      </div>
+
       <div className="shrink-0 bg-card border-t border-border px-4 py-3">
-        <button onClick={() => setShowQR(true)}
-          className="w-full bg-primary text-white rounded-2xl py-4 text-[15px] font-bold flex items-center justify-center gap-2.5 hover:bg-blue-700 active:scale-[0.98] transition-all"
-          style={{ boxShadow: "0 4px 20px rgba(37,99,235,0.35)" }}>
-          <QrCode size={20} />
-          Generate Purchase QR
+        <button onClick={onGetBonus}
+          className="w-full bg-emerald-500 text-white rounded-2xl py-4 text-[15px] font-bold flex items-center justify-center gap-2.5 hover:bg-emerald-600 active:scale-[0.98] transition-all"
+          style={{ boxShadow: "0 4px 20px rgba(16,185,129,0.35)" }}>
+          <Gift size={20} />
+          Get Bonus · +{totalBonus.toLocaleString()} UZS
         </button>
       </div>
     </div>
   );
 }
 
+function OrderHistoryPage({ orders, onBack }: { orders: Order[]; onBack: () => void }) {
+  const [selected, setSelected] = useState<Order | null>(null);
+
+  if (selected) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+          <button onClick={() => setSelected(null)} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground">
+            <ChevronLeft size={20} />
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-[17px] font-bold text-foreground leading-tight">Order Details</p>
+            <p className="text-[11px] font-mono text-muted-foreground">{selected.id}</p>
+          </div>
+          <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-xl">Completed</span>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+          {/* Summary stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-card rounded-2xl border border-border p-3.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">Products</p>
+              <p className="text-[22px] font-bold text-foreground leading-tight">{selected.items.length}</p>
+              <p className="text-[11px] text-muted-foreground">scanned items</p>
+            </div>
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3.5">
+              <p className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wider mb-1">Bonus earned</p>
+              <p className="text-[22px] font-bold text-emerald-600 leading-tight">+{selected.totalBonus.toLocaleString()}</p>
+              <p className="text-[11px] text-emerald-500">UZS · credited</p>
+            </div>
+          </div>
+
+          {/* Date + order ref card */}
+          <div className="bg-card rounded-2xl border border-border px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Clock size={13} />
+              <span className="text-[12px]">{selected.date}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Receipt size={13} className="text-muted-foreground" />
+              <span className="text-[11px] font-mono text-muted-foreground">{selected.id}</span>
+            </div>
+          </div>
+
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">Scanned items</p>
+
+          {selected.items.map((item, idx) => (
+            <div key={idx} className="bg-card rounded-2xl border border-border overflow-hidden">
+              <div className="flex items-center gap-3 p-3">
+                <div className="relative shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden">
+                    <img src={item.productImg} alt={item.productName} className="w-full h-full object-cover" />
+                  </div>
+                  <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-muted-foreground/20 text-foreground text-[9px] font-bold flex items-center justify-center leading-none">
+                    {idx + 1}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-foreground line-clamp-1">{item.productName}</p>
+                  <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{item.sku}</p>
+                  {"shop" in item && <p className="text-[11px] text-muted-foreground">{(item as CartItem).shop}</p>}
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-[13px] font-bold text-emerald-600">+{item.bonus.toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground">UZS</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border shrink-0">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-muted-foreground">
+          <ChevronLeft size={20} />
+        </button>
+        <p className="flex-1 text-[17px] font-bold text-foreground">Order History</p>
+        {orders.length > 0 && (
+          <span className="text-[12px] font-semibold text-muted-foreground bg-[#F4F5F7] px-2.5 py-1 rounded-xl">{orders.length} order{orders.length !== 1 ? "s" : ""}</span>
+        )}
+      </div>
+      {orders.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8 pb-12">
+          <EmptyIllustration />
+          <div className="text-center">
+            <p className="text-[16px] font-bold text-foreground">No orders yet</p>
+            <p className="text-[13px] text-muted-foreground mt-1.5">Scan products and claim your first bonus.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+          {orders.map(order => (
+            <button key={order.id} onClick={() => setSelected(order)}
+              className="bg-card rounded-2xl border border-border p-4 text-left w-full active:scale-[0.98] transition-all"
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div className="flex items-center justify-between mb-2.5">
+                <div>
+                  <p className="text-[11px] font-mono text-muted-foreground">{order.id}</p>
+                  <div className="flex items-center gap-1 mt-0.5 text-muted-foreground">
+                    <Clock size={10} />
+                    <span className="text-[11px]">{order.date}</span>
+                  </div>
+                </div>
+                <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">Completed</span>
+              </div>
+              {/* Product thumbnails */}
+              <div className="flex items-center gap-2 mb-3">
+                {order.items.slice(0, 3).map((item, i) => (
+                  <div key={i} className="w-10 h-10 rounded-xl bg-muted overflow-hidden shrink-0">
+                    <img src={item.productImg} alt={item.productName} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+                {order.items.length > 3 && (
+                  <div className="w-10 h-10 rounded-xl bg-[#F4F5F7] flex items-center justify-center shrink-0">
+                    <span className="text-[11px] font-bold text-muted-foreground">+{order.items.length - 3}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground bg-[#F4F5F7] px-2 py-0.5 rounded-lg font-medium">{order.items.length} item{order.items.length !== 1 ? "s" : ""}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[13px] font-bold text-emerald-600">+{order.totalBonus.toLocaleString()} UZS</span>
+                  <ChevronRight size={14} className="text-muted-foreground" />
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── PROFILE / WALLET (multi-page, shared by both roles) ─────────────────────
 
-interface WalletTxn { id: number; label: string; date: string; amount: number; kind: "earn" | "withdraw"; orderRef?: string; productName?: string; productImg?: string; productId?: number; }
+interface WalletTxn { id: number; label: string; date: string; amount: number; kind: "earn" | "withdraw"; orderRef?: string; }
 
 type WithdrawStatus = "pending" | "processing" | "out_for_delivery" | "delivered" | "failed";
 interface WithdrawRequest {
@@ -2920,8 +2953,8 @@ function DatePickerWheel({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 
-function TransactionHistoryPage({ role, transactions, requests, onBack, onProductTap, showBack = true }: {
-  role: Role; transactions: WalletTxn[]; requests: WithdrawRequest[]; onBack: () => void; onProductTap?: (product: Product) => void; showBack?: boolean;
+function TransactionHistoryPage({ role, transactions, requests, onBack, showBack = true }: {
+  role: Role; transactions: WalletTxn[]; requests: WithdrawRequest[]; onBack: () => void; showBack?: boolean;
 }) {
 
   const [activeTab, setActiveTab] = useState<"history"|"requests">("history");
@@ -3045,37 +3078,25 @@ function TransactionHistoryPage({ role, transactions, requests, onBack, onProduc
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {g.items.map(t => {
-                    const product = t.kind === "earn" && t.productId ? PRODUCTS.find(p => p.id === t.productId) : null;
-                    const tappable = !!product && !!onProductTap;
-                    return (
+                  {g.items.map(t => (
                     <div key={t.id}
-                      onClick={tappable ? () => onProductTap!(product!) : undefined}
-                      className={`flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5 ${tappable ? "cursor-pointer active:scale-[0.98] transition-transform" : ""}`}
+                      className="flex items-center gap-3 bg-card rounded-2xl border border-border p-3.5"
                       style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                      {/* Icon / product thumbnail */}
-                      {t.kind === "earn" && t.productImg ? (
-                        <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-muted">
-                          <img src={t.productImg} alt={t.productName} className="w-full h-full object-cover" />
-                        </div>
-                      ) : (
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
-                          {t.kind === "earn" ? <Gift size={17} /> : <ArrowDownToLine size={17} />}
-                        </div>
-                      )}
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${t.kind === "earn" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
+                        {t.kind === "earn" ? <Gift size={17} /> : <ArrowDownToLine size={17} />}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-foreground leading-tight line-clamp-1">
-                          {t.kind === "earn" && t.productName ? t.productName : t.label}
-                        </p>
+                        <p className="text-[13px] font-semibold text-foreground leading-tight line-clamp-1">{t.label}</p>
+                        {t.orderRef && (
+                          <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{t.orderRef}</p>
+                        )}
                         <p className="text-[11px] text-muted-foreground mt-0.5">{t.date}</p>
                       </div>
                       <span className={`text-[14px] font-bold shrink-0 ${t.kind === "earn" ? "text-emerald-600" : "text-red-500"}`}>
                         {t.kind === "earn" ? "+" : "−"}{fmtUZS(t.amount)} <span className="text-[10px] font-normal">UZS</span>
                       </span>
-                      {tappable && <ChevronRight size={15} className="text-muted-foreground shrink-0 ml-1" />}
                     </div>
-                    );
-                  })}
+                  ))}
                 </div>
               </div>
             ))}
@@ -3475,7 +3496,7 @@ function FAQPage({ onBack }: { onBack: () => void }) {
   );
 }
 
-type ProfileSubPage = "wallet" | "history" | "info" | "faq" | "support" | null;
+type ProfileSubPage = "wallet" | "history" | "orders" | "info" | "faq" | "support" | null;
 
 const LANGS = [
   { code: "en", label: "English",  native: "English",    flag: "🇬🇧" },
@@ -3484,8 +3505,8 @@ const LANGS = [
 ] as const;
 type LangCode = typeof LANGS[number]["code"];
 
-function WalletScreen({ name, phone, balance, transactions, onLogout, onSubPageChange }: {
-  name: string; phone: string; balance: number; transactions: WalletTxn[]; onLogout?: () => void; onSubPageChange?: (active: boolean) => void;
+function WalletScreen({ name, phone, balance, transactions, orders, onLogout, onSubPageChange }: {
+  name: string; phone: string; balance: number; transactions: WalletTxn[]; orders: Order[]; onLogout?: () => void; onSubPageChange?: (active: boolean) => void;
 }) {
   const [sub, setSub] = useState<ProfileSubPage>(null);
   const [showLangSheet, setShowLangSheet] = useState(false);
@@ -3497,6 +3518,7 @@ function WalletScreen({ name, phone, balance, transactions, onLogout, onSubPageC
 
   if (sub === "wallet")  return <WalletPage role="mechanic" balance={balance} name={name} phone={phone} onBack={goBack} />;
   if (sub === "history") return <TransactionHistoryPage role="mechanic" transactions={transactions} requests={MOCK_WITHDRAW_REQUESTS} onBack={goBack} />;
+  if (sub === "orders")  return <OrderHistoryPage orders={orders} onBack={goBack} />;
   if (sub === "info")    return <MyInfoPage name={name} phone={phone} onBack={goBack} />;
   if (sub === "support") return <SupportPage name={name} phone={phone} onBack={goBack} />;
   if (sub === "faq")     return <FAQPage onBack={goBack} />;
@@ -3509,6 +3531,7 @@ function WalletScreen({ name, phone, balance, transactions, onLogout, onSubPageC
         { label: "My information", icon: <UserCircle size={18} />, color: "bg-blue-500",    action: () => goSub("info") },
         { label: "Bonus wallet",   icon: <Wallet size={18} />,     color: "bg-emerald-500", action: () => goSub("wallet") },
         { label: "Bonus history",  icon: <BarChart2 size={18} />,  color: "bg-violet-500",  action: () => goSub("history") },
+        { label: "Order history",  icon: <ClipboardList size={18} />, color: "bg-orange-500", action: () => goSub("orders") },
       ],
     },
     {
@@ -3652,18 +3675,83 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
   const [profileSubActive, setProfileSubActive] = useState(false);
   const [mainSubActive, setMainSubActive] = useState(false);
 
+  const [cart, setCart] = useState<CartItem[]>([
+    { productId: PRODUCTS[0].id, productName: PRODUCTS[0].name, productImg: PRODUCTS[0].img, sku: PRODUCTS[0].sku, shop: PRODUCTS[0].shop, bonus: bonusUZS(PRODUCTS[0]), scannedAt: "10:14" },
+    { productId: PRODUCTS[2].id, productName: PRODUCTS[2].name, productImg: PRODUCTS[2].img, sku: PRODUCTS[2].sku, shop: PRODUCTS[2].shop, bonus: bonusUZS(PRODUCTS[2]), scannedAt: "10:16" },
+    { productId: PRODUCTS[6].id, productName: PRODUCTS[6].name, productImg: PRODUCTS[6].img, sku: PRODUCTS[6].sku, shop: PRODUCTS[6].shop, bonus: bonusUZS(PRODUCTS[6]), scannedAt: "10:21" },
+  ]);
+  const [orders, setOrders] = useState<Order[]>([
+    {
+      id: "ORD-2206-001", date: "Jun 22, 2026",
+      items: [
+        { productId: PRODUCTS[0].id, productName: PRODUCTS[0].name, productImg: PRODUCTS[0].img, sku: PRODUCTS[0].sku, shop: PRODUCTS[0].shop, bonus: bonusUZS(PRODUCTS[0]), scannedAt: "09:41" },
+        { productId: PRODUCTS[2].id, productName: PRODUCTS[2].name, productImg: PRODUCTS[2].img, sku: PRODUCTS[2].sku, shop: PRODUCTS[2].shop, bonus: bonusUZS(PRODUCTS[2]), scannedAt: "09:43" },
+      ],
+      totalBonus: bonusUZS(PRODUCTS[0]) + bonusUZS(PRODUCTS[2]),
+    },
+    {
+      id: "ORD-1806-001", date: "Jun 18, 2026",
+      items: [
+        { productId: PRODUCTS[6].id, productName: PRODUCTS[6].name, productImg: PRODUCTS[6].img, sku: PRODUCTS[6].sku, shop: PRODUCTS[6].shop, bonus: bonusUZS(PRODUCTS[6]), scannedAt: "14:05" },
+      ],
+      totalBonus: bonusUZS(PRODUCTS[6]),
+    },
+    {
+      id: "ORD-0906-001", date: "Jun 09, 2026",
+      items: [
+        { productId: PRODUCTS[8].id,  productName: PRODUCTS[8].name,  productImg: PRODUCTS[8].img,  sku: PRODUCTS[8].sku,  shop: PRODUCTS[8].shop,  bonus: bonusUZS(PRODUCTS[8]),  scannedAt: "11:30" },
+        { productId: PRODUCTS[10].id, productName: PRODUCTS[10].name, productImg: PRODUCTS[10].img, sku: PRODUCTS[10].sku, shop: PRODUCTS[10].shop, bonus: bonusUZS(PRODUCTS[10]), scannedAt: "11:33" },
+        { productId: PRODUCTS[4].id,  productName: PRODUCTS[4].name,  productImg: PRODUCTS[4].img,  sku: PRODUCTS[4].sku,  shop: PRODUCTS[4].shop,  bonus: bonusUZS(PRODUCTS[4]),  scannedAt: "11:35" },
+      ],
+      totalBonus: bonusUZS(PRODUCTS[8]) + bonusUZS(PRODUCTS[10]) + bonusUZS(PRODUCTS[4]),
+    },
+  ]);
+  const [transactions, setTransactions] = useState<WalletTxn[]>([
+    { id: 1, label: "Order #ORD-2206-001", date: "Jun 22, 2026", amount: 6000,  kind: "earn",    orderRef: "ORD-2206-001" },
+    { id: 2, label: "Withdraw to UzCard",  date: "Jun 20, 2026", amount: 100000, kind: "withdraw" },
+    { id: 3, label: "Order #ORD-1806-001", date: "Jun 18, 2026", amount: 16000, kind: "earn",    orderRef: "ORD-1806-001" },
+    { id: 4, label: "Order #ORD-0906-001", date: "Jun 09, 2026", amount: 3000,  kind: "earn",    orderRef: "ORD-0906-001" },
+    { id: 5, label: "Order #ORD-0206-001", date: "Jun 02, 2026", amount: 7000,  kind: "earn",    orderRef: "ORD-0206-001" },
+  ]);
+  const [balance, setBalance] = useState(184000);
+
+  const handleScanDone = () => {
+    const p = PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)];
+    const bonus = bonusUZS(p);
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const scannedAt = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    setCart(prev => [...prev, { productId: p.id, productName: p.name, productImg: p.img, sku: p.sku, shop: p.shop, bonus, scannedAt }]);
+    setScanning(false);
+    setTab("cart");
+  };
+
+  const handleGetBonus = () => {
+    if (cart.length === 0) return;
+    const totalBonus = cart.reduce((s, i) => s + i.bonus, 0);
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const dateStr = `${now.toLocaleString("en-US", { month: "short" })} ${now.getDate()}, ${now.getFullYear()}`;
+    const ref = `ORD-${pad(now.getDate())}${pad(now.getMonth() + 1)}-${String(orders.length + 1).padStart(3, "0")}`;
+    const newOrder: Order = { id: ref, date: dateStr, items: [...cart], totalBonus };
+    const newTxn: WalletTxn = { id: Date.now(), label: `Order #${ref}`, date: dateStr, amount: totalBonus, kind: "earn", orderRef: ref };
+    setOrders(prev => [newOrder, ...prev]);
+    setTransactions(prev => [newTxn, ...prev]);
+    setBalance(prev => prev + totalBonus);
+    setCart([]);
+  };
+
   const tabs: { key: MechanicTab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
-    { key: "main",    label: "Main",    icon: (a) => <Home         size={22} strokeWidth={a ? 2.5 : 1.8} /> },
-    { key: "shops",   label: "Shops",   icon: (a) => <MapPin       size={22} strokeWidth={a ? 2.5 : 1.8} /> },
-    { key: "scan",    label: "Scan",    icon: (_) => <ScanLine     size={24} strokeWidth={2} /> },
-    { key: "bonus",   label: "Bonus",   icon: (a) => <Gift size={22} strokeWidth={a ? 2.5 : 1.8} /> },
-    { key: "profile", label: "Profile", icon: (a) => <User         size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "main",    label: "Main",    icon: (a) => <Home     size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "shops",   label: "Shops",   icon: (a) => <MapPin   size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "scan",    label: "Scan",    icon: (_) => <ScanLine size={24} strokeWidth={2} /> },
+    { key: "cart",    label: "Cart",    icon: (a) => <ShoppingCart size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+    { key: "profile", label: "Profile", icon: (a) => <User     size={22} strokeWidth={a ? 2.5 : 1.8} /> },
   ];
 
   return (
     <div className="flex flex-col flex-1 min-h-0 relative">
-      {scanning && <ScanOverlay onClose={() => setScanning(false)} />}
-
+      {scanning && <ScanOverlay onClose={handleScanDone} />}
 
       <div className="flex-1 min-h-0 overflow-hidden">
         {selectedProduct
@@ -3672,28 +3760,11 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
             ? <MechanicMainPage onSelect={setSelectedProduct} onSubPageChange={setMainSubActive} />
             : tab === "shops"
               ? <ShopsPage />
-              : tab === "bonus"
-                ? <TransactionHistoryPage role="mechanic" showBack={false} onBack={() => {}} requests={MOCK_WITHDRAW_REQUESTS}
-                    onProductTap={setSelectedProduct}
-                    transactions={[
-                      { id: 1, label: "Bosch Oil Filter Premium",   date: "Jun 22, 2026", amount: 2000,   kind: "earn",    productId: 1,   productName: "Bosch Oil Filter Premium",   productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
-                      { id: 2, label: "NGK Spark Plug",             date: "Jun 22, 2026", amount: 4000,   kind: "earn",    productId: 5,   productName: "NGK Spark Plug",             productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
-                      { id: 3, label: "Withdraw to UzCard",         date: "Jun 20, 2026", amount: 100000, kind: "withdraw" },
-                      { id: 4, label: "Continental Tire 205/55R16", date: "Jun 18, 2026", amount: 16000,  kind: "earn",    productId: 9,   productName: "Continental Tire 205/55R16", productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
-                      { id: 5, label: "Denso Air Filter",           date: "Jun 09, 2026", amount: 3000,   kind: "earn",    productId: 13,  productName: "Denso Air Filter",           productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
-                      { id: 6, label: "Monroe Shock Absorber",      date: "Jun 02, 2026", amount: 7000,   kind: "earn",    productId: 17,  productName: "Monroe Shock Absorber",      productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
-                    ]} />
+              : tab === "cart"
+                ? <CartPage cart={cart} onRemove={id => setCart(prev => prev.filter(i => i.productId !== id))} onGetBonus={handleGetBonus} />
                 : tab === "profile"
-                  ? <WalletScreen name="Akmal Karimov" phone="+998 90 123 45 67" balance={184000} onLogout={onLogout}
-                      onSubPageChange={setProfileSubActive}
-                      transactions={[
-                        { id: 1, label: "Bosch Oil Filter Premium",   date: "Jun 22, 2026", amount: 2000,  kind: "earn",    productName: "Bosch Oil Filter Premium",   productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
-                        { id: 2, label: "NGK Spark Plug",             date: "Jun 22, 2026", amount: 4000,  kind: "earn",    productName: "NGK Spark Plug",             productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
-                        { id: 3, label: "Withdraw to UzCard",         date: "Jun 20, 2026", amount: 100000, kind: "withdraw" },
-                        { id: 4, label: "Continental Tire 205/55R16", date: "Jun 18, 2026", amount: 16000, kind: "earn",    productName: "Continental Tire 205/55R16", productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
-                        { id: 5, label: "Denso Air Filter",           date: "Jun 09, 2026", amount: 3000,  kind: "earn",    productName: "Denso Air Filter",           productImg: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80" },
-                        { id: 6, label: "Monroe Shock Absorber",      date: "Jun 02, 2026", amount: 7000,  kind: "earn",    productName: "Monroe Shock Absorber",      productImg: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80" },
-                      ]} />
+                  ? <WalletScreen name="Akmal Karimov" phone="+998 90 123 45 67" balance={balance} onLogout={onLogout}
+                      orders={orders} transactions={transactions} onSubPageChange={setProfileSubActive} />
                   : null}
       </div>
 
@@ -3724,6 +3795,11 @@ function MechanicApp({ onLogout }: { onLogout: () => void }) {
                   style={{ minWidth: 48 }}>
                   <div className={`relative transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                     {t.icon(isActive)}
+                    {t.key === "cart" && cart.length > 0 && (
+                      <span className="absolute -top-1 -right-1.5 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                        {cart.length}
+                      </span>
+                    )}
                   </div>
                   <span className={`text-[10px] font-semibold transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                     {t.label}
