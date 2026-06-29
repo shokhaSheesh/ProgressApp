@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import bannerImg from "../assets/banner.webp";
+import bannerImg from "../assets/banner.png";
 import catEngineImg from "../assets/categories/engine.png";
 import catTransmissionImg from "../assets/categories/transmission.png";
 import catBrakesImg from "../assets/categories/brakes.png";
