@@ -1697,7 +1697,9 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
 
       {/* Banner */}
       <div className="shrink-0 px-4 mb-3">
-        <img src={bannerImg} alt="Promotion" className="w-full rounded-2xl object-contain" style={{ height: 120 }} />
+        <div className="w-full rounded-2xl overflow-hidden" style={{ height: 135 }}>
+          <img src={bannerImg} alt="Promotion" className="w-full h-full object-cover" />
+        </div>
       </div>
 
       {/* Categories */}
