@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import bannerImg from "../assets/banner.webp";
 import catEngineImg from "../assets/categories/engine.png";
 import catTransmissionImg from "../assets/categories/transmission.png";
 import catBrakesImg from "../assets/categories/brakes.png";
@@ -1692,6 +1693,11 @@ function MechanicMainPage({ onSelect, onSubPageChange }: {
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
+      </div>
+
+      {/* Banner */}
+      <div className="shrink-0 px-4 mb-3">
+        <img src={bannerImg} alt="Promotion" className="w-full rounded-2xl object-cover" style={{ maxHeight: 160 }} />
       </div>
 
       {/* Categories */}
