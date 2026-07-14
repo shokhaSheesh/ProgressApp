@@ -3850,7 +3850,7 @@ export default function App() {
       style={{ background: "linear-gradient(135deg, #e0e7ff 0%, #dbeafe 50%, #e0f2fe 100%)" }}>
       {/* Phone shell */}
       <div className="relative bg-card flex flex-col overflow-hidden"
-        style={{ width: 390, height: 780, borderRadius: 44, boxShadow: "0 40px 100px rgba(37,99,235,0.18), 0 0 0 10px #1a1a1a, 0 0 0 11px #333" }}>
+        style={{ width: 390, height: 780, borderRadius: 44, boxShadow: "0 40px 100px rgba(37,99,235,0.18)" }}>
 
         {/* Status bar */}
         <div className="flex items-center justify-between px-8 pt-4 pb-1 shrink-0">
